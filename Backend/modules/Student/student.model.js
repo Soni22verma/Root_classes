@@ -24,17 +24,21 @@ const studentSchema = new mongoose.Schema(
         },
         currentClass: {
             type: String,
-           
+
         },
         interestedCourse: {
             type: String,
-            
-        },
-        address:{
-            type:String,
 
-        }
+        },
+        address: {
+            type: String,
+
+        },
+
+        profileImage: {
+            type: String, 
+        },
     },
-    {timestamps:true}
+    { timestamps: true }
 )
 export const Student = mongoose.model('Student', studentSchema)

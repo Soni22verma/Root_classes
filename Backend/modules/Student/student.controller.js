@@ -1,17 +1,18 @@
 import { Student } from "./student.model.js";
 import bcrypt from 'bcrypt';
 import jwt from "jsonwebtoken";
+import cloudinary from "../../config/cloudinary.js";
 
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: "7d",
-  });
+    return jwt.sign({ id }, process.env.JWT_SECRET, {
+        expiresIn: "7d",
+    });
 };
 
 export const RegisterStudent = async (req, res) => {
     try {
         const { fullName, email, password, dateofBirth, gender, currentClass, interestedCourse, address } = req.body;
-      
+
 
         if (!fullName || !email || !password || !dateofBirth || !gender || !currentClass || !interestedCourse || !address) {
             return res.status(400).json({
@@ -29,79 +30,164 @@ export const RegisterStudent = async (req, res) => {
                 success: false
             })
         }
-          const hash = await bcrypt.hash(password, 10);
+        const hash = await bcrypt.hash(password, 10);
 
         const student = await Student.create({
             fullName,
             email,
-            password : hash,
+            password: hash,
             dateofBirth,
             gender,
             currentClass,
             interestedCourse,
             address,
         })
-          const token = generateToken(student._id);
+        const token = generateToken(student._id);
 
         return res.status(200).json({
-            message:"Student registerd successfully",
+            message: "Student registerd successfully",
             token,
             student,
         })
 
     } catch (error) {
-      return res.status(500).json({
-        message:"Server Error",
-        error:true
-      })
+        return res.status(500).json({
+            message: "Server Error",
+            error: true
+        })
     }
 }
 
-export const handleLogin = async(req,res)=>{
+export const handleLogin = async (req, res) => {
     try {
-        const {email,password} = req.body;
+        const { email, password } = req.body;
 
-        if(!email || !password){
+        if (!email || !password) {
             return res.status(400).json({
-                message:"fill required fields",
-                error:true,
-                success:false
+                message: "fill required fields",
+                error: true,
+                success: false
             })
         }
 
-        const student = await Student.findOne({email})
-        if(!student){
+        const student = await Student.findOne({ email })
+        if (!student) {
             return res.status(400).json({
-                message:"Invalid email and password",
-                error:true,
-                success:false
+                message: "Invalid email and password",
+                error: true,
+                success: false
             })
         }
 
-        const isMatch = await bcrypt.compare(password,student.password)
-        if(!isMatch){
+        const isMatch = await bcrypt.compare(password, student.password)
+        if (!isMatch) {
             return res.status(400).json({
-                message:"email and password not matched",
-                error:true,
-                success:false
+                message: "email and password not matched",
+                error: true,
+                success: false
             })
         }
 
-         const token = generateToken(student._id)
-         return res.status(200).json({
-            message:"Login Successfully",
-            error:false,
-            success:true,
+        const token = generateToken(student._id)
+        return res.status(200).json({
+            message: "Login Successfully",
+            error: false,
+            success: true,
             token,
             student,
-         })
+        })
+
+
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json({
+            message: "Server Error",
+            error: true
+        })
+    }
+}
+
+export const handleStdProfile = async (req, res) => {
+    try {
+        let imageUrl = "";
+
+        if (req.file) {
+            const result = await cloudinary.uploader.upload(req.file.path);
+            console.log(result)
+            imageUrl = result.secure_url;
+
+        }
+        const studentId = req.body.studentId;
+
+     
+
+        const updatedStudent = await Student.findByIdAndUpdate(
+            studentId,
+            {
+                profileImage: imageUrl,
+
+            },
+            { new: true }
+        );
+        
+
+        return res.status(200).json({
+            message: "Profile Updated successfully",
+            error: false,
+            success: true,
+            updatedStudent,
+        })
+
+    } catch (error) {
+        return res.status(500).json({
+            message: "something error",
+            error: true,
+            success: false
+        })
+    }
+}
+
+export const GetStudent = async (req, res) => {
+  try {
+    const { studentId } = req.body;
+   
+    if (!studentId) {
+      return res.status(400).json({
+        message: "Student ID is required",
+        success: false,
+      });
+    }
+
+    const student = await Student.findById(studentId);
+
+    if (!student) {
+      return res.status(404).json({
+        message: "Student not found",
+        success: false,
+      });
+    }
+
+    return res.status(200).json({
+      message: "Student fetched successfully",
+      success: true,
+      student,
+    });
+
+  } catch (error) {
+    console.log(error);
+
+    return res.status(500).json({
+      message: error.message,
+      success: false,
+    });
+  }
+};
+
+export const EditStudent = async(req,res)=>{
+    try {
 
         
     } catch (error) {
-       console.log(error)
-        return res.status(500).json({
-        message:"Server Error",
-        error:true
-      }) 
+        
     }
 }
