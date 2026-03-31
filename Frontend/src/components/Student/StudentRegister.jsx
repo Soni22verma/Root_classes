@@ -10,6 +10,7 @@ const StudentRegistration = () => {
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
+    phone: '', // Added phone field
     password: '',
     dateofBirth: '',
     gender: '',
@@ -20,30 +21,47 @@ const StudentRegistration = () => {
 
   const [showPassword, setShowPassword] = useState(false);
   const [agreed, setAgreed] = useState(false);
+  const [phoneError, setPhoneError] = useState('');
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
+    
+    // Clear phone error when user starts typing
+    if (e.target.name === 'phone') {
+      setPhoneError('');
+    }
   };
 
- const handleRegister = async(e) => {
-  e.preventDefault(); 
-  try {
+  const validatePhoneNumber = (phone) => {
+    // Indian phone number validation (10 digits, starts with 6-9)
+    const phoneRegex = /^[6-9]\d{9}$/;
+    return phoneRegex.test(phone);
+  };
+
+  const handleRegister = async(e) => {
+    e.preventDefault();
     
-    const res = await axios.post(api.student.register, formData);
+    // Validate phone number if provided
+    if (formData.phone && !validatePhoneNumber(formData.phone)) {
+      setPhoneError('Please enter a valid 10-digit mobile number');
+      toast.error('Please enter a valid 10-digit mobile number');
+      return;
+    }
+    
+    try {
+      const res = await axios.post(api.student.register, formData);
       const data = res.data;
-    localStorage.setItem("token", data.token);
-    toast.success("Student Registered Successfully")
-    navigate("/stdlogin")
-    
-  } catch (error) {
-    console.log(error);
-    
+      localStorage.setItem("token", data.token);
+      toast.success("Student Registered Successfully")
+      navigate("/stdlogin")
+    } catch (error) {
+      console.log(error);
+      toast.error(error.response?.data?.message || "Registration failed. Please try again.");
+    }
   }
-}
- 
 
   const courses = [
     { value: 'foundation', label: 'Foundation Course (Class 8-10)' },
@@ -74,7 +92,7 @@ const StudentRegistration = () => {
         {/* Registration Form */}
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
           <div className="p-6 md:p-8">
-            <form className="space-y-6">
+            <form className="space-y-6" onSubmit={handleRegister}>
               {/* Full Name */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -91,7 +109,7 @@ const StudentRegistration = () => {
                 />
               </div>
 
-              {/* Email and Password Row */}
+              {/* Email and Phone Row */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -109,39 +127,64 @@ const StudentRegistration = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Password <span className="text-red-500">*</span>
+                    Phone Number <span className="text-red-500">*</span>
                   </label>
-                  <div className="relative">
+                  <div>
                     <input
-                      type={showPassword ? "text" : "password"}
-                      name="password"
-                      value={formData.password}
+                      type="tel"
+                      name="phone"
+                      value={formData.phone}
                       onChange={handleChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 outline-none pr-12"
-                      placeholder="Create a password (min. 6 characters)"
+                      className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 outline-none ${
+                        phoneError ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                      placeholder="Enter 10-digit mobile number"
+                      maxLength="10"
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                    >
-                      {showPassword ? (
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                      ) : (
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                        </svg>
-                      )}
-                    </button>
+                    {phoneError && (
+                      <p className="text-xs text-red-500 mt-1">{phoneError}</p>
+                    )}
+                    <p className="text-xs text-gray-500 mt-1">Enter 10-digit mobile number (e.g., 9876543210)</p>
                   </div>
-                  {formData.password && formData.password.length < 6 && (
-                    <p className="text-xs text-red-500 mt-1">Password must be at least 6 characters</p>
-                  )}
                 </div>
+              </div>
+
+              {/* Password Row */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Password <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 outline-none pr-12"
+                    placeholder="Create a password (min. 6 characters)"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  >
+                    {showPassword ? (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    ) : (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+                {formData.password && formData.password.length < 6 && (
+                  <p className="text-xs text-red-500 mt-1">Password must be at least 6 characters</p>
+                )}
               </div>
 
               {/* Date of Birth and Gender Row */}
@@ -248,10 +291,9 @@ const StudentRegistration = () => {
               {/* Submit Button */}
               <button
                 type="submit"
-                onClick={(e)=>handleRegister(e)}
-                disabled={!formData.password || formData.password.length < 6}
+                disabled={!formData.password || formData.password.length < 6 || (formData.phone && !validatePhoneNumber(formData.phone))}
                 className={`w-full py-4 font-bold rounded-xl transition-all duration-300 ${
-                  formData.password && formData.password.length >= 6
+                  formData.password && formData.password.length >= 6 && (!formData.phone || validatePhoneNumber(formData.phone))
                     ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:shadow-xl transform hover:scale-[1.02]'
                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
@@ -263,6 +305,11 @@ const StudentRegistration = () => {
               {(!formData.password || formData.password.length < 6) && (
                 <p className="text-center text-xs text-orange-600">
                   ⚠️ Please create a password (minimum 6 characters) to complete registration
+                </p>
+              )}
+              {formData.phone && !validatePhoneNumber(formData.phone) && formData.phone.length > 0 && (
+                <p className="text-center text-xs text-red-500">
+                  ⚠️ Please enter a valid 10-digit mobile number
                 </p>
               )}
             </form>

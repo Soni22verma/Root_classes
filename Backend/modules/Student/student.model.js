@@ -34,9 +34,17 @@ const studentSchema = new mongoose.Schema(
             type: String,
 
         },
+        phone: {
+            type: String,
+        },
 
         profileImage: {
-            type: String, 
+            type: String,
+        },
+        role: {
+            type: String,
+            enum: ["student", "admin"],
+            default: "student"
         },
     },
     { timestamps: true }

@@ -3,6 +3,7 @@ import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import api from '../../services/endpoints';
 import useStudentStore from '../../Store/studentstore';
+import { toast } from 'react-toastify';
 
 const StudentProfile = () => {
     const { student } = useStudentStore();
@@ -11,19 +12,18 @@ const StudentProfile = () => {
     const [loading, setLoading] = useState(true);
     const [studentData, setStudentData] = useState(null);
     const [uploadingImage, setUploadingImage] = useState(false);
-    
-    // Form data for editing
+    const [saving, setSaving] = useState(false);
     const [formData, setFormData] = useState({
         fullName: '',
         email: '',
         phone: '',
+        password: '',
+        dateofBirth: '',
+        gender: '',
         currentClass: '',
         interestedCourse: '',
         address: '',
-        dateofBirth: '',
-        gender: ''
-    });
-
+      });
     // Course Progress - You can fetch this from another API or keep as static for now
     const enrolledCourses = [
         { id: 1, name: 'JEE Mathematics', progress: 75, nextClass: 'Tomorrow, 4:00 PM' },
@@ -52,11 +52,14 @@ const StudentProfile = () => {
                 const studentInfo = res.data.student;
                 setStudentData(studentInfo);
                 
+                // Convert phone to string to avoid type mismatch
+                const phoneNumber = studentInfo.phone ? String(studentInfo.phone) : '';
+                
                 // Set form data for editing
                 setFormData({
                     fullName: studentInfo.fullName || '',
                     email: studentInfo.email || '',
-                    phone: studentInfo.phone || '',
+                    phone: phoneNumber,
                     currentClass: studentInfo.currentClass || '',
                     interestedCourse: studentInfo.interestedCourse || '',
                     address: studentInfo.address || '',
@@ -66,6 +69,7 @@ const StudentProfile = () => {
             }
         } catch (error) {
             console.log(error);
+            toast.error('Failed to fetch student data');
         } finally {
             setLoading(false);
         }
@@ -86,7 +90,7 @@ const StudentProfile = () => {
             formData.append("image", file);
             formData.append("studentId", student?._id);
 
-            const res = await axios.post(api.student.editProfile, // Make sure this endpoint exists
+            const res = await axios.post(api.student.editProfile,
                 formData,
                 {
                     headers: {
@@ -101,13 +105,13 @@ const StudentProfile = () => {
                     ...prev,
                     profileImage: res.data.profileImageUrl || res.data.imageUrl
                 }));
-                alert('Profile image updated successfully!');
+                toast.success('Profile image updated successfully!');
             } else {
-                alert('Failed to upload image. Please try again.');
+                toast.error('Failed to upload image. Please try again.');
             }
         } catch (error) {
             console.error('Error uploading image:', error);
-            alert('Error uploading image. Please try again.');
+            toast.error('Error uploading image. Please try again.');
         } finally {
             setUploadingImage(false);
             setImage(null);
@@ -121,30 +125,73 @@ const StudentProfile = () => {
             [name]: value
         }));
     };
-
-    // Handle profile update
-    const handleProfileUpdate = async (e) => {
-        e.preventDefault();
+    
+    const editDetails = async (e) => {
+        e.preventDefault(); 
+        setSaving(true);
+        
         try {
-            const res = await axios.post(api.student.updateStudent, {
-                studentId: student?._id,
-                ...formData
-            });
+            // Ensure phone is sent as number to backend
+            const dataToSend = {
+                fullName: formData.fullName,
+                email: formData.email,
+                phone: formData.phone ? Number(formData.phone) : null, // Convert to number
+                currentClass: formData.currentClass,
+                interestedCourse: formData.interestedCourse,
+                address: formData.address,
+                dateofBirth: formData.dateofBirth,
+                gender: formData.gender,
+                studentId: student?._id
+            };
+            
+            console.log("Sending data to backend:", dataToSend);
+            
+            const res = await axios.post(
+                api.student.editprofiledetails,
+                dataToSend
+            );
 
+            console.log("Response from backend:", res.data);
+            
             if (res.data.success) {
-                // Update local state with new data
+                // Convert phone back to string for display
+                const updatedPhone = res.data.student?.phone ? String(res.data.student.phone) : formData.phone;
+                
                 setStudentData(prev => ({
                     ...prev,
-                    ...formData
+                    fullName: formData.fullName,
+                    email: formData.email,
+                    phone: updatedPhone,
+                    currentClass: formData.currentClass,
+                    interestedCourse: formData.interestedCourse,
+                    address: formData.address,
+                    dateofBirth: formData.dateofBirth,
+                    gender: formData.gender
                 }));
+                
+                // Also update the store with the new phone number
+                if (useStudentStore.getState().setStudent) {
+                    useStudentStore.getState().setStudent({
+                        ...student,
+                        fullName: formData.fullName,
+                        email: formData.email,
+                        phone: updatedPhone
+                    });
+                }
+                
+                toast.success('Profile updated successfully!');
                 setIsEditing(false);
-                alert('Profile updated successfully!');
+                
+                // Refresh student data to ensure consistency
+                await GetStudent();
             } else {
-                alert('Failed to update profile. Please try again.');
+                toast.error(res.data.message || 'Failed to update profile. Please try again.');
             }
         } catch (error) {
-            console.error('Error updating profile:', error);
-            alert('Failed to update profile. Please try again.');
+            console.log("Error updating profile:", error);
+            toast.error(error.response?.data?.message || 'Error updating profile. Please try again.');
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -274,7 +321,7 @@ const StudentProfile = () => {
                                 <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                                 </svg>
-                                <span className="text-gray-700">{studentData.phone || 'Not provided'}</span>
+                                <span className="text-gray-700">{studentData.phone ? String(studentData.phone) : 'Not provided'}</span>
                             </div>
                             <div className="flex items-center gap-3">
                                 <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -367,7 +414,7 @@ const StudentProfile = () => {
                         <div className="p-5 border-b sticky top-0 bg-white">
                             <h3 className="text-xl font-bold">Edit Profile</h3>
                         </div>
-                        <form onSubmit={handleProfileUpdate} className="p-5 space-y-4">
+                        <form onSubmit={editDetails} className="p-5 space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
                                 <input
@@ -389,14 +436,17 @@ const StudentProfile = () => {
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
                                 <input
                                     type="tel"
                                     name="phone"
                                     value={formData.phone}
                                     onChange={handleInputChange}
                                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    placeholder="Enter 10-digit mobile number"
+                                    maxLength="10"
                                 />
+                                <p className="text-xs text-gray-500 mt-1">Enter 10-digit mobile number</p>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Current Class</label>
@@ -453,8 +503,12 @@ const StudentProfile = () => {
                                 </select>
                             </div>
                             <div className="flex gap-3 pt-2">
-                                <button type="submit" className="flex-1 bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition">
-                                    Save Changes
+                                <button 
+                                    type="submit"
+                                    disabled={saving}
+                                    className="flex-1 bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {saving ? 'Saving...' : 'Save Changes'}
                                 </button>
                                 <button 
                                     type="button" 

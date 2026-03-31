@@ -3,9 +3,12 @@ import React, { useState } from 'react';
 import api from '../../services/endpoints';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
+import useStudentStore from '../../Store/studentstore'; // Import store
 
 const LoginPage = () => {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
+  const { setStudent } = useStudentStore(); // Get setStudent function from store
+  
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -25,20 +28,57 @@ const LoginPage = () => {
   };
 
   const handleLogin = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
+    setLoading(true);
+    setError('');
 
-  try {
-    const res = await axios.post(api.student.login, formData);
-    localStorage.setItem("token", res.data.token);
-    localStorage.setItem("student", JSON.stringify(res.data.student));
-    console.log(res, "this is login student");
-    toast.success("student login successfully")
-    navigate("/")
-
-  } catch (error) {
-    console.log(error);
-  }
-};
+    try {
+      const res = await axios.post(api.student.login, formData);
+      
+      console.log("Login response:", res.data); // Debug log
+      
+      // Check response structure and set data accordingly
+      if (res.data) {
+        // Case 1: If response has student and token directly
+        if (res.data.student && res.data.token) {
+          setStudent({
+            user: res.data.student,
+            token: res.data.token
+          });
+        }
+        // Case 2: If response has user and token
+        else if (res.data.user && res.data.token) {
+          setStudent({
+            user: res.data.user,
+            token: res.data.token
+          });
+        }
+        // Case 3: If response has data object
+        else if (res.data.data && res.data.data.student && res.data.data.token) {
+          setStudent({
+            user: res.data.data.student,
+            token: res.data.data.token
+          });
+        }
+        // Case 4: Fallback - if only student data is available
+        else if (res.data.student) {
+          setStudent({
+            user: res.data.student,
+            token: res.data.token || 'temp-token'
+          });
+        }
+        
+        toast.success("Student login successfully");
+        navigate("/");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      setError(error.response?.data?.message || "Login failed. Please try again.");
+      toast.error(error.response?.data?.message || "Login failed");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -46,7 +86,7 @@ const LoginPage = () => {
         {/* Logo and Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-4">
-            <div className="w-14 h-14  rounded-xl flex items-center justify-center shadow-lg">
+            <div className="w-14 h-14 rounded-xl flex items-center justify-center shadow-lg">
               <img src="/logo.svg" alt="Logo" className="h-10 w-auto" />
             </div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
@@ -60,7 +100,7 @@ const LoginPage = () => {
 
         {/* Login Form Card */}
         <div className="bg-white rounded-2xl shadow-xl p-8">
-          <form className="space-y-6">
+          <form onSubmit={handleLogin} className="space-y-6">
             {/* Error Message */}
             {error && (
               <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
@@ -157,12 +197,12 @@ const LoginPage = () => {
             {/* Login Button */}
             <button
               type="submit"
-              onClick={(e) => handleLogin(e)}
               disabled={loading}
-              className={`w-full py-3 rounded-xl font-semibold transition-all duration-300 ${loading
+              className={`w-full py-3 rounded-xl font-semibold transition-all duration-300 ${
+                loading
                   ? 'bg-gray-400 cursor-not-allowed'
                   : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:shadow-lg transform hover:scale-[1.02]'
-                }`}
+              }`}
             >
               {loading ? (
                 <div className="flex items-center justify-center gap-2">
@@ -191,7 +231,7 @@ const LoginPage = () => {
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
               Don't have an account?{' '}
-              <a href="stdregister" className="text-blue-600 hover:text-blue-800 font-semibold hover:underline transition">
+              <a href="/stdregister" className="text-blue-600 hover:text-blue-800 font-semibold hover:underline transition">
                 Sign up now
               </a>
             </p>

@@ -1,16 +1,29 @@
 import { create } from "zustand";
 
+let storedStudent = null;
+
+try {
+  const data = localStorage.getItem("student");
+
+  if (data && data !== "undefined") {
+    storedStudent = JSON.parse(data);
+  }
+} catch (error) {
+  console.log("JSON error:", error);
+}
+
 const useStudentStore = create((set) => ({
-  student: JSON.parse(localStorage.getItem("student")) || null,
+  student: storedStudent,
   token: localStorage.getItem("token") || null,
 
   setStudent: (data) => {
+    if (!data?.user) return;
+
     set({
       student: data.user,
       token: data.token,
     });
 
-    // ✅ save both
     localStorage.setItem("token", data.token);
     localStorage.setItem("student", JSON.stringify(data.user));
   },

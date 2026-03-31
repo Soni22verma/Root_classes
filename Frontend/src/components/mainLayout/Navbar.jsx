@@ -1,20 +1,55 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Menu, X, User, LogOut, ChevronDown, LayoutDashboard, UserCircle } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import useStudentStore from '../../Store/studentstore';
 
 const Navbar = () => {
+  const { student, logout } = useStudentStore();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
 
-  const student = JSON.parse(localStorage.getItem("student"));
+  // Function to get display name from student data
+  const getDisplayName = () => {
+    if (!student) return 'User';
+    
+    // Check different possible name fields
+    if (student.name) return student.name;
+    if (student.fullName) return student.fullName;
+    if (student.username) return student.username;
+    if (student.firstName) {
+      return student.lastName ? `${student.firstName} ${student.lastName}` : student.firstName;
+    }
+    
+    // Extract from email if available
+    if (student.email) {
+      return student.email.split('@')[0];
+    }
+    
+    return 'Student';
+  };
+
+  // Function to get display email
+  const getDisplayEmail = () => {
+    if (!student) return '';
+    return student.email || student.emailId || '';
+  };
+
+  // Debug: Log student data to see its structure
+  useEffect(() => {
+    if (student) {
+      console.log('Student data in Navbar:', student);
+      console.log('Student name available:', student.name || student.fullName || student.username || student.firstName);
+      console.log('Student email available:', student.email);
+    }
+  }, [student]);
 
   const handleLogout = () => {
-    localStorage.removeItem("student");
-    localStorage.removeItem("token");
+    logout();
     navigate("/stdlogin");
     setIsDropdownOpen(false);
+    setIsMenuOpen(false);
   };
 
   // Close dropdown when clicking outside
@@ -63,8 +98,6 @@ const Navbar = () => {
                 className="relative group text-gray-700 font-medium hover:text-blue-500"
               >
                 {item.name}
-
-                {/* Hover underline */}
                 <span className="absolute left-0 -bottom-1 w-0 h-[2px] bg-blue-500 transition-all duration-300 group-hover:w-full"></span>
               </Link>
             ))}
@@ -76,8 +109,8 @@ const Navbar = () => {
                   className="flex items-center space-x-2 bg-gray-100 px-4 py-2 rounded-lg hover:bg-gray-200 transition group"
                 >
                   <User size={18} className="text-indigo-600" />
-                  <span className="text-gray-700 font-medium">
-                    {student.name || student.email?.split('@')[0]}
+                  <span className="text-gray-700 font-medium max-w-[150px] truncate">
+                    {getDisplayName()}
                   </span>
                   <ChevronDown 
                     size={16} 
@@ -96,13 +129,15 @@ const Navbar = () => {
                         <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
                           <User size={20} className="text-indigo-600" />
                         </div>
-                        <div>
-                          <p className="font-medium text-gray-900">
-                            {student.name || 'User'}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-gray-900 truncate">
+                            {getDisplayName()}
                           </p>
-                          <p className="text-sm text-gray-500">
-                            {student.email || 'user@example.com'}
-                          </p>
+                          {getDisplayEmail() && (
+                            <p className="text-sm text-gray-500 truncate">
+                              {getDisplayEmail()}
+                            </p>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -187,10 +222,10 @@ const Navbar = () => {
               {student ? (
                 <>
                   <div className="flex items-center justify-between bg-gray-100 px-4 py-2 rounded-lg">
-                    <div className="flex items-center space-x-2">
-                      <User size={18} className="text-indigo-600" />
-                      <span className="text-gray-700 font-medium">
-                        {student.name || student.email?.split('@')[0]}
+                    <div className="flex items-center space-x-2 flex-1 min-w-0">
+                      <User size={18} className="text-indigo-600 flex-shrink-0" />
+                      <span className="text-gray-700 font-medium truncate">
+                        {getDisplayName()}
                       </span>
                     </div>
                   </div>
@@ -242,8 +277,7 @@ const Navbar = () => {
         )}
       </div>
 
-      {/* Add this CSS animation */}
-      <style jsx>{`
+      <style>{`
         @keyframes fadeIn {
           from {
             opacity: 0;

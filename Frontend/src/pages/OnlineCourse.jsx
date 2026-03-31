@@ -46,10 +46,10 @@ const OnlineCourses = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
       {/* Header Section */}
-      <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-500 text-white shadow-xl">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className=" text-gray-500">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="text-center">
-            <h1 className="text-5xl font-extrabold mb-4 animate-fade-in">
+            <h1 className="text-4xl font-extrabold mb-4 animate-fade-in">
               🎓 Online Learning Hub
             </h1>
             <p className="text-xl max-w-3xl mx-auto opacity-90">
@@ -60,7 +60,7 @@ const OnlineCourses = () => {
       </div>
 
       {/* Search and Filter Section */}
-      <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-md shadow-md">
+      <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-md ">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
             {/* Search Bar */}
@@ -90,7 +90,7 @@ const OnlineCourses = () => {
                   onClick={() => setSelectedCategory(category)}
                   className={`px-4 py-2 rounded-full font-semibold transition-all duration-300 text-sm ${
                     selectedCategory === category
-                      ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg"
+                      ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-sm"
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
@@ -108,7 +108,7 @@ const OnlineCourses = () => {
           {filteredCourses?.map((onlinecourses) => (
             <div
               key={onlinecourses.id}
-              className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 group"
+              className="bg-white rounded-xl overflow-hidden  hover:shadow-sm "
             >
               {/* Thumbnail with play button overlay */}
               <div className="relative h-48 overflow-hidden cursor-pointer" onClick={() => handleWatchClick(onlinecourses)}>
@@ -121,7 +121,7 @@ const OnlineCourses = () => {
                   }}
                 />
                 <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-all duration-300 flex items-center justify-center">
-                  <div className="w-14 h-14 bg-red-600 rounded-full flex items-center justify-center transform group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                  <div className="w-14 h-14 bg-red-600 rounded-full flex items-center justify-center transform group-hover:scale-110 transition-transform duration-300 ">
                     <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M8 5v14l11-7z" />
                     </svg>
@@ -181,7 +181,7 @@ const OnlineCourses = () => {
                 {/* Watch Button */}
                 <button
                   onClick={() => handleWatchClick(onlinecourses)}
-                  className="w-full py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold text-sm hover:shadow-lg transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2"
+                  className="w-full py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold text-sm hover:shadow-sm transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2"
                 >
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M8 5v14l11-7z" />
@@ -206,7 +206,7 @@ const OnlineCourses = () => {
       {/* YouTube Modal */}
       {showModal && selectedCourse && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="relative bg-white rounded-2xl overflow-hidden max-w-4xl w-full max-h-[90vh] shadow-2xl">
+          <div className="relative bg-white rounded-2xl overflow-hidden max-w-4xl w-full max-h-[90vh] ">
             {/* Modal Header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-purple-600">
               <h3 className="text-xl font-bold text-white">{selectedCourse.title}</h3>
