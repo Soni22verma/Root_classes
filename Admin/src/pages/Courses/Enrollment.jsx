@@ -6,7 +6,8 @@ import useStudentStore from '../../../../Frontend/src/Store/studentstore';
 
 const Enrollment = () => {
       const { student } = useStudentStore();  
-  const studentId = student?._id;
+  const studentId = student?._id;  
+  
     const [enrollments, setEnrollments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
