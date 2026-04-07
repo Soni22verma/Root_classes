@@ -40,7 +40,7 @@ export const CreateCourse = async (req, res, next) => {
         });
 
     } catch (error) {
-        console.log(error); // 👈 IMPORTANT
+        console.log(error);
         next(error);
     }
 };
@@ -152,3 +152,4 @@ export const handleDeleteCourse = async(req,res,next)=>{
         next(error)
     }
 }
+

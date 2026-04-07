@@ -28,12 +28,12 @@ const useStudentStore = create((set) => ({
     localStorage.setItem("student", JSON.stringify(data.user));
   },
 
-  logout: () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("student");
+ logout: () => {
+  localStorage.removeItem("token");
+  localStorage.removeItem("student");   // 👈 FIX
 
-    set({ student: null, token: null });
-  },
+  set({ student: null, token: null });
+}
 }));
 
 export default useStudentStore;

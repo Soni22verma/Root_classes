@@ -46,8 +46,14 @@ const Navbar = () => {
   }, [student]);
 
   const handleLogout = () => {
+    localStorage.removeItem("user");
+    localStorage.removeItem("student"); 
+    
     logout();
+    
     navigate("/stdlogin");
+    
+  
     setIsDropdownOpen(false);
     setIsMenuOpen(false);
   };

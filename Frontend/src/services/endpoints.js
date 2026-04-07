@@ -11,8 +11,18 @@ const api = {
     course:{
         getcourses:Base_Url+"/course/get_courses",
     },
-    enroll:{
+    enrollment:{
         enrollcourse:Base_Url+"/enroll/enroll_course"
+    },
+     onlineClass:{
+           getallclass:Base_Url+"/onlineClass/get_all_classes",
+     },
+      joinClass:{
+        joinClasses:Base_Url+"/joinclass/join_class"
+    },
+    topic:{
+        gettopicbyclass:Base_Url+"/topic/get_topicbyclass",
+        //  gettopic:Base_Url+"/topic/get_topic",
     }
 }
 

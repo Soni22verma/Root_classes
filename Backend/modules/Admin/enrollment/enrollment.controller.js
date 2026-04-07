@@ -50,6 +50,7 @@ export const enrollCourse = async(req,res,next)=>{
 export const GetEnrollments = async(req,res,next)=>{
     try {
         const {studentId}=req.body;
+        console.log(req.body,"hhhhhhhhhhhhhhhhhhh")
         const enrollments = await enrollmentModel.find({student:studentId}).populate("course")
 
         return res.status(200).json({
@@ -63,3 +64,31 @@ export const GetEnrollments = async(req,res,next)=>{
         next(error)
     }
 }
+
+export const GetAllEnrollments = async (req, res, next) => {
+  try {
+    const enrollments = await enrollmentModel
+      .find()
+      .populate({
+        path: "student",
+        select: "fullName email profileImage phone address currentClass gender" 
+      })
+      .populate({
+        path: "course",
+        select: "title thumbnail level price duration instructor discreption"
+      });
+
+    return res.status(200).json({
+      message: "All enrolled students fetched successfully",
+      error: false,
+      success: true,
+      enrollments,
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+

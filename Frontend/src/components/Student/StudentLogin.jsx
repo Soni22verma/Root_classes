@@ -27,58 +27,54 @@ const LoginPage = () => {
     setError(''); // Clear error when user types
   };
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
+const handleLogin = async (e) => {
+  e.preventDefault();
+  setLoading(true);
+  setError("");
 
-    try {
-      const res = await axios.post(api.student.login, formData);
-      
-      console.log("Login response:", res.data); // Debug log
-      
-      // Check response structure and set data accordingly
-      if (res.data) {
-        // Case 1: If response has student and token directly
-        if (res.data.student && res.data.token) {
-          setStudent({
-            user: res.data.student,
-            token: res.data.token
-          });
-        }
-        // Case 2: If response has user and token
-        else if (res.data.user && res.data.token) {
-          setStudent({
-            user: res.data.user,
-            token: res.data.token
-          });
-        }
-        // Case 3: If response has data object
-        else if (res.data.data && res.data.data.student && res.data.data.token) {
-          setStudent({
-            user: res.data.data.student,
-            token: res.data.data.token
-          });
-        }
-        // Case 4: Fallback - if only student data is available
-        else if (res.data.student) {
-          setStudent({
-            user: res.data.student,
-            token: res.data.token || 'temp-token'
-          });
-        }
-        
-        toast.success("Student login successfully");
-        navigate("/");
-      }
-    } catch (error) {
-      console.error("Login error:", error);
-      setError(error.response?.data?.message || "Login failed. Please try again.");
-      toast.error(error.response?.data?.message || "Login failed");
-    } finally {
-      setLoading(false);
+  try {
+    const res = await axios.post(api.student.login, formData);
+
+    console.log("Login response:", res.data);
+
+    const user =
+      res.data.user ||
+      res.data.student ||
+      res.data?.data?.student;
+
+    const token =
+      res.data.token ||
+      res.data?.data?.token;
+
+    if (!user) {
+      throw new Error("User data not found");
     }
-  };
+
+    setStudent({
+      user,
+      token,
+    });
+
+    localStorage.setItem("user", JSON.stringify(user));
+
+    toast.success("Login successful");
+
+    if (user.role === "admin") {
+      navigate("/admin");   
+    } else {
+      navigate("/"); 
+    }
+
+  } catch (error) {
+    console.error("Login error:", error);
+    setError(
+      error.response?.data?.message || "Login failed. Please try again."
+    );
+    toast.error(error.response?.data?.message || "Login failed");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">

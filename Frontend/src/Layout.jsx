@@ -1,19 +1,15 @@
-import React from "react";
-import Navbar from "./components/mainLayout/Navbar";
-import Footer from "./components/mainLayout/Footer";
 import { Outlet } from "react-router-dom";
+import Navbar from "../src/components/mainLayout/Navbar"
+import Footer from "../src/components/mainLayout/Footer"
 
-const Layout = ({children}) => {
+const StudentLayout = () => {
   return (
-    <div>
-   <Navbar />
-      <main className="flex-grow">
-        <Outlet /> 
-        {children}  
-      </main>
+    <>
+      <Navbar />
+      <Outlet />
       <Footer />
-    </div>
-  )
-}
+    </>
+  );
+};
 
-export default Layout
+export default StudentLayout;

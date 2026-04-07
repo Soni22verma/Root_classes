@@ -6,7 +6,7 @@ import "react-toastify/dist/ReactToastify.css";
 import AllStudents from "./pages/StudentManagement/AllStudents";
 import CreateCourse from "./pages/Courses/CreateCourse";
 import AllCourses from "./pages/Courses/AllCourses";
-import AdminLayout from "../AdminLayout";
+import AdminLayout from "../../Frontend/AdminLayout";
 import Enrollment from "./pages/Courses/Enrollment";
 
 function App() {

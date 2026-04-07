@@ -123,7 +123,6 @@ export const handleLogin = async (req, res) => {
       });
     }
 
-    // ✅ Generate token
     const token = generateToken(student._id);
 
     return res.status(200).json({

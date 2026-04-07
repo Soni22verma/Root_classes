@@ -7,7 +7,10 @@ const upload = multer({ dest: "uploads/" });
 
 router.post("/upload", upload.single("image"), async (req, res) => {
   try {
-    const result = await cloudinary.uploader.upload(req.file.path);
+    const result = await cloudinary.uploader.upload(req.file.path, {
+      resource_type: "raw",
+      type: "upload"
+    });
 
     res.json({
       url: result.secure_url,
