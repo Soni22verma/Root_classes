@@ -1,14 +1,15 @@
+
 const Base_Url = import.meta.env.VITE_BASE_URL
 
 const api ={
     admin:{
         getStudents:Base_Url+"/admin/getall_student"
     },
-    course:{
-        createcourse:Base_Url+"/course/create_course",
-        getcourses:Base_Url+"/course/get_courses",
-        editcourse:Base_Url+"/course/edit_course",
-        deletecourse:Base_Url+"/course/delete_course"
+    category:{
+        createcategory:Base_Url+"/category/create_category",
+        getcategory:Base_Url+"/category/get_category",
+        UpdateCategory:Base_Url+"/category/edit_category",
+        deletecategory:Base_Url+"/category/delete_category"
     },
     enroll:{
         getenrollment:Base_Url+"/enroll/get_enrollment",
@@ -35,6 +36,18 @@ const api ={
         getblog:Base_Url+"/blog/get_blogs",
         editblog:Base_Url+"/blog/update_blog",
         deleteblog:Base_Url+"/blog/delete_blog"
+    },
+    slider:{
+        createSlider:Base_Url+"/slider/create_slider",
+        getSlider:Base_Url+"/slider/get_slider",
+        editSlider:Base_Url+"/slider/edit_slider",
+        deleteSlider:Base_Url+"/slider/delete_slider"
+    },
+    testimonial:{
+        addTestimonial:Base_Url+"/testimonial/add_testimonial",
+        getTestimonial:Base_Url+"/testimonial/get_testimonial",
+        editTestimonial:Base_Url+"/testimonial/update_testimonial",
+        deleteTestimonial:Base_Url+"/testimonial/delete_testinomial"
     }
     
 }

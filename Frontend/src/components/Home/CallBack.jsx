@@ -64,7 +64,7 @@ const ExpertConsultationForm = () => {
         <div className="flex flex-col lg:flex-row gap-8 items-start">
           {/* Left Side - Info & Benefits */}
           <div className="flex-1 lg:sticky lg:top-8">
-            <div className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl shadow-xl overflow-hidden">
+            <div className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl overflow-hidden">
               <div className="p-8 md:p-10">
                 <div className="mb-8">
                   <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full mb-6">
@@ -139,7 +139,7 @@ const ExpertConsultationForm = () => {
 
           {/* Right Side - Form */}
           <div className="flex-1">
-            <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+            <div className="bg-white rounded-2xl overflow-hidden">
               <div className="p-8 md:p-10">
                 <h3 className="text-2xl font-bold text-gray-800 mb-2">Get Expert Advice</h3>
                 <p className="text-gray-500 text-sm mb-6">Fill in your details and our expert will contact you</p>
@@ -200,7 +200,7 @@ const ExpertConsultationForm = () => {
                         disabled={loading || formData.mobileNo.length !== 10}
                         className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
                           formData.mobileNo.length === 10 && !loading
-                            ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:shadow-lg transform hover:scale-105'
+                            ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:shadow-sm transform hover:scale-105'
                             : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                         }`}
                       >

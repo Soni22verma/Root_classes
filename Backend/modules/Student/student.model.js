@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const studentSchema = new mongoose.Schema(
+const userSchema = new mongoose.Schema(
     {
         fullName: {
             type: String,
@@ -43,10 +43,11 @@ const studentSchema = new mongoose.Schema(
         },
         role: {
             type: String,
-            enum: ["student", "admin"],
+            enum: ["student", "admin", "instructor"],
             default: "student"
         },
+      
     },
     { timestamps: true }
 )
-export const Student = mongoose.model('Student', studentSchema)
+export default mongoose.model('User', userSchema)

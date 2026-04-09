@@ -61,4 +61,37 @@
     },
   ];
 
-  export {students}
+   const dummyTestimonials = [
+    {
+      _id: "1",
+      name: "Rajesh Kumar",
+      image: "https://randomuser.me/api/portraits/men/1.jpg",
+      achievement: "Top Performer - Batch 2024",
+      Course: "Full Stack Web Development",
+      review: "Excellent course structure! The instructors are very knowledgeable and supportive. I landed a job at a top tech company within 3 months of completing the course.",
+      rating: 5,
+      createdAt: new Date("2024-01-15")
+    },
+    {
+      _id: "2",
+      name: "Priya Sharma",
+      image: "https://randomuser.me/api/portraits/women/2.jpg",
+      achievement: "Gold Medalist",
+      Course: "Data Science & AI",
+      review: "The curriculum is up-to-date with industry standards. The projects were challenging and helped me build a strong portfolio. Highly recommended!",
+      rating: 5,
+      createdAt: new Date("2024-01-20")
+    },
+    {
+      _id: "3",
+      name: "Amit Patel",
+      image: "https://randomuser.me/api/portraits/men/3.jpg",
+      achievement: "Best Project Award",
+      Course: "Digital Marketing",
+      review: "Great learning experience. The practical approach and real-world examples made it easy to understand complex concepts. My business grew 200% after implementing these strategies.",
+      rating: 4,
+      createdAt: new Date("2024-01-25")
+    }
+  ];
+
+  export {students,dummyTestimonials}

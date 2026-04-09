@@ -1,20 +1,37 @@
 // App.jsx
-import React, { useState } from 'react';
-import { blogsData } from '../../components/Constants/Constants';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import api from '../../services/endpoints';
 
+// Helper function to format date
+const formatDate = (dateString) => {
+  if (!dateString) return 'Recent';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', { 
+    year: 'numeric', 
+    month: 'short', 
+    day: 'numeric' 
+  });
+};
 
-// Blog Card Component
+// Helper function to create excerpt from content
+const getExcerpt = (content, maxLength = 100) => {
+  if (!content) return 'No content available';
+  if (content.length <= maxLength) return content;
+  return content.substring(0, maxLength) + '...';
+};
+
 const BlogCard = ({ blog, onClick }) => {
   return (
     <div 
       onClick={() => onClick(blog)}
-      className="bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:-translate-y-1"
+      className="bg-white rounded-xl overflow-hidden cursor-pointer hover:shadow-lg transition-shadow duration-300"
     >
       <div className="h-48 overflow-hidden">
         <img 
           src={blog.image} 
           alt={blog.title}
-          className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
+          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
           onError={(e) => {
             e.target.src = "https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=500&auto=format";
           }}
@@ -23,15 +40,20 @@ const BlogCard = ({ blog, onClick }) => {
       <div className="p-5">
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full">
-            {blog.category}
+            {blog.category || 'Uncategorized'}
           </span>
-          <span className="text-xs text-gray-500">{blog.date}</span>
+          <span className="text-xs text-gray-500">
+            {formatDate(blog.createdAt)}
+          </span>
         </div>
         <h2 className="text-xl font-bold text-gray-800 mb-2 line-clamp-2 hover:text-indigo-600 transition-colors">
           {blog.title}
         </h2>
+        <p className="text-gray-600 text-sm mb-2">
+          <span className="font-medium">By {blog.author || 'Anonymous'}</span>
+        </p>
         <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-          {blog.excerpt}
+          {getExcerpt(blog.content)}
         </p>
         <div className="flex justify-end">
           <span className="text-indigo-600 font-medium text-sm flex items-center gap-1 group">
@@ -51,7 +73,7 @@ const BlogDetail = ({ blog, onClose }) => {
   if (!blog) return null;
 
   return (
-    <div className="fixed inset-0 backdrop-blur-sm bg-opacity-50 z-50 flex items-center justify-center p-4 animate-fadeIn">
+    <div className="fixed inset-0 bg-black/60 bg-opacity-50  z-50 flex items-center justify-center p-4 animate-fadeIn">
       <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-slideUp">
         <div className="sticky top-0 bg-white border-b border-gray-100 p-4 flex justify-between items-center">
           <h2 className="text-xl font-bold text-gray-800 truncate">{blog.title}</h2>
@@ -77,10 +99,13 @@ const BlogDetail = ({ blog, onClose }) => {
           
           <div className="flex items-center gap-3 mb-4">
             <span className="text-sm text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">
-              {blog.category}
+              {blog.category || 'Uncategorized'}
             </span>
             <span className="text-sm text-gray-500">
-              📅 {blog.date}
+              📅 {formatDate(blog.createdAt)}
+            </span>
+            <span className="text-sm text-gray-500">
+              ✍️ By {blog.author || 'Anonymous'}
             </span>
           </div>
           
@@ -88,10 +113,9 @@ const BlogDetail = ({ blog, onClose }) => {
             {blog.title}
           </h1>
           
-          <div 
-            className="prose prose-indigo max-w-none text-gray-700 leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: blog.content }}
-          />
+          <div className="prose prose-indigo max-w-none text-gray-700 leading-relaxed whitespace-pre-wrap">
+            {blog.content}
+          </div>
         </div>
         
         <div className="border-t border-gray-100 p-4 bg-gray-50 rounded-b-2xl">
@@ -109,7 +133,41 @@ const BlogDetail = ({ blog, onClose }) => {
 
 // Main App Component
 const App = () => {
+  const [blogs, setBlogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [selectedBlog, setSelectedBlog] = useState(null);
+
+  const GetBlogs = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.post(api.blog.getblog);
+      
+      // Check the response structure based on your console output
+      if (res.data && res.data.data && res.data.data.data) {
+        // Your response has data.data.data containing the blogs array
+        setBlogs(res.data.data.data);
+      } else if (res.data && res.data.data) {
+        setBlogs(res.data.data);
+      } else if (res.data && Array.isArray(res.data)) {
+        setBlogs(res.data);
+      } else {
+        console.log('Unexpected response structure:', res.data);
+        setBlogs([]);
+      }
+      
+      setError(null);
+    } catch (error) {
+      console.error('Error fetching blogs:', error);
+      setError('Failed to load blogs. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    GetBlogs();
+  }, []);
 
   const handleCardClick = (blog) => {
     setSelectedBlog(blog);
@@ -121,6 +179,34 @@ const App = () => {
     document.body.style.overflow = 'auto';
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading amazing stories...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <div className="text-center bg-white p-8 rounded-xl shadow-lg">
+          <div className="text-red-500 text-5xl mb-4">😕</div>
+          <p className="text-gray-800 font-medium">{error}</p>
+          <button 
+            onClick={GetBlogs}
+            className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Header */}
@@ -131,21 +217,30 @@ const App = () => {
               BlogSphere
             </h1>
             <p className="text-gray-600 mt-2">Discover inspiring stories and insights</p>
+            {blogs.length > 0 && (
+              <p className="text-sm text-gray-500 mt-1">{blogs.length} articles for you</p>
+            )}
           </div>
         </div>
       </header>
 
       {/* Blog Cards Grid */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {blogsData.map((blog) => (
-            <BlogCard 
-              key={blog.id} 
-              blog={blog} 
-              onClick={handleCardClick}
-            />
-          ))}
-        </div>
+        {blogs.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-500 text-lg">No blogs found. Check back later!</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {blogs.map((blog) => (
+              <BlogCard 
+                key={blog._id} 
+                blog={blog} 
+                onClick={handleCardClick}
+              />
+            ))}
+          </div>
+        )}
       </main>
 
       {/* Footer */}

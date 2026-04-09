@@ -2,6 +2,7 @@ import { createBrowserRouter } from "react-router-dom";
 import App from "../App";
 import Studentroutes from "../routes/Studentroutes";
 import Adminroutes from '../routes/Adminroutes'
+import Instructorroutes from '../routes/Instructorroutes'
 
 const route = createBrowserRouter([
   {
@@ -9,7 +10,8 @@ const route = createBrowserRouter([
     element: <App />,
     children: [
       ...Studentroutes,   
-      ...Adminroutes,     
+      ...Adminroutes,
+      ...Instructorroutes,     
     ],
   },
 ]);

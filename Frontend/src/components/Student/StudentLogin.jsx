@@ -26,7 +26,6 @@ const LoginPage = () => {
     });
     setError(''); // Clear error when user types
   };
-
 const handleLogin = async (e) => {
   e.preventDefault();
   setLoading(true);
@@ -59,10 +58,16 @@ const handleLogin = async (e) => {
 
     toast.success("Login successful");
 
+  
     if (user.role === "admin") {
-      navigate("/admin");   
+      navigate("/admin");
+
+    } else if (user.role === "instructor") {
+
+      navigate("/admin");
+
     } else {
-      navigate("/"); 
+      navigate("/");
     }
 
   } catch (error) {
@@ -227,7 +232,7 @@ const handleLogin = async (e) => {
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
               Don't have an account?{' '}
-              <a href="/stdregister" className="text-blue-600 hover:text-blue-800 font-semibold hover:underline transition">
+              <a href="/register" className="text-blue-600 hover:text-blue-800 font-semibold hover:underline transition">
                 Sign up now
               </a>
             </p>

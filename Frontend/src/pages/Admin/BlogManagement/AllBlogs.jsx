@@ -375,10 +375,10 @@ const AdminBlogPanel = () => {
     return (
         <div className="min-h-screen bg-gray-100 overflow-x-hidden">
             {/* Admin Header */}
-            <header className="bg-indigo-700 text-white shadow-lg">
+            <header className="bg-gray-200 text-gray-600 shadow-sm">
                 <div className="max-w-7xl mx-auto px-4 py-5">
                     <h1 className="text-2xl font-bold">Blog Admin Panel</h1>
-                    <p className="text-indigo-200 text-sm mt-0.5">Manage your blog posts</p>
+                    <p className="text-gray-400 text-sm mt-0.5">Manage your blog posts</p>
                 </div>
             </header>
 
@@ -744,14 +744,13 @@ const AdminBlogPanel = () => {
                                             <td className="px-4 py-3 whitespace-nowrap">
                                                 <div className="flex items-center gap-2">
                                                     {getStatusBadge(blog.status)}
-                                                    <select
+                                                    {/* <select
                                                         value={blog.status}
                                                         onChange={(e) => handleStatusChange(blog.id, e.target.value)}
                                                         className="text-xs border border-gray-300 rounded px-1 py-0.5 focus:ring-1 focus:ring-indigo-500 outline-none bg-white"
                                                     >
-                                                        <option value="draft">Draft</option>
-                                                        <option value="published">Published</option>
-                                                    </select>
+                                                        
+                                                    </select> */}
                                                 </div>
                                             </td>
                                             <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-500">

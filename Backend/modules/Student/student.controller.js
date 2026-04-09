@@ -1,7 +1,7 @@
-import { Student } from "./student.model.js";
 import bcrypt from 'bcrypt';
 import jwt from "jsonwebtoken";
 import cloudinary from "../../config/cloudinary.js";
+import  User  from './student.model.js';
 
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -10,7 +10,7 @@ const generateToken = (id) => {
 };
 
 
-export const RegisterStudent = async (req, res) => {
+export const Registeruser = async (req, res) => {
   try {
     const {
       fullName,
@@ -38,10 +38,10 @@ export const RegisterStudent = async (req, res) => {
     }
 
     // ✅ Check existing user
-    const existingStudent = await Student.findOne({ email });
-    if (existingStudent) {
+    const existinguser = await User.findOne({ email });
+    if (existinguser) {
       return res.status(400).json({
-        message: "Student already registered",
+        message: "user already registered",
         error: true,
         success: false
       });
@@ -50,12 +50,12 @@ export const RegisterStudent = async (req, res) => {
     // ✅ Hash password
     const hash = await bcrypt.hash(password, 10);
 
-    // ✅ Create student (role FIXED here)
-    const student = await Student.create({
+    // ✅ Create user (role FIXED here)
+    const user = await User.create({
       fullName,
       email,
       password: hash,
-      role: "student", // 🔥 IMPORTANT
+      role: "student", 
       dateofBirth,
       gender,
       currentClass,
@@ -65,17 +65,17 @@ export const RegisterStudent = async (req, res) => {
     });
 
     // ✅ Generate token
-    const token = generateToken(student._id);
+    const token = generateToken(user._id);
 
     return res.status(201).json({
-      message: "Student registered successfully",
+      message: "user registered successfully",
       success: true,
       token,
       user: {
-        _id: student._id,
-        fullName: student.fullName,
-        email: student.email,
-        role: student.role
+        _id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        role: user.role
       }
     });
 
@@ -104,8 +104,8 @@ export const handleLogin = async (req, res) => {
     }
 
     // ✅ Find user
-    const student = await Student.findOne({ email });
-    if (!student) {
+    const user = await User.findOne({ email });
+    if (!user) {
       return res.status(400).json({
         message: "Invalid email or password",
         error: true,
@@ -114,7 +114,7 @@ export const handleLogin = async (req, res) => {
     }
 
     // ✅ Compare password
-    const isMatch = await bcrypt.compare(password, student.password);
+    const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({
         message: "Invalid email or password",
@@ -123,17 +123,17 @@ export const handleLogin = async (req, res) => {
       });
     }
 
-    const token = generateToken(student._id);
+    const token = generateToken(user._id);
 
     return res.status(200).json({
       message: "Login successful",
       success: true,
       token,
       user: {
-        _id: student._id,
-        fullName: student.fullName,
-        email: student.email,
-        role: student.role || "student" // 🔥 fallback
+        _id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        role: user.role || "user" // 🔥 fallback
       }
     });
 
@@ -156,12 +156,12 @@ export const handleStdProfile = async (req, res) => {
             imageUrl = result.secure_url;
 
         }
-        const studentId = req.body.studentId;
+        const userId = req.body.userId;
 
      
 
-        const updatedStudent = await Student.findByIdAndUpdate(
-            studentId,
+        const updateduser = await User.findByIdAndUpdate(
+            userId,
             {
                 profileImage: imageUrl,
 
@@ -174,7 +174,7 @@ export const handleStdProfile = async (req, res) => {
             message: "Profile Updated successfully",
             error: false,
             success: true,
-            updatedStudent,
+            updateduser,
         })
 
     } catch (error) {
@@ -186,30 +186,30 @@ export const handleStdProfile = async (req, res) => {
     }
 }
 
-export const GetStudent = async (req, res) => {
+export const Getuser = async (req, res) => {
   try {
-    const { studentId } = req.body;
+    const { userId } = req.body;
    
-    if (!studentId) {
+    if (!userId) {
       return res.status(400).json({
-        message: "Student ID is required",
+        message: "user ID is required",
         success: false,
       });
     }
 
-    const student = await Student.findById(studentId);
+    const user = await User.findById(userId);
 
-    if (!student) {
+    if (!user) {
       return res.status(404).json({
-        message: "Student not found",
+        message: "user not found",
         success: false,
       });
     }
 
     return res.status(200).json({
-      message: "Student fetched successfully",
+      message: "user fetched successfully",
       success: true,
-      student,
+      user,
     });
 
   } catch (error) {
@@ -224,17 +224,17 @@ export const GetStudent = async (req, res) => {
 
 export const EditProfileDetails = async(req,res)=>{
     try {
-       const{studentId,fullName, email,  password, dateofBirth, gender, currentClass, 
+       const{userId,fullName, email,  password, dateofBirth, gender, currentClass, 
 interestedCourse, address,phone} = req.body;
-       if(!studentId){
+       if(!userId){
         return res.status(400).json({
-            message:"StudentId is required",
+            message:"userId is required",
             error:true,
             success:false
         })
        }
 
-       const student = await Student.findByIdAndUpdate(studentId,{
+       const user = await User.findByIdAndUpdate(userId,{
         fullName,
          email, 
          password, 
@@ -245,19 +245,19 @@ interestedCourse, address,phone} = req.body;
          address,
          phone 
        },{new:true});
-       if(!student){
+       if(!user){
         return res.status(404).json({
-            message:"student not found",
+            message:"user not found",
             error:true,
             success:false
         })
        }
 
        return res.status(200).json({
-          message:"Student profile details updated successfully",
+          message:"user profile details updated successfully",
           error:false,
           success:true,
-          student
+          user
        })
    
     } catch (error) {

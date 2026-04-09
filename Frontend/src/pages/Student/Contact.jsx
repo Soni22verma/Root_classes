@@ -76,7 +76,7 @@ const Contact = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Contact Information Cards */}
           <div className="lg:col-span-1 space-y-6">
-            <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+            <div className="bg-white rounded-2xl shadow-sm p-6">
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center">
                   <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -91,7 +91,7 @@ const Contact = () => {
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+            <div className="bg-white rounded-2xl shadow-sm p-6">
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center">
                   <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -106,7 +106,7 @@ const Contact = () => {
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+            <div className="bg-white rounded-2xl shadow-sm p-6">
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center">
                   <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -122,7 +122,7 @@ const Contact = () => {
             </div>
 
             {/* Social Links */}
-            <div className="bg-white rounded-2xl shadow-lg p-6">
+            <div className="bg-white rounded-2xl shadow-sm p-6">
               <h3 className="font-semibold text-gray-800 mb-4">Connect With Us</h3>
               <div className="flex gap-4">
                 <a href="#" className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center hover:bg-indigo-100 hover:text-indigo-600 transition-all">
@@ -151,7 +151,7 @@ const Contact = () => {
 
           {/* Contact Form */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8">
+            <div className="bg-white rounded-2xl shadow-sm p-6 md:p-8">
               <h2 className="text-2xl font-bold text-gray-800 mb-6">Send Us a Message</h2>
               
               {submitStatus === 'success' && (

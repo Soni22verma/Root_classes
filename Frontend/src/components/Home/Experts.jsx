@@ -34,7 +34,7 @@ const FacultyShowcase = () => {
             <div className={`absolute -inset-0.5 bg-gradient-to-r ${faculty.color} rounded-2xl blur opacity-0 group-hover:opacity-30 transition duration-500`}></div>
             
             {/* Main Card */}
-            <div className="relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden">
+            <div className="relative bg-white rounded-2xl shadow-sm transition-all duration-300 overflow-hidden">
               {/* Top Gradient Bar */}
               <div className={`absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r ${faculty.color}`}></div>
               
@@ -46,7 +46,7 @@ const FacultyShowcase = () => {
                     <img 
                       src={faculty.image} 
                       alt={faculty.name}
-                      className="relative w-20 h-20 rounded-full object-cover border-3 border-white shadow-lg group-hover:scale-105 transition-transform duration-300"
+                      className="relative w-20 h-20 rounded-full object-cover border-3 border-white shadow-sm group-hover:scale-105 transition-transform duration-300"
                     />
                     {/* Online Status Badge */}
                     <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
@@ -91,7 +91,7 @@ const FacultyShowcase = () => {
                   <button className="flex-1 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-all duration-300">
                     View Profile
                   </button>
-                  <button className={`flex-1 py-2 text-sm font-medium text-white bg-gradient-to-r ${faculty.color} rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-300`}>
+                  <button className={`flex-1 py-2 text-sm font-medium text-white bg-gradient-to-r ${faculty.color} rounded-xl `}>
                     Book Session
                   </button>
                 </div>

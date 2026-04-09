@@ -14,8 +14,9 @@ const ClassroomCourses = () => {
   const [categories, setCategories] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [enrollmentLoading, setEnrollmentLoading] = useState(false);
-  const [enrolledCourses, setEnrolledCourses] = useState([]); // Track enrolled courses
+  const [enrolledCourses, setEnrolledCourses] = useState([]);
 
   const GetCourses = async () => {
     try {
@@ -45,8 +46,6 @@ const ClassroomCourses = () => {
         const uniqueCategories = ['All', ...new Set(coursesData.map(course => course.level || 'Beginner'))];
         setCategories(uniqueCategories);
         
-        // If student is logged in, fetch their enrolled courses
-        
       } else {
         setCourses([]);
         setError("No courses available at the moment");
@@ -60,9 +59,6 @@ const ClassroomCourses = () => {
     }
   };
 
-
-  
-
   useEffect(() => {
     GetCourses();
   }, [studentId]); 
@@ -71,7 +67,6 @@ const ClassroomCourses = () => {
     return enrolledCourses.includes(courseId);
   };
 
-  // Handle enrollment
   const handleEnrollment = async () => {
     if (!studentId) {
       alert("Please login to enroll in courses");
@@ -83,7 +78,6 @@ const ClassroomCourses = () => {
       return;
     }
     
-    // Check if already enrolled
     if (isAlreadyEnrolled(selectedCourse._id)) {
       alert("You are already enrolled in this course!");
       closeModal();
@@ -106,7 +100,6 @@ const ClassroomCourses = () => {
       console.log("Enrollment response:", response);
       
       if (response.data.success) {
-        // Add to enrolled courses list
         setEnrolledCourses(prev => [...prev, selectedCourse._id]);
         alert("Successfully enrolled in the course!");
         closeModal();
@@ -117,10 +110,8 @@ const ClassroomCourses = () => {
     } catch (error) {
       console.error("Enrollment error:", error);
       
-      // Handle duplicate enrollment error from backend
       if (error.response?.data?.message === "Student already enrolled in this course") {
         alert("You are already enrolled in this course!");
-        // Add to enrolled courses list to prevent future attempts
         setEnrolledCourses(prev => [...prev, selectedCourse._id]);
       } else {
         alert(error.response?.data?.message || "Error enrolling in course. Please try again.");
@@ -130,9 +121,7 @@ const ClassroomCourses = () => {
     }
   };
 
-  // Open enrollment confirmation modal
   const handleEnrollClick = (course) => {
-    // Check if already enrolled before opening modal
     if (isAlreadyEnrolled(course._id)) {
       alert("You are already enrolled in this course!");
       return;
@@ -142,8 +131,18 @@ const ClassroomCourses = () => {
     setShowModal(true);
   };
 
+  const handleViewDetails = (course) => {
+    setSelectedCourse(course);
+    setShowDetailsModal(true);
+  };
+
   const closeModal = () => {
     setShowModal(false);
+    setSelectedCourse(null);
+  };
+
+  const closeDetailsModal = () => {
+    setShowDetailsModal(false);
     setSelectedCourse(null);
   };
 
@@ -329,7 +328,7 @@ const ClassroomCourses = () => {
                         </svg>
                         <span className="text-sm">{course.duration || 'N/A'}</span>
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
                         <span className="text-lg font-bold text-blue-600">${course.price || '0'}</span>
                         <button
                           onClick={() => handleEnrollClick(course)}
@@ -340,7 +339,17 @@ const ClassroomCourses = () => {
                               : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:shadow-lg hover:scale-105'
                           }`}
                         >
-                          {enrolled ? 'Already Enrolled' : 'Enroll Now'}
+                          {enrolled ? 'Enrolled' : 'Enroll'}
+                        </button>
+                        <button
+                          onClick={() => handleViewDetails(course)}
+                          className="p-2 rounded-lg text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-all duration-300"
+                          title="View Details"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
                         </button>
                       </div>
                     </div>
@@ -362,11 +371,144 @@ const ClassroomCourses = () => {
         )}
       </div>
 
+      {/* Compact Course Details Modal */}
+      {showDetailsModal && selectedCourse && (
+        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-5 py-3 z-10">
+              <div className="flex justify-between items-center">
+                <h2 className="text-xl font-bold text-gray-800">Course Details</h2>
+                <button
+                  onClick={closeDetailsModal}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Content */}
+            <div className="px-5 py-4">
+              {/* Course Image */}
+              {selectedCourse.thumbnail && (
+                <div className="mb-4 rounded-lg overflow-hidden">
+                  <img
+                    src={selectedCourse.thumbnail}
+                    alt={selectedCourse.title}
+                    className="w-full h-48 object-cover"
+                    onError={(e) => {
+                      e.target.src = 'https://via.placeholder.com/800x400?text=Course+Image';
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Course Title */}
+              <h3 className="text-2xl font-bold text-gray-800 mb-3">{selectedCourse.title}</h3>
+
+              {/* Instructor Info - Compact */}
+              <div className="flex items-center mb-4 p-3 bg-gray-50 rounded-lg">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm">
+                  {selectedCourse.instructor?.charAt(0) || '?'}
+                </div>
+                <div className="ml-3">
+                  <p className="text-xs text-gray-500">Instructor</p>
+                  <p className="text-sm font-semibold text-gray-800">{selectedCourse.instructor || 'Unknown Instructor'}</p>
+                </div>
+              </div>
+
+              {/* Course Stats Grid - Compact */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                <div className="text-center p-2 bg-blue-50 rounded-lg">
+                  <div className="text-lg mb-0.5">⭐</div>
+                  <div className="font-semibold text-gray-800 text-sm">{selectedCourse.rating || 4.5}</div>
+                  <div className="text-xs text-gray-600">Rating</div>
+                </div>
+                <div className="text-center p-2 bg-green-50 rounded-lg">
+                  <div className="text-lg mb-0.5">👥</div>
+                  <div className="font-semibold text-gray-800 text-sm">{selectedCourse.students?.toLocaleString() || '0'}</div>
+                  <div className="text-xs text-gray-600">Students</div>
+                </div>
+                <div className="text-center p-2 bg-purple-50 rounded-lg">
+                  <div className="text-lg mb-0.5">⏱️</div>
+                  <div className="font-semibold text-gray-800 text-sm">{selectedCourse.duration || 'N/A'}</div>
+                  <div className="text-xs text-gray-600">Duration</div>
+                </div>
+                <div className="text-center p-2 bg-orange-50 rounded-lg">
+                  <div className="text-lg mb-0.5">📊</div>
+                  <div className="font-semibold text-gray-800 text-sm">{selectedCourse.level || 'Beginner'}</div>
+                  <div className="text-xs text-gray-600">Level</div>
+                </div>
+              </div>
+
+              {/* Price - Compact */}
+              <div className="mb-4 p-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg text-white">
+                <div className="text-xs opacity-90">Course Price</div>
+                <div className="text-2xl font-bold">${selectedCourse.price || '0'}</div>
+              </div>
+
+              {/* Description - Compact */}
+              <div className="mb-4">
+                <h4 className="text-md font-semibold text-gray-800 mb-2">Description</h4>
+                <p className="text-sm text-gray-700 leading-relaxed">
+                  {selectedCourse.discreption || selectedCourse.description || 'No description available'}
+                </p>
+              </div>
+
+              {/* Tags - Compact */}
+              {selectedCourse.tags && selectedCourse.tags.length > 0 && (
+                <div className="mb-4">
+                  <h4 className="text-md font-semibold text-gray-800 mb-2">Topics</h4>
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectedCourse.tags.slice(0, 5).map((tag, index) => (
+                      <span key={index} className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">
+                        {tag}
+                      </span>
+                    ))}
+                    {selectedCourse.tags.length > 5 && (
+                      <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs">
+                        +{selectedCourse.tags.length - 5} more
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer - Compact */}
+            <div className="sticky bottom-0 bg-white border-t border-gray-200 px-5 py-3 flex gap-2">
+              <button
+                onClick={closeDetailsModal}
+                className="flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors text-sm"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => {
+                  closeDetailsModal();
+                  handleEnrollClick(selectedCourse);
+                }}
+                disabled={isAlreadyEnrolled(selectedCourse._id)}
+                className={`flex-1 px-3 py-1.5 rounded-lg font-semibold text-sm transition-all duration-300 ${
+                  isAlreadyEnrolled(selectedCourse._id)
+                    ? 'bg-gray-400 text-white cursor-not-allowed'
+                    : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:shadow-lg'
+                }`}
+              >
+                {isAlreadyEnrolled(selectedCourse._id) ? 'Already Enrolled' : 'Enroll Now'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Enrollment Confirmation Modal */}
       {showModal && selectedCourse && (
-        <div className="fixed inset-0 backdrop-blur-md bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
-            {/* Modal Header */}
             <div className="border-b border-gray-200 px-6 py-4">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold text-gray-800">Confirm Enrollment</h2>
@@ -382,7 +524,6 @@ const ClassroomCourses = () => {
               </div>
             </div>
 
-            {/* Course Details */}
             <div className="px-6 py-4">
               <div className="bg-blue-50 rounded-lg p-4 mb-4">
                 <h3 className="font-semibold text-gray-800 text-lg mb-2">{selectedCourse.title}</h3>
@@ -403,7 +544,6 @@ const ClassroomCourses = () => {
               </div>
             </div>
 
-            {/* Modal Footer */}
             <div className="border-t border-gray-200 px-6 py-4 flex gap-3">
               <button
                 onClick={closeModal}

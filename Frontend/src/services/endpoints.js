@@ -23,6 +23,15 @@ const api = {
     topic:{
         gettopicbyclass:Base_Url+"/topic/get_topicbyclass",
         //  gettopic:Base_Url+"/topic/get_topic",
+    },
+    blog:{
+        getblog:Base_Url+"/blog/get_blogs",
+    },
+    slider:{
+        getSlider:Base_Url+"/slider/get_slider"
+    },
+    testimonial:{
+        getTestimonial:Base_Url+"/testimonial/get_testimonial",
     }
 }
 

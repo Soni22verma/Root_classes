@@ -2,7 +2,7 @@ import React from 'react';
 
 const ProgramCard = ({ title, icon, bgColor, courses, buttonText, buttonLink }) => {
   return (
-    <div className={`relative bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden group`}>
+    <div className={`relative bg-white rounded-2xl  hover:shadow-sm transition-all duration-300 transform hover:-translate-y-2 overflow-hidden group`}>
       {/* Gradient Background Overlay */}
       <div className={`absolute top-0 left-0 w-full h-2 ${bgColor}`}></div>
       
@@ -27,7 +27,7 @@ const ProgramCard = ({ title, icon, bgColor, courses, buttonText, buttonLink }) 
         </div>
         
         {/* Button */}
-        <button className={`w-full py-3 px-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg ${bgColor} text-white`}>
+        <button className={`w-full py-3 px-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 active:scale-95  hover:shadow-sm ${bgColor} text-white`}>
           {buttonText}
         </button>
       </div>
@@ -95,7 +95,7 @@ const ProgramPage = () => {
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {/* Foundation Card */}
         <div className="group">
-          <div className="relative bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden">
+          <div className="relative bg-white rounded-2xl hover:shadow-sm transition-all duration-300 transform hover:-translate-y-2 overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 to-blue-600"></div>
             
             {/* Decorative Element */}
@@ -118,7 +118,7 @@ const ProgramPage = () => {
                 ))}
               </div>
               
-              <button className="w-full py-3 px-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white">
+              <button className="w-full py-3 px-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 active:scale-95 hover:shadow-sm bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white">
                 Join Now →
               </button>
             </div>
@@ -127,7 +127,7 @@ const ProgramPage = () => {
 
         {/* Medical Card */}
         <div className="group">
-          <div className="relative bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden">
+          <div className="relative bg-white rounded-2xl hover:shadow-sm transition-all duration-300 transform hover:-translate-y-2 overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-green-500 to-green-600"></div>
             
             <div className="absolute -top-10 -right-10 w-32 h-32 bg-green-500 rounded-full opacity-5 group-hover:opacity-10 transition-opacity duration-300"></div>
@@ -149,7 +149,7 @@ const ProgramPage = () => {
                 ))}
               </div>
               
-              <button className="w-full py-3 px-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white">
+              <button className="w-full py-3 px-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 active:scale-95 hover:shadow-sm bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white">
                 Enroll Now →
               </button>
             </div>
@@ -158,7 +158,7 @@ const ProgramPage = () => {
 
         {/* Engineering Card */}
         <div className="group">
-          <div className="relative bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden">
+          <div className="relative bg-white rounded-2xl hover:shadow-sm transition-all duration-300 transform hover:-translate-y-2 overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-purple-500 to-purple-600"></div>
             
             <div className="absolute -top-10 -right-10 w-32 h-32 bg-purple-500 rounded-full opacity-5 group-hover:opacity-10 transition-opacity duration-300"></div>
@@ -180,7 +180,7 @@ const ProgramPage = () => {
                 ))}
               </div>
               
-              <button className="w-full py-3 px-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white">
+              <button className="w-full py-3 px-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 active:scale-95 hover:shadow-sm bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white">
                 Start Learning →
               </button>
             </div>
@@ -191,7 +191,7 @@ const ProgramPage = () => {
       {/* Additional Features Section */}
       <div className="max-w-7xl mx-auto mt-20">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 text-center group">
+          <div className="bg-white rounded-xl hover:shadow-sm transition-all duration-300 p-6 text-center group">
             <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-blue-200 transition-colors duration-300">
               <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
@@ -201,7 +201,7 @@ const ProgramPage = () => {
             <p className="text-gray-600 text-sm">Learn from India's top educators with years of experience</p>
           </div>
           
-          <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 text-center group">
+          <div className="bg-white rounded-xl hover:shadow-sm transition-all duration-300 p-6 text-center group">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-green-200 transition-colors duration-300">
               <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
@@ -211,7 +211,7 @@ const ProgramPage = () => {
             <p className="text-gray-600 text-sm">Interactive online classes with doubt clearing sessions</p>
           </div>
           
-          <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 text-center group">
+          <div className="bg-white rounded-xl  hover:shadow-sm transition-all duration-300 p-6 text-center group">
             <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-purple-200 transition-colors duration-300">
               <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
