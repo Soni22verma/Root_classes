@@ -1,12 +1,30 @@
 import mongoose from "mongoose";
-
 const topicSchema = new mongoose.Schema({
-  title: { type: String, required: true },
-  notes: { type: String },
-  videoUrl: { type: String }, // video link
-  createdAt: { type: Date, default: Date.now },
-});
+  title: {   type: String,required: true,trim: true},
 
+  description: {   type: String },
+
+  videoUrl: {type: String},
+
+  videoPublicId: {type: String},
+
+  notesUrl: { type: String},
+
+  notesPublicId: { type: String},
+
+  duration: {type: Number  },
+
+  isPreviewFree: {type: Boolean, default: false},
+
+  order: { type: Number},
+
+  resources: [
+    { title: String, fileUrl: String}
+  ],
+
+  createdAt: {type: Date, default: Date.now
+  }
+});
 const chapterSchema = new mongoose.Schema({
   title: { type: String, required: true },
   topics: [topicSchema],
