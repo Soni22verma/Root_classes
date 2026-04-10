@@ -42,8 +42,7 @@ app.use("/slider",sliderRouter)
 app.use("/testimonial",testimonialRouter)
 app.use("/fullcourse",courseCategotyRouter)
 app.use("/category",categoryRouter)
-app.use("/createCourse",createcourseRouter)
-
+app.use("/course",createcourseRouter)
 // Test route
 app.get("/", (req, res) => {
   res.send("Server is running 🚀");

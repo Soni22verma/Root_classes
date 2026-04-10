@@ -137,7 +137,7 @@ const AdminSidebar = ({ isMobileOpen, setIsMobileOpen }) => {
       },
       {
         name: 'My Courses',
-        path: '/admin/allcourses',
+        path: '/instructor/allcourses',
         icon: BookOpen,
       },
       {

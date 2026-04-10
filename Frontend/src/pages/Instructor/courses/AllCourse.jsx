@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import api from '../../../services/instructorendpoint';
 import { toast } from 'react-toastify';
+import useStudentStore from '../../../Store/studentstore';
+import { useNavigate } from 'react-router-dom';
 
 const InstructorDashboard = () => {
   const [activeTab, setActiveTab] = useState('courses');
@@ -11,7 +13,10 @@ const InstructorDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
   const [editingCourse, setEditingCourse] = useState(null);
-  
+  const navigate = useNavigate()
+
+  const { student } = useStudentStore()
+  console.log(student, "bbbbbbbbbbbbbbbbbbbbbb")
   // Form data
   const [formData, setFormData] = useState({
     title: '',
@@ -19,7 +24,7 @@ const InstructorDashboard = () => {
     category: '',
     level: 'beginner'
   });
-  
+
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
@@ -27,10 +32,12 @@ const InstructorDashboard = () => {
     fetchCategories();
   }, []);
 
+
+
   const fetchCourses = async () => {
     try {
       setLoading(true);
-      const response = await axios.post(api.createCourse.getCourse);
+      const response = await axios.post(api.course.getCourse);
       let coursesData = [];
       if (response.data && response.data.data && Array.isArray(response.data.data)) {
         coursesData = response.data.data;
@@ -48,7 +55,7 @@ const InstructorDashboard = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.post(api.createCourse.getCategory);
+      const response = await axios.post(api.course.getCategory);
       let categoriesData = [];
       if (response.data && response.data.data && Array.isArray(response.data.data)) {
         categoriesData = response.data.data;
@@ -61,6 +68,16 @@ const InstructorDashboard = () => {
       setCategories([]);
     }
   };
+
+  const handleManageContent = async(courseId)=>{
+    try {
+      console.log(courseId , " this is m y course id")
+      navigate(`/instructor/allcourses/${courseId}`)
+    } catch (error) {
+      console.log( error , " this is error from  handleManageContent")
+      
+    }
+  }
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -82,14 +99,14 @@ const InstructorDashboard = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
-    
+
     setFormLoading(true);
     try {
       if (editingCourse) {
         await axios.put(`/api/courses/${editingCourse._id}`, formData);
         toast.success('Course updated successfully!');
       } else {
-        const res = await axios.post(api.createCourse.createCourse, formData);
+        const res = await axios.post(api.course.createCourse, formData);
         console.log(res);
         toast.success('Course created successfully!');
       }
@@ -145,7 +162,7 @@ const InstructorDashboard = () => {
   };
 
   const getLevelColor = (level) => {
-    switch(level) {
+    switch (level) {
       case 'beginner': return 'bg-green-100 text-green-800';
       case 'intermediate': return 'bg-yellow-100 text-yellow-800';
       case 'advanced': return 'bg-red-100 text-red-800';
@@ -165,14 +182,15 @@ const InstructorDashboard = () => {
           </div>
 
           {/* Create Course Button */}
-          <div className="mb-6">
+          {student.role === "instructor" ? <div className="mb-6">
             <button
               onClick={openCreateModal}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors shadow-sm"
             >
               + Create Course
             </button>
-          </div>
+          </div> : ""}
+
 
           {/* Courses Table */}
           {loading ? (
@@ -235,8 +253,18 @@ const InstructorDashboard = () => {
                             {course.level || 'beginner'}
                           </span>
                         </td>
+
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex gap-3">
+                            <button
+                              onClick={() => handleManageContent(course._id)}
+                              className="text-green-600 hover:text-green-900 transition-colors"
+                              title="Manage Modules & Topics"
+                            >
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                              </svg>
+                            </button>
                             <button
                               onClick={() => openEditModal(course)}
                               className="text-blue-600 hover:text-blue-900 transition-colors"
@@ -257,6 +285,7 @@ const InstructorDashboard = () => {
                             </button>
                           </div>
                         </td>
+
                       </tr>
                     ))}
                   </tbody>
@@ -273,7 +302,7 @@ const InstructorDashboard = () => {
           <div className="flex items-center justify-center min-h-screen px-4">
             {/* Backdrop */}
             <div className="fixed inset-0 bg-black/60" onClick={() => setIsModalOpen(false)}></div>
-            
+
             {/* Modal Content */}
             <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full">
               <form onSubmit={handleSubmit}>
@@ -281,7 +310,7 @@ const InstructorDashboard = () => {
                   <h3 className="text-xl font-semibold text-gray-900 mb-6">
                     {editingCourse ? 'Edit Course' : 'Create New Course'}
                   </h3>
-                  
+
                   <div className="space-y-5">
                     {/* Course Title */}
                     <div>
@@ -294,9 +323,8 @@ const InstructorDashboard = () => {
                         value={formData.title}
                         onChange={handleInputChange}
                         placeholder="Enter course title"
-                        className={`w-full px-3 py-2 border ${
-                          errors.title ? 'border-red-500' : 'border-gray-300'
-                        } rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                        className={`w-full px-3 py-2 border ${errors.title ? 'border-red-500' : 'border-gray-300'
+                          } rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                       />
                       {errors.title && (
                         <p className="mt-1 text-xs text-red-500">{errors.title}</p>
@@ -314,9 +342,8 @@ const InstructorDashboard = () => {
                         value={formData.description}
                         onChange={handleInputChange}
                         placeholder="Enter course description"
-                        className={`w-full px-3 py-2 border ${
-                          errors.description ? 'border-red-500' : 'border-gray-300'
-                        } rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                        className={`w-full px-3 py-2 border ${errors.description ? 'border-red-500' : 'border-gray-300'
+                          } rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                       />
                       {errors.description && (
                         <p className="mt-1 text-xs text-red-500">{errors.description}</p>
@@ -332,9 +359,8 @@ const InstructorDashboard = () => {
                         name="category"
                         value={formData.category}
                         onChange={handleInputChange}
-                        className={`w-full px-3 py-2 border ${
-                          errors.category ? 'border-red-500' : 'border-gray-300'
-                        } rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                        className={`w-full px-3 py-2 border ${errors.category ? 'border-red-500' : 'border-gray-300'
+                          } rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                       >
                         <option value="">Select a category</option>
                         {categories.map((category) => (
