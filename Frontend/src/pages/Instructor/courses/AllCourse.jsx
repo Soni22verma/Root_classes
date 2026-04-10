@@ -79,30 +79,40 @@ const InstructorDashboard = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!validateForm()) return;
-    
-    setFormLoading(true);
-    try {
-      if (editingCourse) {
-        await axios.put(`/api/courses/${editingCourse._id}`, formData);
-        toast.success('Course updated successfully!');
-      } else {
-        const res = await axios.post(api.createCourse.createCourse, formData);
-        console.log(res);
-        toast.success('Course created successfully!');
-      }
-      setIsModalOpen(false);
-      fetchCourses();
-      resetForm();
-    } catch (error) {
-      console.error('Error saving course:', error);
-      toast.error(error.response?.data?.message || 'Error saving course');
-    } finally {
-      setFormLoading(false);
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  if (!validateForm()) return;
+  
+  setFormLoading(true);
+  try {
+    if (editingCourse) {
+      const updateData = {
+        courseId: editingCourse._id,
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        level: formData.level
+      };
+      
+      await axios.post(api.createCourse.editCourse, updateData);
+      
+      
+      toast.success('Course updated successfully!');
+    } else {
+      const res = await axios.post(api.createCourse.createCourse, formData);
+      console.log(res);
+      toast.success('Course created successfully!');
     }
-  };
+    setIsModalOpen(false);
+    fetchCourses();
+    resetForm();
+  } catch (error) {
+    console.error('Error saving course:', error);
+    toast.error(error.response?.data?.message || 'Error saving course');
+  } finally {
+    setFormLoading(false);
+  }
+};
 
   const resetForm = () => {
     setFormData({ title: '', description: '', category: '', level: 'beginner' });
@@ -129,7 +139,7 @@ const InstructorDashboard = () => {
   const handleDelete = async (courseId) => {
     if (window.confirm('Are you sure you want to delete this course?')) {
       try {
-        await axios.delete(`/api/courses/${courseId}`);
+        await axios.post(api.createCourse.deleteCourse,{courseId:courseId});
         toast.success('Course deleted successfully!');
         fetchCourses();
       } catch (error) {
@@ -394,3 +404,6 @@ const InstructorDashboard = () => {
 };
 
 export default InstructorDashboard;
+
+
+

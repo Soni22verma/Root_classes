@@ -21,7 +21,10 @@ import {
   X,
   UserCircle,
   Video,
- 
+  Layers,
+  FolderTree,
+  FileCode,
+  BookMarked
 } from 'lucide-react';
 import { LuSlidersHorizontal } from "react-icons/lu";
 import { PiChalkboard, PiStudentBold } from "react-icons/pi";
@@ -136,11 +139,6 @@ const AdminSidebar = ({ isMobileOpen, setIsMobileOpen }) => {
         exact: true
       },
       {
-        name: 'My Courses',
-        path: '/admin/allcourses',
-        icon: BookOpen,
-      },
-      {
         name: 'Online Classes',
         icon: Calendar,
         submenu: [
@@ -202,6 +200,36 @@ const AdminSidebar = ({ isMobileOpen, setIsMobileOpen }) => {
 
     // Instructor-specific menu items
     const instructorItems = [
+      {
+        name: 'My Courses',
+        icon: BookOpen,
+        submenu: [
+          { 
+            name: 'Courses', 
+            path: '/instructor/courses', 
+            icon: BookMarked,
+            description: 'Manage your courses'
+          },
+          { 
+            name: 'Course Modules', 
+            path: '/instructor/modules', 
+            icon: Layers,
+            description: 'Add and manage modules'
+          },
+          { 
+            name: 'Chapters', 
+            path: '/instructor/chapters', 
+            icon: FolderTree,
+            description: 'Organize course chapters'
+          },
+          { 
+            name: 'Topics', 
+            path: '/instructor/topics', 
+            icon: FileCode,
+            description: 'Manage topics and content'
+          }
+        ]
+      },
       {
         name: 'Student Management',
         icon: Users,
@@ -393,14 +421,20 @@ const AdminSidebar = ({ isMobileOpen, setIsMobileOpen }) => {
                         <Link
                           key={subIndex}
                           to={subItem.path}
-                          className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 text-sm ${
+                          className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 text-sm group ${
                             location.pathname === subItem.path
                               ? 'bg-blue-50 text-blue-700 font-medium'
                               : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                           }`}
+                          title={subItem.description}
                         >
                           <subItem.icon size={16} className="flex-shrink-0" />
                           <span className="truncate">{subItem.name}</span>
+                          {subItem.description && (
+                            <span className="hidden group-hover:inline-block text-xs text-gray-400 ml-2">
+                              {subItem.description}
+                            </span>
+                          )}
                         </Link>
                       ))}
                     </div>

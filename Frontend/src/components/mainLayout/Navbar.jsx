@@ -4,27 +4,101 @@ import { Link, useNavigate } from 'react-router-dom';
 import useStudentStore from '../../Store/studentstore';
 
 const Navbar = () => {
-  const { student, logout } = useStudentStore();
+  const { student, logout, setStudent } = useStudentStore();
+  // console.log(student?.user._id , " this is student")
+
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
 
+  // Check if user is logged in from multiple sources
+  useEffect(() => {
+    const checkLoginStatus = () => {
+      // Check store first
+      if (student && (student._id || student.id)) {
+        setIsLoggedIn(true);
+        return;
+      }
+      
+      // Check localStorage
+      const storedStudent = localStorage.getItem('student');
+
+      if (storedStudent) {
+        try {
+          const parsed = JSON.parse(storedStudent);
+          if (parsed && (parsed._id || parsed.id)) {
+            setIsLoggedIn(true);
+            // Update store if needed
+            if (!student && setStudent) {
+              setStudent(parsed);
+            }
+            return;
+          }
+        } catch (error) {
+          console.error("Error parsing localStorage:", error);
+        }
+      }
+      
+      
+      // Check for user in localStorage (alternative key)
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        try {
+          const parsed = JSON.parse(storedUser);
+          if (parsed && (parsed._id || parsed.id)) {
+            setIsLoggedIn(true);
+            return;
+          }
+        } catch (error) {
+          console.error("Error parsing user from localStorage:", error);
+        }
+      }
+      
+      setIsLoggedIn(false);
+    };
+    
+    checkLoginStatus();
+  }, [student, setStudent]);
+
   // Function to get display name from student data
   const getDisplayName = () => {
-    if (!student) return 'User';
-    
-    // Check different possible name fields
-    if (student.name) return student.name;
-    if (student.fullName) return student.fullName;
-    if (student.username) return student.username;
-    if (student.firstName) {
-      return student.lastName ? `${student.firstName} ${student.lastName}` : student.firstName;
+    // Check store first
+    if (student) {
+      if (student.fullName) return student.fullName;
+      if (student.name) return student.name;
+      if (student.username) return student.username;
+      if (student.firstName) {
+        return student.lastName ? `${student.firstName} ${student.lastName}` : student.firstName;
+      }
     }
     
-    // Extract from email if available
-    if (student.email) {
-      return student.email.split('@')[0];
+    // Check localStorage
+    const storedStudent = localStorage.getItem('student');
+    if (storedStudent) {
+      try {
+        const parsed = JSON.parse(storedStudent);
+        if (parsed.fullName) return parsed.fullName;
+        if (parsed.name) return parsed.name;
+        if (parsed.username) return parsed.username;
+        if (parsed.email) return parsed.email.split('@')[0];
+      } catch (error) {
+        console.error("Error parsing localStorage:", error);
+      }
+    }
+    
+    // Check for user in localStorage
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        const parsed = JSON.parse(storedUser);
+        if (parsed.fullName) return parsed.fullName;
+        if (parsed.name) return parsed.name;
+        if (parsed.username) return parsed.username;
+      } catch (error) {
+        console.error("Error parsing user from localStorage:", error);
+      }
     }
     
     return 'Student';
@@ -32,30 +106,57 @@ const Navbar = () => {
 
   // Function to get display email
   const getDisplayEmail = () => {
-    if (!student) return '';
-    return student.email || student.emailId || '';
+    if (student && student.email) return student.email;
+    
+    const storedStudent = localStorage.getItem('student');
+    if (storedStudent) {
+      try {
+        const parsed = JSON.parse(storedStudent);
+        if (parsed.email) return parsed.email;
+      } catch (error) {
+        console.error("Error parsing localStorage:", error);
+      }
+    }
+    
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        const parsed = JSON.parse(storedUser);
+        if (parsed.email) return parsed.email;
+      } catch (error) {
+        console.error("Error parsing user from localStorage:", error);
+      }
+    }
+    
+    return '';
   };
 
-  // Debug: Log student data to see its structure
-  useEffect(() => {
-    if (student) {
-      console.log('Student data in Navbar:', student);
-      console.log('Student name available:', student.name || student.fullName || student.username || student.firstName);
-      console.log('Student email available:', student.email);
-    }
-  }, [student]);
-
   const handleLogout = () => {
+    // Clear all possible storage keys
     localStorage.removeItem("user");
-    localStorage.removeItem("student"); 
+    localStorage.removeItem("student");
+    localStorage.removeItem("token");
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("studentToken");
     
-    logout();
+    // Clear sessionStorage if used
+    sessionStorage.clear();
     
-    navigate("/stdlogin");
+    // Call logout function from store if it exists
+    if (logout && typeof logout === 'function') {
+      logout();
+    }
     
-  
+    // Reset state
+    setIsLoggedIn(false);
     setIsDropdownOpen(false);
     setIsMenuOpen(false);
+    
+    // Navigate to login page
+    navigate("/stdlogin");
+    
+    // Optional: Show success message
+    // toast.success("Logged out successfully");
   };
 
   // Close dropdown when clicking outside
@@ -78,6 +179,12 @@ const Navbar = () => {
     { name: 'Blog', path: '/blog' },
     { name: 'Contact', path: '/contact' },
   ];
+
+
+
+  const handleProflie = async()=>{
+    navigate("/stdprofile")
+  }
 
   return (
     <nav className="bg-white shadow-md sticky top-0 z-50">
@@ -108,7 +215,7 @@ const Navbar = () => {
               </Link>
             ))}
 
-            {student ? (
+            {isLoggedIn ? (
               <div className="relative ml-4" ref={dropdownRef}>
                 <button
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -159,14 +266,13 @@ const Navbar = () => {
                         <span>Dashboard</span>
                       </Link>
                       
-                      <Link
-                        to="/stdprofile"
-                        onClick={() => setIsDropdownOpen(false)}
+                      <div 
+                        onClick={() => handleProflie()}
                         className="flex items-center space-x-3 px-4 py-2 text-gray-700 hover:bg-gray-50 transition group"
                       >
                         <UserCircle size={18} className="text-gray-500 group-hover:text-indigo-600" />
                         <span>My Profile</span>
-                      </Link>
+                      </div>
                     </div>
 
                     {/* Logout Button */}
@@ -225,7 +331,7 @@ const Navbar = () => {
                 </Link>
               ))}
 
-              {student ? (
+              {isLoggedIn ? (
                 <>
                   <div className="flex items-center justify-between bg-gray-100 px-4 py-2 rounded-lg">
                     <div className="flex items-center space-x-2 flex-1 min-w-0">

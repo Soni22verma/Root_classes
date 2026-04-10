@@ -6,8 +6,8 @@ import useStudentStore from '../../Store/studentstore';
 import { toast } from 'react-toastify';
 
 const StudentProfile = () => {
-    const { student } = useStudentStore();
-    const [image, setImage] = useState(null);
+    const { student, setStudent } = useStudentStore();
+    
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(true);
     const [studentData, setStudentData] = useState(null);
@@ -17,59 +17,73 @@ const StudentProfile = () => {
         fullName: '',
         email: '',
         phone: '',
-        password: '',
         dateofBirth: '',
         gender: '',
         currentClass: '',
         interestedCourse: '',
         address: '',
-      });
-    // Course Progress - You can fetch this from another API or keep as static for now
+    });
+
     const enrolledCourses = [
         { id: 1, name: 'JEE Mathematics', progress: 75, nextClass: 'Tomorrow, 4:00 PM' },
         { id: 2, name: 'Physics for JEE', progress: 45, nextClass: 'Today, 6:30 PM' },
         { id: 3, name: 'Organic Chemistry', progress: 30, nextClass: 'Wednesday, 5:00 PM' }
     ];
 
-    // Quick Stats - Calculate from real data
-    const getStats = () => {
-        if (!studentData) return [];
-        return [
-            { label: 'Total Hours', value: '127', icon: '⏱️' },
-            { label: 'Courses', value: enrolledCourses.length.toString(), icon: '📚' },
-            { label: 'Attendance', value: '94%', icon: '✅' }
-        ];
+    const getStats = () => [
+        { label: 'Total Hours', value: '127', icon: '⏱️' },
+        { label: 'Courses', value: enrolledCourses.length.toString(), icon: '📚' },
+        { label: 'Attendance', value: '94%', icon: '✅' }
+    ];
+
+    const getStudentId = () => {
+        if (student?._id) return student._id;
+        if (student?.user?._id) return student.user._id;
+        if (studentData?._id) return studentData._id;
+        
+        const storedStudent = localStorage.getItem('student');
+        if (storedStudent) {
+            try {
+                const parsed = JSON.parse(storedStudent);
+                return parsed._id || parsed.user?._id;
+            } catch (err) {
+                console.error("Error parsing localStorage:", err);
+            }
+        }
+        return null;
     };
 
-    const GetStudent = async () => {
+    const GetStudentData = async () => {
+        const studentId = getStudentId();
+        
+        if (!studentId) {
+            toast.error("Student ID not found. Please log in again.");
+            setLoading(false);
+            return;
+        }
+
         try {
-            setLoading(true);
             const res = await axios.post(api.student.getStudent, {
-                studentId: student?._id,
+                studentId: studentId,
             });
             
-            if (res.data.success && res.data.student) {
-                const studentInfo = res.data.student;
-                setStudentData(studentInfo);
-                
-                // Convert phone to string to avoid type mismatch
-                const phoneNumber = studentInfo.phone ? String(studentInfo.phone) : '';
-                
-                // Set form data for editing
+            if (res.data.success && res.data.user) {
+                setStudentData(res.data.user);
                 setFormData({
-                    fullName: studentInfo.fullName || '',
-                    email: studentInfo.email || '',
-                    phone: phoneNumber,
-                    currentClass: studentInfo.currentClass || '',
-                    interestedCourse: studentInfo.interestedCourse || '',
-                    address: studentInfo.address || '',
-                    dateofBirth: studentInfo.dateofBirth ? new Date(studentInfo.dateofBirth).toISOString().split('T')[0] : '',
-                    gender: studentInfo.gender || ''
+                    fullName: res.data.user.fullName || '',
+                    email: res.data.user.email || '',
+                    phone: res.data.user.phone || '',
+                    dateofBirth: res.data.user.dateofBirth ? res.data.user.dateofBirth.split('T')[0] : '',
+                    gender: res.data.user.gender || '',
+                    currentClass: res.data.user.currentClass || '',
+                    interestedCourse: res.data.user.interestedCourse || '',
+                    address: res.data.user.address || '',
                 });
+            } else {
+                toast.error(res.data.message || "Failed to fetch student data");
             }
         } catch (error) {
-            console.log(error);
-            toast.error('Failed to fetch student data');
+            toast.error(error.response?.data?.message || "Failed to fetch student data");
         } finally {
             setLoading(false);
         }
@@ -78,43 +92,53 @@ const StudentProfile = () => {
     const handleImageSelect = (e) => {
         const file = e.target.files[0];
         if (file) {
-            setImage(file);
+            if (!file.type.startsWith('image/')) {
+                toast.error('Please select an image file');
+                return;
+            }
+            if (file.size > 5 * 1024 * 1024) {
+                toast.error('Image size should be less than 5MB');
+                return;
+            }
             uploadProfile(file);
         }
     };
 
     const uploadProfile = async (file) => {
+        const studentId = getStudentId();
+        
+        if (!studentId) {
+            toast.error('Student ID not found');
+            return;
+        }
+        
+        setUploadingImage(true);
+        
         try {
-            setUploadingImage(true);
             const formData = new FormData();
             formData.append("image", file);
-            formData.append("studentId", student?._id);
-
-            const res = await axios.post(api.student.editProfile,
-                formData,
-                {
-                    headers: {
-                        "Content-Type": "multipart/form-data",
-                    },
-                }
-            );
-
-            if (res.data.success) {
-                // Update the student data with the new profile image URL
+            formData.append("studentId", studentId);
+            
+            const response = await axios.post(api.student.editProfile, formData, {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                },
+            });
+            
+            if (response.data.success) {
                 setStudentData(prev => ({
                     ...prev,
-                    profileImage: res.data.profileImageUrl || res.data.imageUrl
+                    profileImage: response.data.updateduser?.profileImage
                 }));
                 toast.success('Profile image updated successfully!');
+                GetStudentData();
             } else {
-                toast.error('Failed to upload image. Please try again.');
+                toast.error(response.data.message || 'Failed to upload image');
             }
         } catch (error) {
-            console.error('Error uploading image:', error);
-            toast.error('Error uploading image. Please try again.');
+            toast.error(error.response?.data?.message || 'Error uploading image');
         } finally {
             setUploadingImage(false);
-            setImage(null);
         }
     };
 
@@ -127,77 +151,61 @@ const StudentProfile = () => {
     };
     
     const editDetails = async (e) => {
-        e.preventDefault(); 
+        e.preventDefault();
         setSaving(true);
         
+        const studentId = getStudentId();
+        
+        if (!studentId) {
+            toast.error("Student ID not found. Please log in again.");
+            setSaving(false);
+            return;
+        }
+        
         try {
-            // Ensure phone is sent as number to backend
             const dataToSend = {
+                studentId: studentId,
                 fullName: formData.fullName,
                 email: formData.email,
-                phone: formData.phone ? Number(formData.phone) : null, // Convert to number
+                phone: formData.phone ? Number(formData.phone) : null,
                 currentClass: formData.currentClass,
                 interestedCourse: formData.interestedCourse,
                 address: formData.address,
                 dateofBirth: formData.dateofBirth,
                 gender: formData.gender,
-                studentId: student?._id
             };
             
-            console.log("Sending data to backend:", dataToSend);
-            
-            const res = await axios.post(
-                api.student.editprofiledetails,
-                dataToSend
-            );
-
-            console.log("Response from backend:", res.data);
+            const res = await axios.post(api.student.editprofiledetails, dataToSend, {
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
             
             if (res.data.success) {
-                // Convert phone back to string for display
-                const updatedPhone = res.data.student?.phone ? String(res.data.student.phone) : formData.phone;
-                
+                const updatedStudent = res.data.student || res.data.user;
                 setStudentData(prev => ({
                     ...prev,
-                    fullName: formData.fullName,
-                    email: formData.email,
-                    phone: updatedPhone,
-                    currentClass: formData.currentClass,
-                    interestedCourse: formData.interestedCourse,
-                    address: formData.address,
-                    dateofBirth: formData.dateofBirth,
-                    gender: formData.gender
+                    ...updatedStudent
                 }));
-                
-                // Also update the store with the new phone number
-                if (useStudentStore.getState().setStudent) {
-                    useStudentStore.getState().setStudent({
-                        ...student,
-                        fullName: formData.fullName,
-                        email: formData.email,
-                        phone: updatedPhone
-                    });
-                }
-                
                 toast.success('Profile updated successfully!');
                 setIsEditing(false);
-                
-                // Refresh student data to ensure consistency
-                await GetStudent();
+                GetStudentData();
             } else {
-                toast.error(res.data.message || 'Failed to update profile. Please try again.');
+                toast.error(res.data.message || 'Failed to update profile');
             }
         } catch (error) {
-            console.log("Error updating profile:", error);
-            toast.error(error.response?.data?.message || 'Error updating profile. Please try again.');
+            toast.error(error.response?.data?.message || 'Error updating profile');
         } finally {
             setSaving(false);
         }
     };
 
     useEffect(() => {
-        if (student?._id) {
-            GetStudent();
+        if (student || getStudentId()) {
+            GetStudentData();
+        } else {
+            toast.error("Please log in to view profile");
+            setLoading(false);
         }
     }, [student]);
 
@@ -216,13 +224,20 @@ const StudentProfile = () => {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
                 <div className="text-center">
-                    <p className="text-gray-600">No student data found</p>
+                    <p className="text-gray-600 mb-4">No student data found</p>
+                    <button 
+                        onClick={() => window.location.href = '/login'}
+                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg"
+                    >
+                        Go to Login
+                    </button>
                 </div>
             </div>
         );
     }
 
     const stats = getStats();
+    const profileImageUrl = studentData.profileImage || studentData.profilePicture || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format';
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
@@ -242,9 +257,12 @@ const StudentProfile = () => {
                         <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 -mt-12 mb-4">
                             <div className="relative group">
                                 <img
-                                    src={studentData.profileImage || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format'}
+                                    src={profileImageUrl}
                                     alt={studentData.fullName}
                                     className="w-24 h-24 rounded-full border-4 border-white shadow-lg object-cover"
+                                    onError={(e) => {
+                                        e.target.src = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format';
+                                    }}
                                 />
                                 <label 
                                     htmlFor="profileImageUpload" 
@@ -446,7 +464,6 @@ const StudentProfile = () => {
                                     placeholder="Enter 10-digit mobile number"
                                     maxLength="10"
                                 />
-                                <p className="text-xs text-gray-500 mt-1">Enter 10-digit mobile number</p>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Current Class</label>
@@ -506,7 +523,7 @@ const StudentProfile = () => {
                                 <button 
                                     type="submit"
                                     disabled={saving}
-                                    className="flex-1 bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="flex-1 bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition disabled:opacity-50"
                                 >
                                     {saving ? 'Saving...' : 'Save Changes'}
                                 </button>

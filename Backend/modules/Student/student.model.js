@@ -46,6 +46,13 @@ const userSchema = new mongoose.Schema(
             enum: ["student", "admin", "instructor"],
             default: "student"
         },
+        otp:{
+            type:String,
+        },
+        expiredAt:{
+            type:Date,
+        }
+
       
     },
     { timestamps: true }

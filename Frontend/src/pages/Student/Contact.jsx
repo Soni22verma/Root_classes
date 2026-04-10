@@ -1,7 +1,11 @@
 // Contact.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import useStudentStore from '../../Store/studentstore';
 
 const Contact = () => {
+  const { student } = useStudentStore();
+  console.log("Logged in student:", student);
+  
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -12,6 +16,32 @@ const Contact = () => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null); // 'success' or 'error'
+
+  // Auto-fill form with student data when component mounts or student changes
+  useEffect(() => {
+    if (student) {
+      setFormData(prev => ({
+        ...prev,
+        name: student.fullName || '',
+        email: student.email || ''
+      }));
+    } else {
+      // Try to get from localStorage if store is empty
+      const storedStudent = localStorage.getItem('student');
+      if (storedStudent) {
+        try {
+          const parsed = JSON.parse(storedStudent);
+          setFormData(prev => ({
+            ...prev,
+            name: parsed.fullName || '',
+            email: parsed.email || ''
+          }));
+        } catch (error) {
+          console.error("Error parsing localStorage:", error);
+        }
+      }
+    }
+  }, [student]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -57,7 +87,51 @@ const Contact = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+    
+    setIsSubmitting(true);
+    setSubmitStatus(null);
+    
+    try {
+      // Here you would make your API call to submit the contact form
+      // For example:
+      // const response = await axios.post('/api/contact', formData);
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      console.log("Form submitted:", formData);
+      setSubmitStatus('success');
+      
+      // Reset only subject and message, keep name and email
+      setFormData(prev => ({
+        ...prev,
+        subject: '',
+        message: ''
+      }));
+      
+      // Clear success message after 5 seconds
+      setTimeout(() => {
+        setSubmitStatus(null);
+      }, 5000);
+      
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      setSubmitStatus('error');
+      
+      // Clear error message after 5 seconds
+      setTimeout(() => {
+        setSubmitStatus(null);
+      }, 5000);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8">
@@ -147,6 +221,27 @@ const Contact = () => {
                 </a>
               </div>
             </div>
+
+            {/* User Info Card - Show logged in user */}
+            {student && (
+              <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl shadow-sm p-6 border border-indigo-100">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center">
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-800">Logged in as</h3>
+                    <p className="text-sm text-gray-600">{student.fullName}</p>
+                    <p className="text-xs text-gray-500">{student.email}</p>
+                  </div>
+                </div>
+                <p className="text-xs text-indigo-600 mt-2">
+                  ✓ Your contact information is pre-filled
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Contact Form */}
@@ -172,7 +267,7 @@ const Contact = () => {
                 </div>
               )}
               
-              <form  className="space-y-5">
+              <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
                   <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
                     Full Name <span className="text-red-500">*</span>
@@ -187,9 +282,13 @@ const Contact = () => {
                       errors.name ? 'border-red-500 bg-red-50' : 'border-gray-300'
                     }`}
                     placeholder="John Doe"
+                    readOnly={!!student} // Make read-only if student is logged in
                   />
                   {errors.name && (
                     <p className="mt-1 text-sm text-red-500">{errors.name}</p>
+                  )}
+                  {student && (
+                    <p className="mt-1 text-xs text-gray-500">This field is auto-filled from your profile</p>
                   )}
                 </div>
                 
@@ -207,9 +306,13 @@ const Contact = () => {
                       errors.email ? 'border-red-500 bg-red-50' : 'border-gray-300'
                     }`}
                     placeholder="hello@example.com"
+                    readOnly={!!student} // Make read-only if student is logged in
                   />
                   {errors.email && (
                     <p className="mt-1 text-sm text-red-500">{errors.email}</p>
+                  )}
+                  {student && (
+                    <p className="mt-1 text-xs text-gray-500">This field is auto-filled from your profile</p>
                   )}
                 </div>
                 
@@ -274,11 +377,9 @@ const Contact = () => {
             </div>
           </div>
         </div>
-
-       
       </div>
     </div>
-  );
+  );   
 };
 
 export default Contact;
