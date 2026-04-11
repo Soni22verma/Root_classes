@@ -21,10 +21,6 @@ import {
   X,
   UserCircle,
   Video,
-  Layers,
-  FolderTree,
-  FileCode,
-  BookMarked
 } from 'lucide-react';
 import { LuSlidersHorizontal } from "react-icons/lu";
 import { PiChalkboard, PiStudentBold } from "react-icons/pi";
@@ -32,14 +28,14 @@ import { toast } from 'react-toastify';
 import useStudentStore from '../../Store/studentstore';
 
 const AdminSidebar = ({ isMobileOpen, setIsMobileOpen }) => {
-  const { logout } = useStudentStore();
+  const { logout, student, token } = useStudentStore();
   const location = useLocation();
   const navigate = useNavigate();
   const [openSubmenus, setOpenSubmenus] = useState({});
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [userName, setUserName] = useState('');
   const [userEmail, setUserEmail] = useState('');
-  const [userRole, setUserRole] = useState(''); // 'admin' or 'instructor'
+  const [userRole, setUserRole] = useState('');
   const [userAvatar, setUserAvatar] = useState('');
 
   // Close mobile sidebar on window resize if screen becomes desktop
@@ -66,32 +62,40 @@ const AdminSidebar = ({ isMobileOpen, setIsMobileOpen }) => {
   }, [isMobileOpen]);
 
   useEffect(() => {
-    // Get user data from localStorage (after login)
+    // Get user data from store and localStorage
     const getUserData = () => {
-      // First check for user data from login response
-      const userData = localStorage.getItem('user');
-      const adminData = localStorage.getItem('admin');
-      const token = localStorage.getItem('token') || localStorage.getItem('adminToken');
+      // First check if student store has user data
+      let user = student;
       
-      let user = null;
-      
-      if (userData) {
-        try {
-          user = JSON.parse(userData);
-        } catch (error) {
-          console.error('Error parsing user data:', error);
+      // If not in store, check localStorage
+      if (!user) {
+        const storedUser = localStorage.getItem('student');
+        if (storedUser) {
+          try {
+            user = JSON.parse(storedUser);
+          } catch (error) {
+            console.error('Error parsing stored user:', error);
+          }
         }
-      } else if (adminData) {
-        try {
-          user = JSON.parse(adminData);
-        } catch (error) {
-          console.error('Error parsing admin data:', error);
+      }
+      
+      // Also check for user from admin/instructor login
+      if (!user) {
+        const adminUser = localStorage.getItem('user');
+        if (adminUser) {
+          try {
+            user = JSON.parse(adminUser);
+          } catch (error) {
+            console.error('Error parsing user data:', error);
+          }
         }
       }
       
       if (user) {
-        // Set user role
-        const role = user.role || user.userRole || 'admin';
+        console.log('User data in sidebar:', user);
+        
+        // Set user role - check multiple possible role fields
+        const role = user.role || user.userRole || 'student';
         setUserRole(role);
         
         // Set user name based on role and available fields
@@ -104,12 +108,10 @@ const AdminSidebar = ({ isMobileOpen, setIsMobileOpen }) => {
           name = user.username;
         } else if (user.firstName) {
           name = user.lastName ? `${user.firstName} ${user.lastName}` : user.firstName;
-        } else if (user.adminName) {
-          name = user.adminName;
         } else if (user.email) {
           name = user.email.split('@')[0];
         } else {
-          name = role === 'admin' ? 'Admin' : 'Instructor';
+          name = role === 'admin' ? 'Admin' : role === 'instructor' ? 'Instructor' : 'User';
         }
         
         setUserName(name);
@@ -122,26 +124,23 @@ const AdminSidebar = ({ isMobileOpen, setIsMobileOpen }) => {
           setUserAvatar(user.avatar || user.profilePicture);
         }
       } else {
+        // Default values if no user found
         setUserRole('admin');
         setUserName('Admin');
       }
     };
     
     getUserData();
-  }, []);
+  }, [student]); // Re-run when student store changes
 
   const getMenuItems = () => {
+    // Common items for both admin and instructor
     const commonItems = [
       {
         name: 'Dashboard',
         path: '/admin',
         icon: LayoutDashboard,
         exact: true
-      },
-      {
-        name: 'My Courses',
-        path: '/instructor/allcourses',
-        icon: BookOpen,
       },
       {
         name: 'Online Classes',
@@ -160,6 +159,7 @@ const AdminSidebar = ({ isMobileOpen, setIsMobileOpen }) => {
       }
     ];
 
+    // Admin-specific menu items
     const adminItems = [
       {
         name: 'Student Management',
@@ -203,37 +203,12 @@ const AdminSidebar = ({ isMobileOpen, setIsMobileOpen }) => {
       }
     ];
 
-    // Instructor-specific menu items
+    // Instructor-specific menu items (including My Courses)
     const instructorItems = [
       {
-        name: 'My Courses',
+        name: 'My Courses',  // This is for instructor only
+        path: '/instructor/allcourses',
         icon: BookOpen,
-        submenu: [
-          { 
-            name: 'Courses', 
-            path: '/instructor/courses', 
-            icon: BookMarked,
-            description: 'Manage your courses'
-          },
-          { 
-            name: 'Course Modules', 
-            path: '/instructor/modules', 
-            icon: Layers,
-            description: 'Add and manage modules'
-          },
-          { 
-            name: 'Chapters', 
-            path: '/instructor/chapters', 
-            icon: FolderTree,
-            description: 'Organize course chapters'
-          },
-          { 
-            name: 'Topics', 
-            path: '/instructor/topics', 
-            icon: FileCode,
-            description: 'Manage topics and content'
-          }
-        ]
       },
       {
         name: 'Student Management',
@@ -264,12 +239,14 @@ const AdminSidebar = ({ isMobileOpen, setIsMobileOpen }) => {
       }
     ];
 
+    // Return menu items based on user role
     if (userRole === 'admin') {
       return [...commonItems, ...adminItems];
     } else if (userRole === 'instructor') {
       return [...commonItems, ...instructorItems];
     }
     
+    // Default return for other roles (like student)
     return commonItems;
   };
 
@@ -283,13 +260,17 @@ const AdminSidebar = ({ isMobileOpen, setIsMobileOpen }) => {
   };
 
   const handleLogout = () => {
+    // Clear all storage
     localStorage.removeItem('admin');
     localStorage.removeItem('user');
     localStorage.removeItem('adminToken');
     localStorage.removeItem('token');
+    localStorage.removeItem('student');
     
+    // Call logout from store
     logout();
     
+    // Navigate to login page
     navigate("/stdlogin");
     
     toast.success("Logged out Successfully");
@@ -304,7 +285,7 @@ const AdminSidebar = ({ isMobileOpen, setIsMobileOpen }) => {
   };
 
   const isActive = (path) => {
-    if (path === '/admin/dashboard') {
+    if (path === '/admin') {
       return location.pathname === path;
     }
     return location.pathname.startsWith(path);
@@ -372,7 +353,7 @@ const AdminSidebar = ({ isMobileOpen, setIsMobileOpen }) => {
                     Roots Classes
                   </h1>
                   <p className="text-xs text-gray-500 mt-0.5">
-                    {userRole === 'admin' ? 'Admin Dashboard' : 'Instructor Portal'}
+                    {userRole === 'admin' ? 'Admin Dashboard' : userRole === 'instructor' ? 'Instructor Portal' : 'Dashboard'}
                   </p>
                 </div>
               )}
@@ -426,20 +407,14 @@ const AdminSidebar = ({ isMobileOpen, setIsMobileOpen }) => {
                         <Link
                           key={subIndex}
                           to={subItem.path}
-                          className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 text-sm group ${
+                          className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 text-sm ${
                             location.pathname === subItem.path
                               ? 'bg-blue-50 text-blue-700 font-medium'
                               : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                           }`}
-                          title={subItem.description}
                         >
                           <subItem.icon size={16} className="flex-shrink-0" />
                           <span className="truncate">{subItem.name}</span>
-                          {subItem.description && (
-                            <span className="hidden group-hover:inline-block text-xs text-gray-400 ml-2">
-                              {subItem.description}
-                            </span>
-                          )}
                         </Link>
                       ))}
                     </div>
@@ -487,7 +462,7 @@ const AdminSidebar = ({ isMobileOpen, setIsMobileOpen }) => {
               )}
               {/* Role indicator dot */}
               <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-white ${
-                userRole === 'admin' ? 'bg-purple-500' : 'bg-blue-500'
+                userRole === 'admin' ? 'bg-purple-500' : userRole === 'instructor' ? 'bg-blue-500' : 'bg-gray-500'
               }`}></div>
             </div>
             
@@ -549,7 +524,7 @@ const AdminSidebar = ({ isMobileOpen, setIsMobileOpen }) => {
                 Roots Classes
               </h1>
               <p className="text-xs text-gray-500">
-                {userRole === 'admin' ? 'Admin Dashboard' : 'Instructor Portal'}
+                {userRole === 'admin' ? 'Admin Dashboard' : userRole === 'instructor' ? 'Instructor Portal' : 'Dashboard'}
               </p>
             </div>
           </Link>
@@ -578,7 +553,7 @@ const AdminSidebar = ({ isMobileOpen, setIsMobileOpen }) => {
                 </div>
               )}
               <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-white ${
-                userRole === 'admin' ? 'bg-purple-500' : 'bg-blue-500'
+                userRole === 'admin' ? 'bg-purple-500' : userRole === 'instructor' ? 'bg-blue-500' : 'bg-gray-500'
               }`}></div>
             </div>
             <div className="flex-1 min-w-0">

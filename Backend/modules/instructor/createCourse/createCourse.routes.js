@@ -1,5 +1,5 @@
 import express, { Router } from "express"
-import {  createCourse, DeleteCourse, DeleteTopic, GetCategory, GetCreatedCourse, UpdateCourse, handleAddChapter, handleAddModule, handleAddTopic, handleDeleteChapter, handleDeleteModule, handleEditTopic, handleGetCourseById, handleUpdateChapter, handleUpdateModule } from "./createCourse.controller.js"
+import {  createCourse, DeleteCourse, DeleteTopic, GetCategory, GetCreatedCourse, UpdateCourse, handleAddChapter, handleAddModule, handleAddTopic, handleDeleteChapter, handleDeleteModule, handleEditTopic, handleGetCourseById, handleUpdateChapter, handleUpdateModule, getFullCourseDetails } from "./createCourse.controller.js"
 import multer from "multer";
 
 const createcourseRouter = Router()
@@ -28,5 +28,7 @@ createcourseRouter.post("/add-topic",Upload.fields([
     { name: "notes", maxCount: 1 }
   ]),handleEditTopic)
 createcourseRouter.post("/delete-topic",DeleteTopic)
+
+createcourseRouter.get("/get-full-course",getFullCourseDetails)
 
 export default createcourseRouter 

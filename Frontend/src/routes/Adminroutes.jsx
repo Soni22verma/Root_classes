@@ -7,6 +7,7 @@ import AllBlogs from "../pages/Admin/BlogManagement/AllBlogs";
 import ManageSlider from "../pages/Admin/ManageSlider";
 import Testimonials from "../pages/Admin/Testimonials";
 import CourseCategory from "../pages/Admin/Courses/CourseCategory";
+import AllCourses from "../pages/Admin/Courses/AllCourses";
 
 const Adminroutes = [
   {
@@ -45,6 +46,10 @@ const Adminroutes = [
       {
         path:"coursecategory",
         element:<CourseCategory/>
+      },
+      {
+        path:"allcourses",
+        element:<AllCourses/>
       }
     ],
   },

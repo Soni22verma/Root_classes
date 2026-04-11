@@ -6,7 +6,9 @@ const api = {
         login:Base_Url+"/student/student-login",
         getStudent:Base_Url+"/student/get-student",
         editProfile:Base_Url+"/student/std-profile-img",
-        editprofiledetails:Base_Url+"/student/edit-profile-details"
+        editprofiledetails:Base_Url+"/student/edit-profile-details",
+        sendOtp:Base_Url+"/student/send-otp",
+        verifyOTP:Base_Url+"/student/verify-otp"
     },
     course:{
         getcourses:Base_Url+"/course/get_courses",

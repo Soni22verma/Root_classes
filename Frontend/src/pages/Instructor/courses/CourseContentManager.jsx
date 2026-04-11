@@ -236,20 +236,20 @@ const CourseContentManager = () => {
 const handleDeleteTopic = async (moduleId, chapterId, topicId) => {
   if (window.confirm('Delete this topic?')) {
     try {
-      await axios.delete(api.course.deleteTopic, {
-        data: {
+      await axios.post(api.course.deleteTopic, {
           courseId: courseId,
           moduleId: moduleId,
           chapterId: chapterId,
           topicId: topicId
         }
-      });
+      );
+      
 
       toast.success('Topic deleted successfully');
       await fetchCourseData();
-
     } catch (error) {
-      toast.error('Error deleting topic');
+      console.error('Error deleting topic:', error);
+      toast.error(error.response?.data?.message || 'Error deleting topic');
     }
   }
 };

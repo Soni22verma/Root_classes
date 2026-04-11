@@ -807,6 +807,44 @@ export const DeleteTopic = async (req, res) => {
   }
 };
 
+export const getFullCourseDetails = async (req, res) => {
+  try {
+    const { courseId } = req.body;
+
+    if (!courseId) {
+      return res.status(400).json({
+        success: false,
+        message: "courseId is required",
+      });
+    }
+
+    const course = await Course.findById(courseId)
+      .populate("category", "name") // sirf name field
+      .populate("instructor", "name email"); // optional
+
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: "Course not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Full course fetched successfully",
+      data: course,
+    });
+
+  } catch (error) {
+    console.error("Error in getFullCourseDetails:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+};
+
 
 
 
