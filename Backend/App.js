@@ -33,20 +33,20 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
-app.use("/student", studentRouter);
-app.use("/admin", adminRouter);
-app.use("/instructor",instructorRouter)
-app.use("/onlineClass",classRouter)
-app.use("/joinclass",attendanceRouter)
-app.use("/blog",blogRouter)
-app.use("/slider",sliderRouter)
-app.use("/testimonial",testimonialRouter)
-app.use("/category",categoryRouter)
-app.use("/course",createcourseRouter)
-app.use("/enroll",enrollmentRouter)
-app.use("/test",testRouter)
-app.use("/result",resultRouter)
-app.use("/payment",paymentRouter)
+app.use("/api/student", studentRouter);
+app.use("/api/admin", adminRouter);
+app.use("/api/instructor",instructorRouter)
+app.use("/api/onlineClass",classRouter)
+app.use("/api/joinclass",attendanceRouter)
+app.use("/api/blog",blogRouter)
+app.use("/api/slider",sliderRouter)
+app.use("/api/testimonial",testimonialRouter)
+app.use("/api/category",categoryRouter)
+app.use("/api/course",createcourseRouter)
+app.use("/api/enroll",enrollmentRouter)
+app.use("/api/test",testRouter)
+app.use("/api/result",resultRouter)
+app.use("/api/payment",paymentRouter)
 
 
 // Test route
