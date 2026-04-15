@@ -11,10 +11,6 @@ const api ={
         UpdateCategory:Base_Url+"/category/edit_category",
         deletecategory:Base_Url+"/category/delete_category"
     },
-    enroll:{
-        getenrollment:Base_Url+"/enroll/get_enrollment",
-        getAllenrollment:Base_Url+"/enroll/all_enrollment"
-    },
     onlineClass:{
         createclass:Base_Url+"/onlineClass/create_class",
         getclass:Base_Url+"/onlineClass/get_class",
@@ -51,7 +47,20 @@ const api ={
     },
     fullcourse:{
         getfullcourse:Base_Url+"/course/get-full-course"
-    }
+    },
+    enroll:{
+      getEnrollment:Base_Url+"/enroll/get-enrollment"
+    },
+    test:{
+      createTest:Base_Url+"/test/create_test",
+      deleteTest:Base_Url+"/test/delete_test",
+      addQuestion:Base_Url+"/test/add_question",
+      getQuestion:Base_Url+"/test/get_question",
+      editQuestion:Base_Url+"/test/update_question",
+      deleteQuestion:Base_Url+"/test/delete_question",
+
+      isPublished:Base_Url+"/test/isPublish"
+     }
     
 }
 export default api

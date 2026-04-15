@@ -91,9 +91,7 @@ const FacultyShowcase = () => {
                   <button className="flex-1 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-all duration-300">
                     View Profile
                   </button>
-                  <button className={`flex-1 py-2 text-sm font-medium text-white bg-gradient-to-r ${faculty.color} rounded-xl `}>
-                    Book Session
-                  </button>
+                 
                 </div>
               </div>
             </div>

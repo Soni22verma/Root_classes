@@ -1,0 +1,21 @@
+import mongoose from "mongoose";
+
+const questionSchema = new mongoose.Schema({
+  question: { type: String, required: true },
+  options: [{ type: String, required: true }],
+  correctAnswer: { type: String, required: true },
+  marks: { type: Number, default: 1 }
+});
+
+const testSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  totalMarks: { type: Number, default: 0 },
+  passingPercentage: { type: Number, default: 70 },
+  duration: { type: Number },
+
+  questions: [questionSchema],
+
+  isPublished: { type: Boolean, default: false }
+}, { timestamps: true });
+
+export const Test = mongoose.model("Test", testSchema);

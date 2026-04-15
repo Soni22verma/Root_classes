@@ -2,19 +2,17 @@ const Base_Url = import.meta.env.VITE_BASE_URL
 
 const api = {
     student:{
-        register:Base_Url+"/student/student-register",
-        login:Base_Url+"/student/student-login",
+        register:Base_Url+"/student/register",
+        login:Base_Url+"/student/login",
         getStudent:Base_Url+"/student/get-student",
         editProfile:Base_Url+"/student/std-profile-img",
         editprofiledetails:Base_Url+"/student/edit-profile-details",
         sendOtp:Base_Url+"/student/send-otp",
-        verifyOTP:Base_Url+"/student/verify-otp"
+        verifyOTP:Base_Url+"/student/verify-otp",
+        resetPassword:Base_Url+"/student/reset-password"
     },
     course:{
         getcourses:Base_Url+"/course/get_courses",
-    },
-    enrollment:{
-        enrollcourse:Base_Url+"/enroll/enroll_course"
     },
      onlineClass:{
            getallclass:Base_Url+"/onlineClass/get_all_classes",
@@ -34,7 +32,20 @@ const api = {
     },
     testimonial:{
         getTestimonial:Base_Url+"/testimonial/get_testimonial",
-    }
+    },
+     fullcourse:{
+        getfullcourse:Base_Url+"/course/get-full-course"
+    },
+    test:{
+      publishTest:Base_Url+"/test/get_isPublish",
+      getQuestion:Base_Url+"/test/get_questions"
+     },
+     result:{
+        submitTest:Base_Url+"/result/submit_test"
+     },
+     enrollment:{
+       enrollCourse:Base_Url+"/student/enroll-course"
+     }
 }
 
 export default api

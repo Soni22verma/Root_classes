@@ -189,28 +189,18 @@ export const handleStdProfile = async (req, res) => {
 
 export const Getuser = async (req, res) => {
   try {
-    // console.log("sssssssssssssssss")
-    
-    if (typeof console !== 'object') {
-      console.error("Console object is corrupted!");
-    }
-    
-    if (typeof console.log !== 'function') {
-      // Fallback if console.log is broken
-      const originalError = console.error;
-      console.error = function(msg) { originalError(msg); };
-    }
-    
     const { studentId } = req.body;
 
-    if (!studentId){
+    if (!studentId) {
       return res.status(400).json({
         message: "user ID is required",
         success: false,
       });
     }
 
-    const user = await User.findById(studentId);
+    const user = await User.findById(studentId)
+      .populate("enrolledCourses"); 
+
     if (!user) {
       return res.status(404).json({
         message: "user not found",
@@ -225,14 +215,12 @@ export const Getuser = async (req, res) => {
     });
 
   } catch (error) {
-
     return res.status(500).json({
       message: error.message,
       success: false,
     });
   }
 };
-
 export const EditProfileDetails = async(req,res)=>{
     try {
        const{studentId,fullName, email,  password, dateofBirth, gender, currentClass, 
@@ -385,132 +373,77 @@ export const verifyOTP = async (req, res) => {
 };
 
 
-// Add these to your existing auth controllers file
-
-// Forgot Password - Send OTP
-export const forgotPassword = async (req, res) => {
-    try {
-        const { email } = req.body;
-
-        if (!email) {
-            return res.status(400).json({
-                success: false,
-                message: 'Email is required'
-            });
-        }
-
-        // Check if user exists with this email
-        const user = await User.findOne({ email }); // Adjust based on your user model
-        if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: 'No account found with this email'
-            });
-        }
-
-        const otp = generateOTP();
-        
-        otpStore.set(email, {
-            otp: otp,
-            expiresAt: Date.now() + 10 * 60 * 1000, // 10 minutes
-            purpose: 'password_reset'
-        });
-
-        const emailSent = await sendOTP(email, otp);
-
-        if (emailSent) {
-            return res.status(200).json({
-                success: true,
-                message: 'OTP sent successfully to your email'
-            });
-        } else {
-            return res.status(500).json({
-                success: false,
-                message: 'Failed to send OTP'
-            });
-        }
-    } catch (error) {
-        console.error('Error in forgotPassword:', error);
-        return res.status(500).json({
-            success: false,
-            message: 'Internal server error'
-        });
-    }
-};
-
 export const resetPassword = async (req, res) => {
-    try {
-        const { email, otp, newPassword, confirmPassword } = req.body;
+  try {
+    const { email, newPassword, confirmPassword } = req.body;
 
-        if (!email || !otp || !newPassword || !confirmPassword) {
-            return res.status(400).json({
-                success: false,
-                message: 'All fields are required'
-            });
-        }
-
-        if (newPassword !== confirmPassword) {
-            return res.status(400).json({
-                success: false,
-                message: 'Passwords do not match'
-            });
-        }
-
-        const storedData = otpStore.get(email);
-
-        if (!storedData) {
-            return res.status(400).json({
-                success: false,
-                message: 'OTP not found. Please request a new one.'
-            });
-        }
-
-        if (storedData.purpose !== 'password_reset') {
-            return res.status(400).json({
-                success: false,
-                message: 'Invalid OTP purpose'
-            });
-        }
-
-        if (Date.now() > storedData.expiresAt) {
-            otpStore.delete(email);
-            return res.status(400).json({
-                success: false,
-                message: 'OTP has expired. Please request a new one.'
-            });
-        }
-
-        if (storedData.otp !== otp) {
-            return res.status(400).json({
-                success: false,
-                message: 'Invalid OTP'
-            });
-        }
-
-        // Update user password
-        const user = await User.findOne({ email });
-        if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: 'User not found'
-            });
-        }
-
-        user.password = await hashPassword(newPassword);
-        await user.save();
-
-        otpStore.delete(email);
-
-        return res.status(200).json({
-            success: true,
-            message: 'Password reset successfully'
-        });
-
-    } catch (error) {
-        console.error('Error in resetPassword:', error);
-        return res.status(500).json({
-            success: false,
-            message: 'Internal server error'
-        });
+    if (!email || !newPassword || !confirmPassword) {
+      return res.status(400).json({
+        message: "All fields are required",
+      });
     }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({
+        message: "Passwords do not match",
+      });
+    }
+
+    const otpData = otpStore.get(email);
+
+    if (otpData) {
+      return res.status(400).json({
+        message: "OTP not verified yet",
+      });
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(400).json({
+        message: "User not found",
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    user.password = hashedPassword;
+    await user.save();
+
+    return res.json({
+      success: true,
+      message: "Password reset successful",
+    });
+
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
 };
+
+
+export const enrollCourse = async (req, res) => {
+  try {
+    const { studentId, courseId } = req.body;
+
+    const user = await User.findById(studentId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.enrolledCourses.includes(courseId)) {
+      return res.status(200).json({ message: "Already enrolled" });
+    }
+
+    user.enrolledCourses.push(courseId);
+    await user.save();
+
+    res.json({
+      success: true,
+      message: "Course enrolled successfully",
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+

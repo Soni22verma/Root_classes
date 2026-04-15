@@ -4,15 +4,18 @@ import React, { useEffect, useState } from 'react';
 import api from '../../services/endpoints';
 import useStudentStore from '../../Store/studentstore';
 import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
 
 const StudentProfile = () => {
     const { student, setStudent } = useStudentStore();
+    const navigate = useNavigate();
     
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(true);
     const [studentData, setStudentData] = useState(null);
     const [uploadingImage, setUploadingImage] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [enrolledCourses, setEnrolledCourses] = useState([]);
     const [formData, setFormData] = useState({
         fullName: '',
         email: '',
@@ -23,18 +26,6 @@ const StudentProfile = () => {
         interestedCourse: '',
         address: '',
     });
-
-    const enrolledCourses = [
-        { id: 1, name: 'JEE Mathematics', progress: 75, nextClass: 'Tomorrow, 4:00 PM' },
-        { id: 2, name: 'Physics for JEE', progress: 45, nextClass: 'Today, 6:30 PM' },
-        { id: 3, name: 'Organic Chemistry', progress: 30, nextClass: 'Wednesday, 5:00 PM' }
-    ];
-
-    const getStats = () => [
-        { label: 'Total Hours', value: '127', icon: '⏱️' },
-        { label: 'Courses', value: enrolledCourses.length.toString(), icon: '📚' },
-        { label: 'Attendance', value: '94%', icon: '✅' }
-    ];
 
     const getStudentId = () => {
         if (student?._id) return student._id;
@@ -79,6 +70,11 @@ const StudentProfile = () => {
                     interestedCourse: res.data.user.interestedCourse || '',
                     address: res.data.user.address || '',
                 });
+                
+                // Set enrolled courses directly from user data
+                if (res.data.user.enrolledCourses && Array.isArray(res.data.user.enrolledCourses)) {
+                    setEnrolledCourses(res.data.user.enrolledCourses);
+                }
             } else {
                 toast.error(res.data.message || "Failed to fetch student data");
             }
@@ -200,6 +196,44 @@ const StudentProfile = () => {
         }
     };
 
+    const calculateTotalTopics = () => {
+        let totalTopics = 0;
+        enrolledCourses.forEach(course => {
+            if (course.modules) {
+                course.modules.forEach(module => {
+                    if (module.chapters) {
+                        module.chapters.forEach(chapter => {
+                            if (chapter.topics) {
+                                totalTopics += chapter.topics.length;
+                            }
+                        });
+                    }
+                });
+            }
+        });
+        return totalTopics;
+    };
+
+    const calculateTotalDuration = () => {
+        let totalMinutes = 0;
+        enrolledCourses.forEach(course => {
+            if (course.modules) {
+                course.modules.forEach(module => {
+                    if (module.chapters) {
+                        module.chapters.forEach(chapter => {
+                            if (chapter.topics) {
+                                chapter.topics.forEach(topic => {
+                                    totalMinutes += topic.duration || 10;
+                                });
+                            }
+                        });
+                    }
+                });
+            }
+        });
+        return Math.floor(totalMinutes / 60);
+    };
+
     useEffect(() => {
         if (student || getStudentId()) {
             GetStudentData();
@@ -211,9 +245,9 @@ const StudentProfile = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
                 <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
                     <p className="mt-4 text-gray-600">Loading profile...</p>
                 </div>
             </div>
@@ -222,12 +256,12 @@ const StudentProfile = () => {
 
     if (!studentData) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
-                <div className="text-center">
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <div className="text-center bg-white rounded-lg shadow-md p-8">
                     <p className="text-gray-600 mb-4">No student data found</p>
                     <button 
-                        onClick={() => window.location.href = '/login'}
-                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg"
+                        onClick={() => navigate('/login')}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
                     >
                         Go to Login
                     </button>
@@ -236,37 +270,56 @@ const StudentProfile = () => {
         );
     }
 
-    const stats = getStats();
+    const totalTopics = calculateTotalTopics();
+    const totalHours = calculateTotalDuration();
+    const totalCourses = enrolledCourses.length;
+
+    const stats = [
+        { label: 'Total Hours', value: totalHours.toString(), icon: '⏱️' },
+        { label: 'Total Topics', value: totalTopics.toString(), icon: '📖' },
+        { label: 'Enrolled Courses', value: totalCourses.toString(), icon: '📚' },
+    ];
+
     const profileImageUrl = studentData.profileImage || studentData.profilePicture || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format';
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="min-h-screen bg-gray-50">
             {/* Header */}
-            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
-                <div className="max-w-6xl mx-auto px-4 py-5">
-                    <h1 className="text-2xl font-bold">Root Classes</h1>
-                    <p className="text-indigo-100 text-sm">Empowering Minds, Building Futures</p>
+            <div className="bg-white border-b border-gray-200">
+                <div className="max-w-6xl mx-auto px-4 py-4">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h1 className="text-2xl font-bold text-gray-800">Root Classes</h1>
+                            <p className="text-gray-500 text-sm">Student Dashboard</p>
+                        </div>
+                        <button
+                            onClick={() => navigate('/course')}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition text-sm"
+                        >
+                            Browse Courses
+                        </button>
+                    </div>
                 </div>
             </div>
 
             <div className="max-w-6xl mx-auto px-4 py-8">
                 {/* Profile Card */}
-                <div className="bg-white rounded-2xl shadow-lg overflow-hidden mb-8">
-                    <div className="bg-gradient-to-r from-indigo-500 to-purple-600 h-24"></div>
+                <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+                    <div className="bg-blue-600 h-20"></div>
                     <div className="px-6 pb-6">
                         <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 -mt-12 mb-4">
                             <div className="relative group">
                                 <img
                                     src={profileImageUrl}
                                     alt={studentData.fullName}
-                                    className="w-24 h-24 rounded-full border-4 border-white shadow-lg object-cover"
+                                    className="w-24 h-24 rounded-full border-4 border-white shadow-md object-cover bg-white"
                                     onError={(e) => {
                                         e.target.src = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format';
                                     }}
                                 />
                                 <label 
                                     htmlFor="profileImageUpload" 
-                                    className={`absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer ${uploadingImage ? 'opacity-100' : ''}`}
+                                    className={`absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition cursor-pointer ${uploadingImage ? 'opacity-100' : ''}`}
                                 >
                                     {uploadingImage ? (
                                         <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent"></div>
@@ -286,16 +339,16 @@ const StudentProfile = () => {
                                     disabled={uploadingImage}
                                 />
                             </div>
-                            <div className="text-center sm:text-left">
+                            <div className="text-center sm:text-left flex-1">
                                 <h2 className="text-2xl font-bold text-gray-800">{studentData.fullName}</h2>
-                                <p className="text-gray-500">Student ID: {studentData._id?.slice(-8).toUpperCase()}</p>
-                                <div className="flex flex-wrap gap-2 mt-1 justify-center sm:justify-start">
-                                    <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 text-xs rounded-full">
+                                <p className="text-gray-500 text-sm">ID: {studentData._id?.slice(-8).toUpperCase()}</p>
+                                <div className="flex flex-wrap gap-2 mt-2 justify-center sm:justify-start">
+                                    <span className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">
                                         {studentData.currentClass || 'Not Specified'}
                                     </span>
-                                    <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">Active</span>
+                                    <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded">Active</span>
                                     {studentData.gender && (
-                                        <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs rounded-full">
+                                        <span className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">
                                             {studentData.gender}
                                         </span>
                                     )}
@@ -303,30 +356,34 @@ const StudentProfile = () => {
                             </div>
                             <button
                                 onClick={() => setIsEditing(!isEditing)}
-                                className="sm:ml-auto px-4 py-2 border border-indigo-300 text-indigo-600 rounded-lg hover:bg-indigo-50 transition text-sm font-medium"
+                                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition text-sm"
                             >
-                                ✏️ Edit Profile
+                                Edit Profile
                             </button>
                         </div>
                     </div>
                 </div>
 
-                {/* Quick Stats */}
-                <div className="grid grid-cols-3 gap-4 mb-8">
+                {/* Stats Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                     {stats.map((stat, idx) => (
-                        <div key={idx} className="bg-white rounded-xl shadow-md p-4 text-center">
-                            <div className="text-2xl mb-1">{stat.icon}</div>
-                            <div className="text-2xl font-bold text-gray-800">{stat.value}</div>
-                            <div className="text-xs text-gray-500">{stat.label}</div>
+                        <div key={idx} className="bg-white rounded-lg shadow-md p-4">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-gray-500 text-sm">{stat.label}</p>
+                                    <p className="text-2xl font-bold text-gray-800 mt-1">{stat.value}</p>
+                                </div>
+                                <div className="text-2xl">{stat.icon}</div>
+                            </div>
                         </div>
                     ))}
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Contact Information */}
-                    <div className="bg-white rounded-xl shadow-md p-5">
-                        <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                            📞 Contact Information
+                    <div className="bg-white rounded-lg shadow-md p-5">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
+                            Contact Information
                         </h3>
                         <div className="space-y-3">
                             <div className="flex items-center gap-3">
@@ -360,21 +417,21 @@ const StudentProfile = () => {
                     </div>
 
                     {/* Academic Information */}
-                    <div className="bg-white rounded-xl shadow-md p-5">
-                        <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                            🎓 Academic Information
+                    <div className="bg-white rounded-lg shadow-md p-5">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
+                            Academic Information
                         </h3>
                         <div className="space-y-3">
-                            <div className="flex justify-between items-center py-2 border-b">
-                                <span className="text-gray-600">Current Class:</span>
+                            <div className="flex justify-between items-center py-2">
+                                <span className="text-gray-600">Current Class</span>
                                 <span className="font-semibold text-gray-800">{studentData.currentClass || 'Not specified'}</span>
                             </div>
-                            <div className="flex justify-between items-center py-2 border-b">
-                                <span className="text-gray-600">Interested Course:</span>
-                                <span className="font-semibold text-indigo-600">{studentData.interestedCourse || 'Not specified'}</span>
+                            <div className="flex justify-between items-center py-2 border-t border-gray-100">
+                                <span className="text-gray-600">Interested Course</span>
+                                <span className="font-semibold text-blue-600">{studentData.interestedCourse || 'Not specified'}</span>
                             </div>
-                            <div className="flex justify-between items-center py-2">
-                                <span className="text-gray-600">Member Since:</span>
+                            <div className="flex justify-between items-center py-2 border-t border-gray-100">
+                                <span className="text-gray-600">Member Since</span>
                                 <span className="text-gray-700">
                                     {studentData.createdAt ? new Date(studentData.createdAt).toLocaleDateString() : 'Recently'}
                                 </span>
@@ -383,56 +440,94 @@ const StudentProfile = () => {
                     </div>
                 </div>
 
-                {/* Course Progress Section */}
-                <div className="mt-6 bg-white rounded-xl shadow-md p-5">
-                    <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                        📖 My Courses
-                    </h3>
-                    <div className="space-y-4">
-                        {enrolledCourses.map(course => (
-                            <div key={course.id}>
-                                <div className="flex justify-between text-sm mb-1">
-                                    <span className="font-medium text-gray-700">{course.name}</span>
-                                    <span className="text-indigo-600">{course.progress}%</span>
-                                </div>
-                                <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
-                                    <div className="bg-indigo-600 rounded-full h-2" style={{ width: `${course.progress}%` }}></div>
-                                </div>
-                                <p className="text-xs text-gray-500">📅 {course.nextClass}</p>
+                {/* My Courses Section */}
+                <div className="mt-6 bg-white rounded-lg shadow-md overflow-hidden">
+                    <div className="px-5 py-4 border-b border-gray-200">
+                        <h3 className="text-lg font-semibold text-gray-800">My Enrolled Courses</h3>
+                        <p className="text-sm text-gray-500 mt-1">{totalCourses} course(s) enrolled</p>
+                    </div>
+                    <div className="p-5">
+                        {enrolledCourses.length > 0 ? (
+                            <div className="space-y-4">
+                                {enrolledCourses.map((course, idx) => (
+                                    <div key={course._id || idx} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
+                                        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <div className="w-8 h-8 bg-blue-100 rounded-md flex items-center justify-center">
+                                                        <span className="text-blue-600 font-bold text-sm">{idx + 1}</span>
+                                                    </div>
+                                                    <h4 className="font-semibold text-gray-800 text-lg">{course.title}</h4>
+                                                </div>
+                                                <p className="text-gray-600 text-sm mb-3">{course.description}</p>
+                                                
+                                                {/* Course Stats */}
+                                                <div className="flex flex-wrap gap-3 mb-3">
+                                                    <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
+                                                        Level: {course.level || 'Beginner'}
+                                                    </span>
+                                                    <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
+                                                        Modules: {course.modules?.length || 0}
+                                                    </span>
+                                                    <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
+                                                        Topics: {course.modules?.reduce((acc, module) => 
+                                                            acc + (module.chapters?.reduce((acc2, chapter) => 
+                                                                acc2 + (chapter.topics?.length || 0), 0) || 0), 0)}
+                                                    </span>
+                                                </div>
+                                                
+                                                {/* Module Preview */}
+                                                {course.modules && course.modules.length > 0 && (
+                                                    <details className="mt-2">
+                                                        <summary className="text-sm text-blue-600 cursor-pointer hover:text-blue-700">
+                                                            View Modules ({course.modules.length})
+                                                        </summary>
+                                                        <div className="mt-2 space-y-2 pl-4">
+                                                            {course.modules.slice(0, 2).map((module, mIdx) => (
+                                                                <div key={mIdx} className="text-sm">
+                                                                    <span className="font-medium text-gray-700">Module {mIdx + 1}:</span>
+                                                                    <span className="text-gray-600 ml-2">{module.title}</span>
+                                                                    <span className="text-gray-400 text-xs ml-2">
+                                                                        ({module.chapters?.length || 0} chapters)
+                                                                    </span>
+                                                                </div>
+                                                            ))}
+                                                            {course.modules.length > 2 && (
+                                                                <p className="text-xs text-gray-400">+ {course.modules.length - 2} more modules</p>
+                                                            )}
+                                                        </div>
+                                                    </details>
+                                                )}
+                                            </div>
+                                            
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Upcoming Classes */}
-                <div className="mt-6 bg-white rounded-xl shadow-md overflow-hidden">
-                    <div className="p-5 border-b border-gray-100">
-                        <h3 className="text-lg font-bold text-gray-800">📅 Upcoming Classes</h3>
-                    </div>
-                    <div className="divide-y divide-gray-100">
-                        {enrolledCourses.map(course => (
-                            <div key={course.id} className="p-4 flex justify-between items-center">
-                                <div>
-                                    <h4 className="font-semibold text-gray-800">{course.name}</h4>
-                                    <p className="text-sm text-gray-500">{course.nextClass}</p>
-                                </div>
-                                <button className="px-4 py-1.5 bg-indigo-50 text-indigo-600 rounded-lg text-sm font-medium hover:bg-indigo-100 transition">
-                                    Join
+                        ) : (
+                            <div className="text-center py-8">
+                                <div className="text-5xl mb-3">📚</div>
+                                <p className="text-gray-500 mb-4">You haven't enrolled in any courses yet</p>
+                                <button 
+                                    onClick={() => navigate('/course')}
+                                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+                                >
+                                    Browse Courses
                                 </button>
                             </div>
-                        ))}
+                        )}
                     </div>
                 </div>
             </div>
 
             {/* Edit Profile Modal */}
             {isEditing && (
-                <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-                        <div className="p-5 border-b sticky top-0 bg-white">
-                            <h3 className="text-xl font-bold">Edit Profile</h3>
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+                        <div className="px-6 py-4 border-b border-gray-200 sticky top-0 bg-white">
+                            <h3 className="text-xl font-semibold text-gray-800">Edit Profile</h3>
                         </div>
-                        <form onSubmit={editDetails} className="p-5 space-y-4">
+                        <form onSubmit={editDetails} className="p-6 space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
                                 <input
@@ -440,7 +535,7 @@ const StudentProfile = () => {
                                     name="fullName"
                                     value={formData.fullName}
                                     onChange={handleInputChange}
-                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                                 />
                             </div>
                             <div>
@@ -450,7 +545,7 @@ const StudentProfile = () => {
                                     name="email"
                                     value={formData.email}
                                     onChange={handleInputChange}
-                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                                 />
                             </div>
                             <div>
@@ -460,7 +555,7 @@ const StudentProfile = () => {
                                     name="phone"
                                     value={formData.phone}
                                     onChange={handleInputChange}
-                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                                     placeholder="Enter 10-digit mobile number"
                                     maxLength="10"
                                 />
@@ -472,7 +567,7 @@ const StudentProfile = () => {
                                     name="currentClass"
                                     value={formData.currentClass}
                                     onChange={handleInputChange}
-                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                                 />
                             </div>
                             <div>
@@ -482,7 +577,7 @@ const StudentProfile = () => {
                                     name="interestedCourse"
                                     value={formData.interestedCourse}
                                     onChange={handleInputChange}
-                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                                 />
                             </div>
                             <div>
@@ -492,7 +587,7 @@ const StudentProfile = () => {
                                     value={formData.address}
                                     onChange={handleInputChange}
                                     rows="3"
-                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                                 />
                             </div>
                             <div>
@@ -502,7 +597,7 @@ const StudentProfile = () => {
                                     name="dateofBirth"
                                     value={formData.dateofBirth}
                                     onChange={handleInputChange}
-                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                                 />
                             </div>
                             <div>
@@ -511,7 +606,7 @@ const StudentProfile = () => {
                                     name="gender"
                                     value={formData.gender}
                                     onChange={handleInputChange}
-                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                                 >
                                     <option value="">Select Gender</option>
                                     <option value="male">Male</option>
@@ -519,18 +614,18 @@ const StudentProfile = () => {
                                     <option value="other">Other</option>
                                 </select>
                             </div>
-                            <div className="flex gap-3 pt-2">
+                            <div className="flex gap-3 pt-4">
                                 <button 
                                     type="submit"
                                     disabled={saving}
-                                    className="flex-1 bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition disabled:opacity-50"
+                                    className="flex-1 bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition disabled:opacity-50"
                                 >
                                     {saving ? 'Saving...' : 'Save Changes'}
                                 </button>
                                 <button 
                                     type="button" 
                                     onClick={() => setIsEditing(false)} 
-                                    className="flex-1 border border-gray-300 py-2 rounded-lg hover:bg-gray-50 transition"
+                                    className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-md hover:bg-gray-50 transition"
                                 >
                                     Cancel
                                 </button>

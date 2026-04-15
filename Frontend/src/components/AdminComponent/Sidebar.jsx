@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { LuSlidersHorizontal } from "react-icons/lu";
 import { PiChalkboard, PiStudentBold } from "react-icons/pi";
+import { SiTestcafe } from "react-icons/si";
 import { toast } from 'react-toastify';
 import useStudentStore from '../../Store/studentstore';
 
@@ -196,11 +197,17 @@ const AdminSidebar = ({ isMobileOpen, setIsMobileOpen }) => {
           { name: 'All Blogs', path: '/admin/blog', icon: FileText },
         ]
       },
+       {
+        name: 'Create Test',
+        path: '/admin/createtest',
+        icon: SiTestcafe  
+      },
       {
         name: 'Settings',
         path: '/admin/settings',
         icon: Settings
-      }
+      },
+     
     ];
 
     // Instructor-specific menu items (including My Courses)

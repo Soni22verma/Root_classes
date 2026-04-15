@@ -8,6 +8,7 @@ import ManageSlider from "../pages/Admin/ManageSlider";
 import Testimonials from "../pages/Admin/Testimonials";
 import CourseCategory from "../pages/Admin/Courses/CourseCategory";
 import AllCourses from "../pages/Admin/Courses/AllCourses";
+import CreateTest from "../pages/Admin/CreateTest"
 
 const Adminroutes = [
   {
@@ -50,6 +51,10 @@ const Adminroutes = [
       {
         path:"allcourses",
         element:<AllCourses/>
+      },
+      {
+        path:"createtest",
+        element:<CreateTest/>
       }
     ],
   },

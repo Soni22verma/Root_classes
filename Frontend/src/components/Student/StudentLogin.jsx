@@ -88,7 +88,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
     }
   };
 
-  // Step 3: Reset Password
+ 
   const handleResetPassword = async (e) => {
     e.preventDefault();
     
@@ -111,9 +111,8 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
     setLoading(true);
 
     try {
-      const response = await axios.post(api.auth.resetPassword, {
+      const response = await axios.post(api.student.resetPassword, {
         email,
-        otp,
         newPassword,
         confirmPassword
       });
@@ -137,31 +136,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
     }
   };
 
-  const handleResendOTP = async () => {
-    if (countdown > 0) {
-      toast.info(`Please wait ${countdown} seconds before resending`);
-      return;
-    }
-    
-    setLoading(true);
-    try {
-      const response = await axios.post(api.auth.forgotPassword, { email });
-      if (response.data.success) {
-        toast.success('OTP resent successfully!');
-        setCountdown(60);
-        const interval = setInterval(() => {
-          setCountdown(prev => {
-            if (prev <= 1) clearInterval(interval);
-            return prev - 1;
-          });
-        }, 1000);
-      }
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to resend OTP');
-    } finally {
-      setLoading(false);
-    }
-  };
+ 
 
   const handleBack = () => {
     if (step === 2) {
@@ -177,219 +152,172 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-        {/* Backdrop - fixed overlay */}
-        <div className="fixed inset-0 transition-opacity" aria-hidden="true">
-          <div className="absolute inset-0 bg-gray-900 opacity-50"></div>
-        </div>
+ <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+  {/* Backdrop */}
+  <div className="fixed inset-0 bg-black/50" onClick={onClose}></div>
 
-        {/* Modal panel */}
-        <div className="relative inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full z-50">
-          {/* Progress Steps */}
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <div className={`text-center ${step >= 1 ? 'text-white' : 'text-blue-200'}`}>
-                  <div className={`w-8 h-8 mx-auto rounded-full flex items-center justify-center ${step >= 1 ? 'bg-white text-blue-600' : 'bg-blue-400 text-white'}`}>
-                    1
-                  </div>
-                  <p className="text-xs mt-1">Email</p>
-                </div>
-              </div>
-              <div className={`flex-1 h-1 mx-2 ${step >= 2 ? 'bg-white' : 'bg-blue-400'}`}></div>
-              <div className="flex-1">
-                <div className={`text-center ${step >= 2 ? 'text-white' : 'text-blue-200'}`}>
-                  <div className={`w-8 h-8 mx-auto rounded-full flex items-center justify-center ${step >= 2 ? 'bg-white text-blue-600' : 'bg-blue-400 text-white'}`}>
-                    2
-                  </div>
-                  <p className="text-xs mt-1">OTP</p>
-                </div>
-              </div>
-              <div className={`flex-1 h-1 mx-2 ${step >= 3 ? 'bg-white' : 'bg-blue-400'}`}></div>
-              <div className="flex-1">
-                <div className={`text-center ${step >= 3 ? 'text-white' : 'text-blue-200'}`}>
-                  <div className={`w-8 h-8 mx-auto rounded-full flex items-center justify-center ${step >= 3 ? 'bg-white text-blue-600' : 'bg-blue-400 text-white'}`}>
-                    3
-                  </div>
-                  <p className="text-xs mt-1">Password</p>
-                </div>
-              </div>
+  {/* Modal Panel */}
+  <div className="relative bg-white rounded-lg shadow-xl w-full max-w-md">
+    {/* Close Button */}
+    <button
+      onClick={onClose}
+      className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10"
+    >
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+
+    {/* Content */}
+    <div className="p-6">
+      {/* Step 1: Email */}
+      {step === 1 && (
+        <div>
+          <div className="text-center mb-6">
+            <div className="w-12 h-12 mx-auto bg-blue-100 rounded-full flex items-center justify-center mb-3">
+              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
             </div>
+            <h3 className="text-lg font-semibold text-gray-900">Reset Password</h3>
+            <p className="text-sm text-gray-500 mt-1">Enter your email to receive OTP</p>
           </div>
 
-          {/* Modal Content */}
-          <div className="bg-white px-6 pt-6 pb-8 relative">
-            <div className="absolute top-4 right-4">
-              <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
+          <form onSubmit={handleSendOTP}>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setEmailError('');
+              }}
+              placeholder="Email address"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none mb-4"
+              autoFocus
+            />
+            {emailError && <p className="text-red-500 text-sm mb-3 -mt-2">{emailError}</p>}
 
-            {/* Step 1: Email */}
-            {step === 1 && (
-              <div>
-                <div className="text-center mb-6">
-                  <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                    <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-800 mb-2">Verify Your Email</h3>
-                  <p className="text-sm text-gray-600">We'll send a verification code to your email address</p>
-                </div>
-
-                <form onSubmit={handleSendOTP}>
-                  <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => {
-                        setEmail(e.target.value);
-                        setEmailError('');
-                      }}
-                      className={`w-full px-4 py-3 border ${emailError ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition`}
-                      placeholder="Enter your registered email"
-                      autoFocus
-                    />
-                    {emailError && <p className="mt-1 text-xs text-red-500">{emailError}</p>}
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {loading ? 'Sending OTP...' : 'Send Verification Code →'}
-                  </button>
-                </form>
-              </div>
-            )}
-
-            {/* Step 2: OTP */}
-            {step === 2 && (
-              <div>
-                <div className="text-center mb-6">
-                  <div className="mx-auto w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mb-4">
-                    <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6-4h12a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2v-6a2 2 0 012-2zm10-4V6a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-800 mb-2">Enter Verification Code</h3>
-                  <p className="text-sm text-gray-600">We've sent a 6-digit code to <span className="font-semibold">{email}</span></p>
-                </div>
-
-                <form onSubmit={handleVerifyOTP}>
-                  <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">OTP Code</label>
-                    <input
-                      type="text"
-                      value={otp}
-                      onChange={(e) => {
-                        const value = e.target.value.replace(/\D/g, '').slice(0, 6);
-                        setOtp(value);
-                        setOtpError('');
-                      }}
-                      className={`w-full px-4 py-3 text-center text-2xl tracking-widest border ${otpError ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition`}
-                      placeholder="000000"
-                      maxLength="6"
-                      autoFocus
-                    />
-                    {otpError && <p className="mt-1 text-xs text-red-500">{otpError}</p>}
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed mb-3"
-                  >
-                    {loading ? 'Verifying...' : 'Verify OTP →'}
-                  </button>
-
-                  <div className="text-center">
-                    <button
-                      type="button"
-                      onClick={handleResendOTP}
-                      disabled={countdown > 0}
-                      className="text-sm text-purple-600 hover:text-purple-800 transition disabled:text-gray-400"
-                    >
-                      {countdown > 0 ? `Resend OTP in ${countdown}s` : 'Resend OTP'}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            )}
-
-            {/* Step 3: New Password */}
-            {step === 3 && (
-              <div>
-                <div className="text-center mb-6">
-                  <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                    <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-800 mb-2">Create New Password</h3>
-                  <p className="text-sm text-gray-600">Enter your new password below</p>
-                </div>
-
-                <form onSubmit={handleResetPassword}>
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
-                    <input
-                      type="password"
-                      value={newPassword}
-                      onChange={(e) => {
-                        setNewPassword(e.target.value);
-                        setPasswordError('');
-                      }}
-                      className={`w-full px-4 py-3 border ${passwordError ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition`}
-                      placeholder="Enter new password"
-                      autoFocus
-                    />
-                  </div>
-
-                  <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
-                    <input
-                      type="password"
-                      value={confirmPassword}
-                      onChange={(e) => {
-                        setConfirmPassword(e.target.value);
-                        setPasswordError('');
-                      }}
-                      className={`w-full px-4 py-3 border ${passwordError ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition`}
-                      placeholder="Confirm new password"
-                    />
-                    {passwordError && <p className="mt-1 text-xs text-red-500">{passwordError}</p>}
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full py-3 bg-gradient-to-r from-green-600 to-teal-600 text-white rounded-lg hover:shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {loading ? 'Resetting Password...' : 'Reset Password →'}
-                  </button>
-                </form>
-              </div>
-            )}
-
-            {/* Back button */}
-            {(step === 2 || step === 3) && (
-              <div className="mt-4 text-center">
-                <button onClick={handleBack} className="text-sm text-gray-500 hover:text-gray-700 transition">
-                  ← Go Back
-                </button>
-              </div>
-            )}
-          </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+            >
+              {loading ? 'Sending...' : 'Send OTP'}
+            </button>
+          </form>
         </div>
-      </div>
+      )}
+
+      {/* Step 2: OTP */}
+      {step === 2 && (
+        <div>
+          <div className="text-center mb-6">
+            <div className="w-12 h-12 mx-auto bg-blue-100 rounded-full flex items-center justify-center mb-3">
+              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6-4h12a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2v-6a2 2 0 012-2zm10-4V6a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900">Enter OTP</h3>
+            <p className="text-sm text-gray-500 mt-1">Sent to {email}</p>
+          </div>
+
+          <form onSubmit={handleVerifyOTP}>
+            <input
+              type="text"
+              value={otp}
+              onChange={(e) => {
+                const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                setOtp(value);
+                setOtpError('');
+              }}
+              placeholder="6-digit code"
+              className="w-full px-4 py-2 text-center text-xl tracking-wider border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none mb-4"
+              maxLength="6"
+              autoFocus
+            />
+            {otpError && <p className="text-red-500 text-sm mb-3 -mt-2">{otpError}</p>}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 mb-3"
+            >
+              {loading ? 'Verifying...' : 'Verify OTP'}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleSendOTP()}
+              disabled={countdown > 0}
+              className="w-full text-sm text-blue-600 hover:text-blue-700 disabled:text-gray-400"
+            >
+              {countdown > 0 ? `Resend in ${countdown}s` : 'Resend OTP'}
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* Step 3: New Password */}
+      {step === 3 && (
+        <div>
+          <div className="text-center mb-6">
+            <div className="w-12 h-12 mx-auto bg-blue-100 rounded-full flex items-center justify-center mb-3">
+              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900">New Password</h3>
+            <p className="text-sm text-gray-500 mt-1">Create a strong password</p>
+          </div>
+
+          <form onSubmit={handleResetPassword}>
+            <input
+              type="password"
+              value={newPassword}
+              onChange={(e) => {
+                setNewPassword(e.target.value);
+                setPasswordError('');
+              }}
+              placeholder="New password"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none mb-3"
+              autoFocus
+            />
+
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => {
+                setConfirmPassword(e.target.value);
+                setPasswordError('');
+              }}
+              placeholder="Confirm password"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none mb-4"
+            />
+            {passwordError && <p className="text-red-500 text-sm mb-3 -mt-2">{passwordError}</p>}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+            >
+              {loading ? 'Resetting...' : 'Reset Password'}
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* Back Button */}
+      {(step === 2 || step === 3) && (
+        <button
+          onClick={handleBack}
+          className="w-full text-center text-sm text-gray-500 hover:text-gray-700 mt-4 pt-3 border-t"
+        >
+          ← Back
+        </button>
+      )}
     </div>
+  </div>
+</div>
   );
 };
 

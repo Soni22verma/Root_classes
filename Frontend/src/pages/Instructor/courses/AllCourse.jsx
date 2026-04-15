@@ -13,10 +13,10 @@ const InstructorDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
   const [editingCourse, setEditingCourse] = useState(null);
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
-  const { student } = useStudentStore()
-  console.log(student, "bbbbbbbbbbbbbbbbbbbbbb")
+  const { student } = useStudentStore();
+  
   // Form data
   const [formData, setFormData] = useState({
     title: '',
@@ -29,7 +29,8 @@ const InstructorDashboard = () => {
 
   useEffect(() => {
     fetchCourses();
-    fetchCategories();
+    fetchCategories()
+   
   }, []);
 
 
@@ -69,15 +70,14 @@ const InstructorDashboard = () => {
     }
   };
 
-  const handleManageContent = async(courseId)=>{
+  const handleManageContent = async (courseId) => {
     try {
-      console.log(courseId , " this is m y course id")
-      navigate(`/instructor/allcourses/${courseId}`)
+      console.log(courseId, "this is my course id");
+      navigate(`/instructor/allcourses/${courseId}`);
     } catch (error) {
-      console.log( error , " this is error from  handleManageContent")
-      
+      console.log(error, "this is error from handleManageContent");
     }
-  }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -96,40 +96,44 @@ const InstructorDashboard = () => {
     return Object.keys(newErrors).length === 0;
   };
 
- const handleSubmit = async (e) => {
-  e.preventDefault();
-  if (!validateForm()) return;
-  
-  setFormLoading(true);
-  try {
-    if (editingCourse) {
-      const updateData = {
-        courseId: editingCourse._id,
-        title: formData.title,
-        description: formData.description,
-        category: formData.category,
-        level: formData.level
-      };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+    
+    setFormLoading(true);
+    try {
+      if (editingCourse) {
+        const updateData = {
+          courseId: editingCourse._id,
+          title: formData.title,
+          description: formData.description,
+          category: formData.category,
+          level: formData.level
+        };
+        
+        console.log("Updating course with data:", updateData);
+        
+    
+        const response = await axios.post(api.course.editCourse, updateData);
       
-      await axios.post(api.createCourse.editCourse, updateData);
+        console.log("Update response:", response);
+        toast.success('Course updated successfully!');
+      } else {
+        const res = await axios.post(api.course.createCourse, formData);
+        console.log("Create response:", res);
+        toast.success('Course created successfully!');
+      }
       
-      
-      toast.success('Course updated successfully!');
-    } else {
-      const res = await axios.post(api.createCourse.createCourse, formData);
-      console.log(res);
-      toast.success('Course created successfully!');
+      setIsModalOpen(false);
+      fetchCourses(); // Refresh the course list
+      resetForm();
+    } catch (error) {
+      console.error('Error saving course:', error);
+      toast.error(error.response?.data?.message || error.message || 'Error saving course');
+    } finally {
+      setFormLoading(false);
     }
-    setIsModalOpen(false);
-    fetchCourses();
-    resetForm();
-  } catch (error) {
-    console.error('Error saving course:', error);
-    toast.error(error.response?.data?.message || 'Error saving course');
-  } finally {
-    setFormLoading(false);
-  }
-};
+  };
 
   const resetForm = () => {
     setFormData({ title: '', description: '', category: '', level: 'beginner' });
@@ -153,15 +157,20 @@ const InstructorDashboard = () => {
     setIsModalOpen(true);
   };
 
+  // FIXED: Delete handler
   const handleDelete = async (courseId) => {
-    if (window.confirm('Are you sure you want to delete this course?')) {
+    if (window.confirm('Are you sure you want to delete this course? This action cannot be undone.')) {
       try {
-        await axios.post(api.createCourse.deleteCourse,{courseId:courseId});
+        setLoading(true);
+        
+        await axios.post(api.course.deleteCourse, { courseId: courseId }); 
         toast.success('Course deleted successfully!');
-        fetchCourses();
+        fetchCourses(); // Refresh the course list
       } catch (error) {
         console.error('Error deleting course:', error);
-        toast.error('Error deleting course');
+        toast.error(error.response?.data?.message || error.message || 'Error deleting course');
+      } finally {
+        setLoading(false);
       }
     }
   };
@@ -191,16 +200,17 @@ const InstructorDashboard = () => {
             <p className="text-gray-600 mt-1">Manage your courses efficiently</p>
           </div>
 
-          {/* Create Course Button */}
-          {student.role === "instructor" ? <div className="mb-6">
-            <button
-              onClick={openCreateModal}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors shadow-sm"
-            >
-              + Create Course
-            </button>
-          </div> : ""}
-
+          {/* Create Course Button - Fixed condition */}
+          {student?.role === "instructor" && (
+            <div className="mb-6">
+              <button
+                onClick={openCreateModal}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors shadow-sm"
+              >
+                + Create Course
+              </button>
+            </div>
+          )}
 
           {/* Courses Table */}
           {loading ? (
@@ -263,7 +273,6 @@ const InstructorDashboard = () => {
                             {course.level || 'beginner'}
                           </span>
                         </td>
-
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex gap-3">
                             <button
@@ -295,7 +304,6 @@ const InstructorDashboard = () => {
                             </button>
                           </div>
                         </td>
-
                       </tr>
                     ))}
                   </tbody>
@@ -430,6 +438,3 @@ const InstructorDashboard = () => {
 };
 
 export default InstructorDashboard;
-
-
-

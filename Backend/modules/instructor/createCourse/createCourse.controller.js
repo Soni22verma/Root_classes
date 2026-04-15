@@ -2,55 +2,60 @@ import mongoose from "mongoose";
 import { Course } from "./createCourse.model.js";
 import { Category } from "../../Admin/category/category.model.js";
 import cloudinary from "../../../config/cloudinary.js";
+import User from "../../Student/student.model.js"
 
-export const createCourse = async (req, res) => {
-  try {
-    const { title, description, category, level } = req.body;
 
-    if (!title || !category) {
-      return res.status(400).json({
+  export const createCourse = async (req, res) => {
+    try {
+      const { title, description, category, level } = req.body;
+
+      if (!title || !category) {
+        return res.status(400).json({
+          success: false,
+          message: "Title and Category are required",
+        });
+      }
+
+      if (!mongoose.Types.ObjectId.isValid(category)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid Category ID",
+        });
+      }
+
+      const categoryExists = await Category.findById(category);
+      if (!categoryExists) {
+        return res.status(404).json({
+          success: false,
+          message: "Category not found",
+        });
+      }
+     console.log(req.user)
+      const course = await Course.create({
+        title,
+        description,
+        category,
+        level: level || "beginner",
+        instructor: req.user?.id, 
+        modules: [],
+      });
+
+
+      console.log("USER:", req.user);
+
+      res.status(201).json({
+        success: true,
+        message: "Course created successfully",
+        data: course,
+      });
+
+    } catch (error) {
+      res.status(500).json({
         success: false,
-        message: "Title and Category are required",
+        message: error.message,
       });
     }
-
-    if (!mongoose.Types.ObjectId.isValid(category)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid Category ID",
-      });
-    }
-
-    const categoryExists = await Category.findById(category);
-    if (!categoryExists) {
-      return res.status(404).json({
-        success: false,
-        message: "Category not found",
-      });
-    }
-
-    const course = await Course.create({
-      title,
-      description,
-      category,
-      level: level || "beginner",
-      instructor: req.user?._id, 
-      modules: [],
-    });
-
-    res.status(201).json({
-      success: true,
-      message: "Course created successfully",
-      data: course,
-    });
-
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
+  };
 
 export const GetCategory = async(req,res,next)=>{
     try {
@@ -809,18 +814,11 @@ export const DeleteTopic = async (req, res) => {
 
 export const getFullCourseDetails = async (req, res) => {
   try {
-    const { courseId } = req.body;
 
-    if (!courseId) {
-      return res.status(400).json({
-        success: false,
-        message: "courseId is required",
-      });
-    }
 
-    const course = await Course.findById(courseId)
-      .populate("category", "name") // sirf name field
-      .populate("instructor", "name email"); // optional
+    const course = await Course.find()
+      .populate("category", "name") 
+      .populate("instructor","fullName email");
 
     if (!course) {
       return res.status(404).json({
@@ -844,6 +842,10 @@ export const getFullCourseDetails = async (req, res) => {
     });
   }
 };
+
+
+
+
 
 
 

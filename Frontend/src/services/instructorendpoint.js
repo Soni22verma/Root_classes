@@ -5,6 +5,9 @@ const api = {
         getCategory:Base_Url+"/course/get_category",
         createCourse:Base_Url+"/course/create_course",
         getCourse:Base_Url+"/course/get_course",
+       editCourse:Base_Url+"/course/edit_course",
+        deleteCourse:Base_Url+"/course/delete_course",
+ 
 
         getCourseById:Base_Url+"/course/get-course-by-id",
         addModule:Base_Url+"/course/add-module",
@@ -17,18 +20,11 @@ const api = {
 
         addTopic:Base_Url+"/course/add-topic",
         updateTopic:Base_Url+"/course/edit-topic",
-        deleteTopic:Base_Url+"/course/delete-topic"
+        deleteTopic:Base_Url+"/course/delete-topic",
+
+       
     },
-      createCourse:{
-        getCategory:Base_Url+"/createCourse/get_category",
-        createCourse:Base_Url+"/createCourse/create_course",
-        getCourse:Base_Url+"/createCourse/get_course",
-        editCourse:Base_Url+"/createCourse/edit_course",
-        deleteCourse:Base_Url+"/createCourse/delete_course",
- 
-
-
 }
-}
+
 
 export default api

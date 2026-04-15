@@ -175,7 +175,7 @@ const Navbar = () => {
     { name: 'Courses', path: '/course' },
     { name: 'Online Courses', path: '/onlinecourse' },
     { name: 'Up to 100% Scholarship', path: '/schollarship' },
-    { name: 'Career', path: '/career' },
+    { name: 'Test List', path: '/test' },
     { name: 'Blog', path: '/blog' },
     { name: 'Contact', path: '/contact' },
   ];

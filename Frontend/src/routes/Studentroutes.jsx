@@ -3,14 +3,25 @@ import StudentLogin from "../components/Student/StudentLogin";
 import StudentRegister from "../components/Student/StudentRegister";
 import OnlineCourse from "../pages/Student/OnlineCourse";
 import Schollarship from "../pages/Student/Schollarship";
-import Career from "../pages/Student/Career";
+import TestList from "../pages/Student/TestList";
 import Blog from "../pages/Student/Blog";
 import Contact from "../pages/Student/Contact";
 import StudentProfile from "../components/Student/StudentProfile";
-import Courses from "../pages/Student/Courses"
 import Layout from "../Layout"
+import Courses from "../pages/Student/Course/Courses";
+import CourseDetails from "../pages/Student/Course/CourseDetails"
 
 const StudentRoutes = [
+
+    {
+        path: "/stdlogin",
+        element: <StudentLogin />,
+    },
+    {
+        path: "/register",
+        element: <StudentRegister />,
+    },
+
     {
         path: "/",
         element: <Layout />,
@@ -20,16 +31,12 @@ const StudentRoutes = [
                 element: <Home />,
             },
             {
-                path: "/stdlogin",
-                element: <StudentLogin />,
-            },
-            {
-                path: "/register",
-                element: <StudentRegister />,
-            },
-            {
                 path: "/course",
                 element: <Courses />,
+            },
+            {
+                path:"/coursedetails",
+                element: <CourseDetails/>
             },
             {
                 path: "/onlinecourse",
@@ -40,8 +47,8 @@ const StudentRoutes = [
                 element: <Schollarship />,
             },
             {
-                path: "/career",
-                element: <Career />,
+                path: "/test",
+                element: <TestList />,
             },
             {
                 path: "/blog",

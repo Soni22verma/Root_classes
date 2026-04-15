@@ -19,130 +19,72 @@ const Enrollment = () => {
     const [showModal, setShowModal] = useState(false);
     const itemsPerPage = 10;
 
-    const fetchAllEnrollment = async () => {
-        setLoading(true);
-        setError(null);
+    const GetEnrollment = async () => {
         try {
-            const res = await axios.get(api.enroll.getAllenrollment);
-            console.log("Full API Response:", res);
-            console.log("Response data:", res.data);
+            setLoading(true);
+            const res = await axios.get(api.enroll.getEnrollment);
+            console.log(res, "this is all enrollments");
             
-            // Check different possible data structures
-            let enrollmentData = [];
-            
-            if (res.data && res.data.data && res.data.data.enrollments) {
-                // Structure: { data: { enrollments: [...] } }
-                enrollmentData = res.data.data.enrollments;
-                console.log("Found enrollments in data.data.enrollments:", enrollmentData);
-            } 
-            else if (res.data && res.data.enrollments) {
-                // Structure: { enrollments: [...] }
-                enrollmentData = res.data.enrollments;
-                console.log("Found enrollments in data.enrollments:", enrollmentData);
-            }
-            else if (res.data && Array.isArray(res.data.data)) {
-                // Structure: { data: [...] }
-                enrollmentData = res.data.data;
-                console.log("Found enrollments in data.data:", enrollmentData);
-            }
-            else if (res.data && Array.isArray(res.data)) {
-                // Structure: [...] directly
-                enrollmentData = res.data;
-                console.log("Found enrollments directly in data:", enrollmentData);
-            }
-            else {
-                console.warn("Unexpected data structure:", res.data);
-                setError("Unable to fetch enrollment data. Please check API response format.");
-                setEnrollments([]);
-                setLoading(false);
-                return;
-            }
-            
-            // Check if enrollmentData is an array
-            if (!Array.isArray(enrollmentData)) {
-                console.error("Enrollment data is not an array:", enrollmentData);
-                setError("Invalid data format received from server");
-                setEnrollments([]);
-                setLoading(false);
-                return;
-            }
-            
-            if (enrollmentData.length === 0) {
-                console.log("No enrollments found");
-                setEnrollments([]);
-                setLoading(false);
-                return;
-            }
-            
-            // Transform the data to match table structure
-            const transformedEnrollments = enrollmentData.map((enrollment, index) => {
-                console.log(`Processing enrollment ${index + 1}:`, enrollment);
-                
-                // Extract student data safely
-                const studentData = enrollment.student || {};
-                const courseData = enrollment.course || {};
-                
-                return {
-                    _id: enrollment._id || `temp_${index}`,
-                    enrollmentId: enrollment._id || `ENR${index + 1}`,
-                    enrollmentDate: enrollment.enrolledAt || enrollment.createdAt || new Date().toISOString(),
+            if (res.data.success && res.data.data) {
+                // Transform the data to match the table structure
+                const transformedData = res.data.data.map(enrollment => ({
+                    _id: enrollment._id,
+                    enrollmentId: enrollment._id,
+                    studentName: enrollment.student?.fullName || 'N/A',
+                    email: enrollment.student?.email || 'N/A',
+                    studentId: enrollment.student?._id || 'N/A',
+                    courseTitle: enrollment.course?.title || 'N/A',
+                    courseId: enrollment.course?._id || 'N/A',
+                    courseLevel: enrollment.course?.level || 'N/A',
+                    courseDescription: enrollment.course?.description || 'No description',
+                    enrollmentDate: enrollment.enrolledAt,
+                    amount: enrollment.amount || 0,
                     status: enrollment.status || 'Active',
-                    paymentStatus: enrollment.paymentStatus || 'Paid',
-                    amount: courseData.price || enrollment.amount || '0',
-                    
-                    // Student details
-                    studentName: studentData.fullName || studentData.name || 'N/A',
-                    email: studentData.email || 'N/A',
-                    phone: studentData.phone || studentData.mobile || 'N/A',
-                    studentId: studentData._id || 'N/A',
-                    studentAvatar: studentData.profileImage || studentData.avatar || null,
-                    studentAddress: studentData.address || 'N/A',
-                    studentClass: studentData.currentClass || studentData.class || 'N/A',
-                    studentGender: studentData.gender || 'N/A',
-                    
-                    // Course details
-                    courseTitle: courseData.title || courseData.name || 'N/A',
-                    instructor: courseData.instructor || courseData.teacher || 'N/A',
-                    duration: courseData.duration || 'N/A',
-                    level: courseData.level || 'N/A',
-                    courseDescription: courseData.discreption || courseData.description || 'N/A',
-                    courseThumbnail: courseData.thumbnail || null,
-                    courseId: courseData._id || 'N/A',
-                    
-                    // Additional fields
-                    enrolledAt: enrollment.enrolledAt || enrollment.createdAt,
-                    notes: enrollment.notes || `Enrolled on ${new Date(enrollment.enrolledAt || enrollment.createdAt || Date.now()).toLocaleDateString()}`
-                };
-            });
-            
-            console.log("Transformed enrollments:", transformedEnrollments);
-            setEnrollments(transformedEnrollments);
-            
+                    paymentStatus: enrollment.paymentStatus || 'Pending',
+                    enrolledAt: enrollment.enrolledAt,
+                    // Additional fields for modal
+                    phone: enrollment.student?.phone || 'N/A',
+                    studentGender: enrollment.student?.gender || 'N/A',
+                    studentClass: enrollment.student?.currentClass || 'N/A',
+                    studentAddress: enrollment.student?.address || 'N/A',
+                    instructor: enrollment.course?.instructor?.name || 'Root Classes',
+                    duration: calculateCourseDuration(enrollment.course),
+                    level: enrollment.course?.level || 'Beginner',
+                    studentAvatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(enrollment.student?.fullName || 'S')}&background=4F46E5&color=fff`
+                }));
+                setEnrollments(transformedData);
+            } else {
+                setEnrollments([]);
+            }
         } catch (error) {
             console.error("Error fetching enrollments:", error);
-            console.error("Error details:", error.response);
-            
-            let errorMessage = "Failed to fetch enrollments. ";
-            if (error.response) {
-                // Server responded with error status
-                errorMessage += `Server error: ${error.response.status} - ${error.response.data?.message || error.response.statusText}`;
-            } else if (error.request) {
-                // Request was made but no response
-                errorMessage += "No response from server. Please check your network connection.";
-            } else {
-                // Something else happened
-                errorMessage += error.message || "Please try again later.";
-            }
-            
-            setError(errorMessage);
-            setEnrollments([]);
+            setError(error.response?.data?.message || "Failed to fetch enrollments");
         } finally {
             setLoading(false);
         }
     };
 
+    const calculateCourseDuration = (course) => {
+        if (!course || !course.modules) return 'N/A';
+        let totalMinutes = 0;
+        course.modules.forEach(module => {
+            if (module.chapters) {
+                module.chapters.forEach(chapter => {
+                    if (chapter.topics) {
+                        chapter.topics.forEach(topic => {
+                            totalMinutes += topic.duration || 10;
+                        });
+                    }
+                });
+            }
+        });
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+        return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+    };
+
     useEffect(() => {
-        fetchAllEnrollment();
+        GetEnrollment();
     }, []);
 
     const getStatusBadge = (status) => {
@@ -166,7 +108,6 @@ const Enrollment = () => {
         return paymentConfig[status] || 'bg-gray-100 text-gray-800';
     };
 
-    // Filter and sort enrollments
     const getFilteredAndSortedEnrollments = () => {
         if (!Array.isArray(enrollments) || enrollments.length === 0) return [];
 
@@ -185,7 +126,6 @@ const Enrollment = () => {
             return matchesSearch && matchesStatus;
         });
 
-        // Sort enrollments
         filtered.sort((a, b) => {
             if (sortBy === 'newest') {
                 return new Date(b.enrollmentDate) - new Date(a.enrollmentDate);
@@ -206,7 +146,6 @@ const Enrollment = () => {
 
     const filteredEnrollments = getFilteredAndSortedEnrollments();
     
-    // Pagination
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentEnrollments = filteredEnrollments.slice(indexOfFirstItem, indexOfLastItem);
@@ -214,7 +153,6 @@ const Enrollment = () => {
 
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
-    // Get unique statuses for filter
     const getUniqueStatuses = () => {
         if (!Array.isArray(enrollments) || enrollments.length === 0) return ['All'];
         const statuses = ['All', ...new Set(enrollments.map(e => e.status).filter(s => s))];
@@ -223,7 +161,6 @@ const Enrollment = () => {
 
     const statuses = getUniqueStatuses();
 
-    // View enrollment details
     const handleViewDetails = (enrollment) => {
         setSelectedEnrollment(enrollment);
         setShowModal(true);
@@ -234,7 +171,6 @@ const Enrollment = () => {
         setSelectedEnrollment(null);
     };
 
-    // Format date
     const formatDate = (dateString) => {
         if (!dateString) return 'N/A';
         try {
@@ -248,7 +184,6 @@ const Enrollment = () => {
         }
     };
 
-    // Loading skeleton
     const LoadingSkeleton = () => (
         <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
             <div className="overflow-x-auto">
@@ -376,7 +311,7 @@ const Enrollment = () => {
                     <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-6">
                         <strong>Error:</strong> {error}
                         <button
-                            onClick={fetchAllEnrollment}
+                            onClick={GetEnrollment}
                             className="ml-4 text-red-700 font-semibold hover:text-red-800 underline"
                         >
                             Try Again
@@ -395,7 +330,7 @@ const Enrollment = () => {
                         <h3 className="mt-2 text-sm font-medium text-gray-900">No enrollments found</h3>
                         <p className="mt-1 text-sm text-gray-500">No students have enrolled in any courses yet.</p>
                         <button
-                            onClick={fetchAllEnrollment}
+                            onClick={GetEnrollment}
                             className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
                         >
                             Refresh
@@ -457,11 +392,8 @@ const Enrollment = () => {
                                                     <div className="flex-shrink-0 h-10 w-10">
                                                         <img
                                                             className="h-10 w-10 rounded-full object-cover"
-                                                            src={enrollment.studentAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(enrollment.studentName || 'S')}&background=4F46E5&color=fff`}
+                                                            src={enrollment.studentAvatar}
                                                             alt={enrollment.studentName}
-                                                            onError={(e) => {
-                                                                e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(enrollment.studentName || 'S')}&background=4F46E5&color=fff`;
-                                                            }}
                                                         />
                                                     </div>
                                                     <div className="ml-3">
@@ -480,11 +412,9 @@ const Enrollment = () => {
                                                 <div className="text-sm text-slate-900 font-medium">
                                                     {enrollment.courseTitle}
                                                 </div>
-                                                {enrollment.instructor && enrollment.instructor !== 'N/A' && (
-                                                    <div className="text-xs text-slate-500">
-                                                        By: {enrollment.instructor}
-                                                    </div>
-                                                )}
+                                                <div className="text-xs text-slate-500">
+                                                    Level: {enrollment.level}
+                                                </div>
                                             </td>
 
                                             {/* Enrollment Date */}
@@ -611,12 +541,9 @@ const Enrollment = () => {
                                 <div className="flex-shrink-0">
                                     <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
                                         <img
-                                            src={selectedEnrollment.studentAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedEnrollment.studentName)}&background=4F46E5&color=fff`}
+                                            src={selectedEnrollment.studentAvatar}
                                             alt={selectedEnrollment.studentName}
                                             className="w-16 h-16 rounded-full object-cover"
-                                            onError={(e) => {
-                                                e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedEnrollment.studentName)}&background=4F46E5&color=fff`;
-                                            }}
                                         />
                                     </div>
                                 </div>
@@ -699,7 +626,7 @@ const Enrollment = () => {
                             </div>
 
                             {/* Enrollment Details */}
-                            <div className="mb-6">
+                            <div>
                                 <h3 className="text-lg font-semibold text-slate-800 mb-3 flex items-center gap-2">
                                     <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -738,7 +665,6 @@ const Enrollment = () => {
                             >
                                 Close
                             </button>
-                           
                         </div>
                     </div>
                 </div>
