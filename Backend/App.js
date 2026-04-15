@@ -16,6 +16,7 @@ import createcourseRouter from "./modules/instructor/createCourse/createCourse.r
 import testRouter from "./modules/Admin/CreateTest/createtest.routes.js";
 import resultRouter from "./modules/Student/Result/result.routes.js";
 import enrollmentRouter from "./modules/Admin/enrollment/enrollment.routes.js";
+import paymentRouter from "./modules/Admin/enrollment/payment.routes.js";
 
 dotenv.config();
 
@@ -45,6 +46,9 @@ app.use("/course",createcourseRouter)
 app.use("/enroll",enrollmentRouter)
 app.use("/test",testRouter)
 app.use("/result",resultRouter)
+app.use("/payment",paymentRouter)
+
+
 // Test route
 app.get("/", (req, res) => {
   res.send("Server is running 🚀");

@@ -26,7 +26,6 @@ const Enrollment = () => {
             console.log(res, "this is all enrollments");
             
             if (res.data.success && res.data.data) {
-                // Transform the data to match the table structure
                 const transformedData = res.data.data.map(enrollment => ({
                     _id: enrollment._id,
                     enrollmentId: enrollment._id,
@@ -42,7 +41,6 @@ const Enrollment = () => {
                     status: enrollment.status || 'Active',
                     paymentStatus: enrollment.paymentStatus || 'Pending',
                     enrolledAt: enrollment.enrolledAt,
-                    // Additional fields for modal
                     phone: enrollment.student?.phone || 'N/A',
                     studentGender: enrollment.student?.gender || 'N/A',
                     studentClass: enrollment.student?.currentClass || 'N/A',
@@ -625,7 +623,6 @@ const Enrollment = () => {
                                 </div>
                             </div>
 
-                            {/* Enrollment Details */}
                             <div>
                                 <h3 className="text-lg font-semibold text-slate-800 mb-3 flex items-center gap-2">
                                     <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
