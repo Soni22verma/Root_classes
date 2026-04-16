@@ -5,7 +5,8 @@ import useStudentStore from '../../Store/studentstore';
 
 const Navbar = () => {
   const { student, logout, setStudent } = useStudentStore();
-  // console.log(student?.user._id , " this is student")
+
+  console.log(student?.role , " this is student")
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -258,14 +259,22 @@ const Navbar = () => {
                     {/* Menu Items */}
                     <div className="py-2">
                       <Link
-                        to="/dashboard"
+                        to="/admin/"
                         onClick={() => setIsDropdownOpen(false)}
                         className="flex items-center space-x-3 px-4 py-2 text-gray-700 hover:bg-gray-50 transition group"
                       >
-                        <LayoutDashboard size={18} className="text-gray-500 group-hover:text-indigo-600" />
-                        <span>Dashboard</span>
-                      </Link>
-                      
+
+                        {student?.role === "admin" || student?.role === "instructor" ? 
+                        <>
+                          <LayoutDashboard size={18} className="text-gray-500 group-hover:text-indigo-600" />
+
+                          <span>Dashboard</span> 
+
+                        </>
+                        
+                        :""
+                      }
+                      </Link> 
                       <div 
                         onClick={() => handleProflie()}
                         className="flex items-center space-x-3 px-4 py-2 text-gray-700 hover:bg-gray-50 transition group"

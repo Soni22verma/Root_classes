@@ -16,45 +16,49 @@ const Adminroutes = [
     element: <AdminLayout />,
     children: [
       {
+        index: true,
+        element: <AllStudents />,
+      },
+      {
         path: "allstudent",
         element: <AllStudents />,
       },
-    
+
       {
         path: "enrollment",
         element: <Enrollment />,
       },
       {
-        path:"classshadule",
-        element:<ClassShadule/>
+        path: "classshadule",
+        element: <ClassShadule />
       },
       {
-        path:"topics",
-        element:<Topics/>
+        path: "topics",
+        element: <Topics />
       },
       {
-        path:"blog",
-        element:<AllBlogs/>
+        path: "blog",
+        element: <AllBlogs />
       },
       {
-        path:"slider",
-        element:<ManageSlider/>
+        path: "slider",
+        element: <ManageSlider />
       },
       {
-        path:"testimonial",
-        element:<Testimonials/>
+        path: "testimonial",
+        element: <Testimonials />
       },
       {
-        path:"coursecategory",
-        element:<CourseCategory/>
+        path: "coursecategory",
+        element: <CourseCategory />
       },
       {
-        path:"allcourses",
-        element:<AllCourses/>
+        path: "allcourses",
+        element: <AllCourses />
       },
       {
-        path:"createtest",
-        element:<CreateTest/>
+        path: "createtest",
+        element: <CreateTest />
       }
     ],
   },

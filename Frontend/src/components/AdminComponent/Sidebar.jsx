@@ -149,15 +149,15 @@ const AdminSidebar = ({ isMobileOpen, setIsMobileOpen }) => {
         submenu: [
           { name: 'Class Schedule', path: '/admin/classshadule', icon: Calendar },
           { name: 'Topics', path: '/admin/topics', icon: MessageSquare },
-          { name: 'Recorded Lectures', path: '/admin/classes/recordings', icon: FileText }
+          // { name: 'Recorded Lectures', path: '/admin/classes/recordings', icon: FileText }
         ]
       },
-      {
-        name: 'Messages',
-        path: '/admin/messages',
-        icon: MessageSquare,
-        badge: '3'
-      }
+      // {
+      //   name: 'Messages',
+      //   path: '/admin/messages',
+      //   icon: MessageSquare,
+      //   badge: '3'
+      // }
     ];
 
     // Admin-specific menu items
@@ -167,8 +167,8 @@ const AdminSidebar = ({ isMobileOpen, setIsMobileOpen }) => {
         icon: Users,
         submenu: [
           { name: 'All Students', path: '/admin/allstudent', icon: Users },
-          { name: 'Student Attendance', path: '/admin/students/attendance', icon: Calendar },
-          { name: 'Student Fees', path: '/admin/students/fees', icon: DollarSign }
+          // { name: 'Student Attendance', path: '/admin/students/attendance', icon: Calendar },
+          // { name: 'Student Fees', path: '/admin/students/fees', icon: DollarSign }
         ]
       },
       {
@@ -309,7 +309,7 @@ const AdminSidebar = ({ isMobileOpen, setIsMobileOpen }) => {
         bgColor: 'bg-purple-100',
         textColor: 'text-purple-700',
         icon: Shield,
-        label: 'Administrator'
+        label: 'Admin'
       };
     } else if (userRole === 'instructor') {
       return {

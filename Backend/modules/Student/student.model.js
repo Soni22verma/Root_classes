@@ -53,6 +53,18 @@ const userSchema = new mongoose.Schema(
             type: Date,
         },
 
+        enrolledCourses: [
+            {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "Course",
+            },
+        ],
+        scholarshipApplied: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Scholarship",
+            default: null
+        },
+
 
     },
     { timestamps: true }
