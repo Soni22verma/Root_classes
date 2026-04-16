@@ -421,29 +421,4 @@ export const resetPassword = async (req, res) => {
 };
 
 
-export const enrollCourse = async (req, res) => {
-  try {
-    const { studentId, courseId } = req.body;
-
-    const user = await User.findById(studentId);
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    if (user.enrolledCourses.includes(courseId)) {
-      return res.status(200).json({ message: "Already enrolled" });
-    }
-
-    user.enrolledCourses.push(courseId);
-    await user.save();
-
-    res.json({
-      success: true,
-      message: "Course enrolled successfully",
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
 

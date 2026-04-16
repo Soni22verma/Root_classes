@@ -7,13 +7,22 @@ import User from "../../Student/student.model.js"
 
   export const createCourse = async (req, res) => {
     try {
-      const { title, description, category, level } = req.body;
+      const { title, description, category, level,price } = req.body;
+      console.log(req.body,"dfffffffffffffffffffff")
 
       if (!title || !category) {
         return res.status(400).json({
           success: false,
           message: "Title and Category are required",
         });
+      }
+
+      if(!price){
+        return res.status(400).json({
+          message:"price is required",
+          error:true,
+          success:false
+        })
       }
 
       if (!mongoose.Types.ObjectId.isValid(category)) {
@@ -35,6 +44,7 @@ import User from "../../Student/student.model.js"
         title,
         description,
         category,
+        price,
         level: level || "beginner",
         instructor: req.user?.id, 
         modules: [],
@@ -89,7 +99,7 @@ export const GetCreatedCourse = async(req,res,next)=>{
 
 export const UpdateCourse = async (req, res, next) => {
   try {
-    const { courseId, title, description, category, level } = req.body;
+    const { courseId, title, description, category, level,price } = req.body;
 
     // 🔥 1. Check courseId
     if (!courseId) {
@@ -127,6 +137,7 @@ export const UpdateCourse = async (req, res, next) => {
         description: description || existingCourse.description,
         category: category || existingCourse.category,
         level: level || existingCourse.level,
+        price: price || existingCourse.price,
       },
       { returnDocument: "after" }
     );

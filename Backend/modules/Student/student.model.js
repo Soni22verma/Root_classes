@@ -53,13 +53,6 @@ const userSchema = new mongoose.Schema(
             type: Date,
         },
 
-        enrolledCourses: [
-            {
-                type: mongoose.Schema.Types.ObjectId,
-                ref: "Course",
-            },
-        ],
-
 
     },
     { timestamps: true }

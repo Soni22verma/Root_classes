@@ -53,7 +53,7 @@ const courseSchema = new mongoose.Schema({
   },
 
   duration: { type: String },
-  price: { type: Number },
+  price: { type: Number,default:0 },
 
   level: {
     type: String,

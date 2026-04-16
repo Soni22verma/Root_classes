@@ -22,18 +22,16 @@ const InstructorDashboard = () => {
     title: '',
     description: '',
     category: '',
-    level: 'beginner'
+    level: 'beginner',
+    price: '' 
   });
 
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
     fetchCourses();
-    fetchCategories()
-   
+    fetchCategories();
   }, []);
-
-
 
   const fetchCourses = async () => {
     try {
@@ -45,6 +43,13 @@ const InstructorDashboard = () => {
       } else if (Array.isArray(response.data)) {
         coursesData = response.data;
       }
+      
+      // Ensure price is properly formatted
+      coursesData = coursesData.map(course => ({
+        ...course,
+        price: course.price !== undefined && course.price !== null ? course.price : 0
+      }));
+      
       setCourses(coursesData);
     } catch (error) {
       console.error('Error fetching courses:', error);
@@ -92,6 +97,14 @@ const InstructorDashboard = () => {
     if (!formData.title.trim()) newErrors.title = 'Course title is required';
     if (!formData.description.trim()) newErrors.description = 'Description is required';
     if (!formData.category) newErrors.category = 'Please select a category';
+    
+    // Price validation
+    if (formData.price === '' || formData.price === null) {
+      newErrors.price = 'Price is required';
+    } else if (isNaN(formData.price) || Number(formData.price) < 0) {
+      newErrors.price = 'Please enter a valid price (0 or greater)';
+    }
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -102,30 +115,47 @@ const InstructorDashboard = () => {
     
     setFormLoading(true);
     try {
+      const submissionData = {
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        level: formData.level,
+        price: Number(formData.price) 
+      };
+
       if (editingCourse) {
         const updateData = {
           courseId: editingCourse._id,
-          title: formData.title,
-          description: formData.description,
-          category: formData.category,
-          level: formData.level
+          title: submissionData.title,
+          description: submissionData.description,
+          category: submissionData.category,
+          level: submissionData.level,
+          price: submissionData.price
         };
         
         console.log("Updating course with data:", updateData);
-        
-    
         const response = await axios.post(api.course.editCourse, updateData);
-      
         console.log("Update response:", response);
-        toast.success('Course updated successfully!');
+        
+        if (response.data?.success) {
+          toast.success('Course updated successfully!');
+        } else {
+          toast.error(response.data?.message || 'Failed to update course');
+        }
       } else {
-        const res = await axios.post(api.course.createCourse, formData);
+        console.log("Creating course with data:", submissionData);
+        const res = await axios.post(api.course.createCourse, submissionData);
         console.log("Create response:", res);
-        toast.success('Course created successfully!');
+        
+        if (res.data?.success) {
+          toast.success('Course created successfully!');
+        } else {
+          toast.error(res.data?.message || 'Failed to create course');
+        }
       }
       
       setIsModalOpen(false);
-      fetchCourses(); // Refresh the course list
+      await fetchCourses(); // Refresh the course list
       resetForm();
     } catch (error) {
       console.error('Error saving course:', error);
@@ -136,7 +166,7 @@ const InstructorDashboard = () => {
   };
 
   const resetForm = () => {
-    setFormData({ title: '', description: '', category: '', level: 'beginner' });
+    setFormData({ title: '', description: '', category: '', level: 'beginner', price: '' });
     setErrors({});
     setEditingCourse(null);
   };
@@ -149,23 +179,23 @@ const InstructorDashboard = () => {
   const openEditModal = (course) => {
     setEditingCourse(course);
     setFormData({
-      title: course.title,
-      description: course.description,
-      category: course.category?._id || course.category,
-      level: course.level || 'beginner'
+      title: course.title || '',
+      description: course.description || '',
+      category: course.category?._id || course.category || '',
+      level: course.level || 'beginner',
+      price: course.price !== undefined && course.price !== null ? course.price : ''
     });
     setIsModalOpen(true);
   };
 
-  // FIXED: Delete handler
+  // Delete handler
   const handleDelete = async (courseId) => {
     if (window.confirm('Are you sure you want to delete this course? This action cannot be undone.')) {
       try {
         setLoading(true);
-        
         await axios.post(api.course.deleteCourse, { courseId: courseId }); 
         toast.success('Course deleted successfully!');
-        fetchCourses(); // Refresh the course list
+        await fetchCourses(); // Refresh the course list
       } catch (error) {
         console.error('Error deleting course:', error);
         toast.error(error.response?.data?.message || error.message || 'Error deleting course');
@@ -176,6 +206,7 @@ const InstructorDashboard = () => {
   };
 
   const getCategoryName = (categoryId) => {
+    if (!categoryId) return 'Uncategorized';
     const category = categories.find(cat => cat._id === categoryId);
     return category ? category.name : 'Uncategorized';
   };
@@ -189,6 +220,15 @@ const InstructorDashboard = () => {
     }
   };
 
+  // Format price for display
+  const formatPrice = (price) => {
+    if (price === undefined || price === null || price === '') return 'Free';
+    const numericPrice = typeof price === 'string' ? parseFloat(price) : price;
+    if (isNaN(numericPrice)) return 'Free';
+    if (numericPrice === 0) return 'Free';
+    return `₹${numericPrice.toFixed(2)}`;
+  };
+
   return (
     <div className="flex h-screen bg-gray-100">
       {/* Main Content */}
@@ -200,7 +240,7 @@ const InstructorDashboard = () => {
             <p className="text-gray-600 mt-1">Manage your courses efficiently</p>
           </div>
 
-          {/* Create Course Button - Fixed condition */}
+          {/* Create Course Button */}
           {student?.role === "instructor" && (
             <div className="mb-6">
               <button
@@ -243,6 +283,9 @@ const InstructorDashboard = () => {
                         Level
                       </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Price
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
@@ -271,6 +314,11 @@ const InstructorDashboard = () => {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${getLevelColor(course.level)}`}>
                             {course.level || 'beginner'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            {formatPrice(course.price)}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -408,6 +456,35 @@ const InstructorDashboard = () => {
                         <option value="advanced">Advanced</option>
                       </select>
                     </div>
+
+                    {/* Price Field */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Price (₹) <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">
+                          ₹
+                        </span>
+                        <input
+                          type="number"
+                          name="price"
+                          value={formData.price}
+                          onChange={handleInputChange}
+                          placeholder="0.00"
+                          min="0"
+                          step="0.01"
+                          className={`w-full pl-8 pr-3 py-2 border ${errors.price ? 'border-red-500' : 'border-gray-300'
+                            } rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                        />
+                      </div>
+                      {errors.price && (
+                        <p className="mt-1 text-xs text-red-500">{errors.price}</p>
+                      )}
+                      <p className="mt-1 text-xs text-gray-500">
+                        Enter 0 for free courses
+                      </p>
+                    </div>
                   </div>
                 </div>
 
@@ -423,7 +500,7 @@ const InstructorDashboard = () => {
                   <button
                     type="submit"
                     disabled={formLoading}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {formLoading ? 'Saving...' : (editingCourse ? 'Update Course' : 'Create Course')}
                   </button>

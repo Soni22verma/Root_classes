@@ -1,3 +1,4 @@
+// CourseContentManager.jsx
 import { toast } from 'react-toastify';
 import axios from 'axios';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -211,6 +212,7 @@ const CourseContentManager = () => {
     formData.append('chapterId', selectedChapter._id);
     formData.append('title', topicData.title);
     formData.append('description', topicData.description || '');
+    // IMPORTANT: Send isPreviewFree as a proper boolean
     formData.append('isPreviewFree', topicData.isPreviewFree);
     formData.append('order', topicData.order);
     
@@ -224,14 +226,16 @@ const CourseContentManager = () => {
 
     try {
       if (editingItem?.type === 'topic') {
-        await axios.post(api.course.updateTopic, formData, {
+        const response = await axios.post(api.course.updateTopic, formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
+        console.log('Update response:', response.data);
         toast.success('Topic updated successfully');
       } else {
-        await axios.post(api.course.addTopic, formData, {
+        const response = await axios.post(api.course.addTopic, formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
+        console.log('Add response:', response.data);
         toast.success('Topic added successfully');
       }
       await fetchCourseData();
@@ -653,6 +657,12 @@ const CourseContentManager = () => {
                                                   Free Preview
                                                 </span>
                                               )}
+                                              {!topic.isPreviewFree && (
+                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 rounded-md text-xs font-medium">
+                                                  <Lock size={12} />
+                                                  Paid Content
+                                                </span>
+                                              )}
                                               {topic.order > 0 && (
                                                 <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md text-xs">
                                                   <Clock size={12} />
@@ -840,23 +850,29 @@ const CourseContentManager = () => {
                     <p className="text-xs text-slate-400 mt-1">Lower numbers appear first</p>
                   </div>
 
-                  {/* Free Preview Toggle */}
+                  {/* Free Preview Toggle - Enhanced */}
                   <div className="flex items-center justify-between p-4 bg-gradient-to-r from-slate-50 to-slate-100 rounded-xl border border-slate-200">
                     <div className="flex items-center gap-3">
                       {topicData.isPreviewFree ? (
                         <Unlock size={20} className="text-emerald-600" />
                       ) : (
-                        <Lock size={20} className="text-slate-500" />
+                        <Lock size={20} className="text-red-500" />
                       )}
                       <div>
-                        <p className="font-semibold text-slate-800">Free Preview Available</p>
-                        <p className="text-xs text-slate-500">Allow students to preview this topic before enrollment</p>
+                        <p className="font-semibold text-slate-800">
+                          {topicData.isPreviewFree ? 'Free Preview Available' : 'Paid Content'}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {topicData.isPreviewFree 
+                            ? 'Students can preview this topic before enrollment' 
+                            : 'Students must enroll to access this content'}
+                        </p>
                       </div>
                     </div>
                     <button
                       onClick={() => setTopicData({ ...topicData, isPreviewFree: !topicData.isPreviewFree })}
                       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all ${
-                        topicData.isPreviewFree ? 'bg-emerald-600' : 'bg-slate-300'
+                        topicData.isPreviewFree ? 'bg-emerald-600' : 'bg-red-500'
                       }`}
                     >
                       <span
