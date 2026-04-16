@@ -59,6 +59,11 @@ const userSchema = new mongoose.Schema(
                 ref: "Course",
             },
         ],
+        scholarshipApplied: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Scholarship",
+            default: null
+        },
 
 
     },

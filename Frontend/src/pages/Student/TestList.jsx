@@ -91,13 +91,14 @@ const StudentTestPanel = () => {
     }
   };
 
-  const SubmitTest = async (testId, studentAnswers, totalScore) => {
+  const SubmitTest = async (testId, studentAnswers) => {
     try {
       setSubmitting(true);
       
+      // Format answers as object with questionId as key
       const formattedAnswers = {};
-      studentAnswers.forEach((answer, questionId) => {
-        formattedAnswers[questionId] = answer;
+      Object.keys(studentAnswers).forEach(questionId => {
+        formattedAnswers[questionId] = studentAnswers[questionId];
       });
       
       const requestData = {
@@ -106,17 +107,20 @@ const StudentTestPanel = () => {
         answers: formattedAnswers
       };
       
-      console.log('Submitting test:', requestData);
+      console.log('Submitting test with data:', JSON.stringify(requestData, null, 2));
       
       const res = await axios.post(api.result.submitTest, requestData);
       
-      console.log('Submit response:', res);
+      console.log('Submit response:', res.data);
       
       if (res.data && res.data.success) {
         setScoreDetails(res.data.data);
-        return true;
+        return {
+          success: true,
+          data: res.data.data
+        };
       }
-      return false;
+      return { success: false };
     } catch (error) {
       console.error('Error submitting test:', error);
       if (error.response) {
@@ -125,7 +129,7 @@ const StudentTestPanel = () => {
       } else {
         alert('Network error. Please check your connection.');
       }
-      return false;
+      return { success: false };
     } finally {
       setSubmitting(false);
     }
@@ -167,10 +171,8 @@ const StudentTestPanel = () => {
       console.error('Error fetching questions:', error);
     }
     
-    return getSampleQuestions(testId);
+    return [];
   };
-
-
 
   const handleStartTest = async (test) => {
     let currentStudentId = studentId;
@@ -210,7 +212,6 @@ const StudentTestPanel = () => {
     const testQuestions = await fetchTestQuestions(test.id);
     setQuestions(testQuestions);
     
-    // Set timer
     if (test.duration) {
       setTimeRemaining(test.duration * 60);
       setTimerActive(true);
@@ -246,24 +247,28 @@ const StudentTestPanel = () => {
   }, [timerActive, timeRemaining, testCompleted]);
 
   const calculateAndSubmitScore = async () => {
-    const answerMap = new Map();
+    // Create a plain object with questionId as key
+    const formattedAnswers = {};
     let correctCount = 0;
     
     questions.forEach(question => {
       const userAnswer = answers[question.id];
-      answerMap.set(question.questionId, userAnswer);
+      // Use the actual MongoDB _id as key
+      formattedAnswers[question.questionId] = userAnswer;
       
       if (userAnswer === question.correctAnswer) {
         correctCount++;
       }
     });
     
+    console.log('Submitting answers:', formattedAnswers);
+    
     const percentage = (correctCount / questions.length) * 100;
     setScore(percentage);
     
-    const submitted = await SubmitTest(selectedTest.id, answerMap, percentage);
+    const result = await SubmitTest(selectedTest.id, formattedAnswers);
     
-    if (submitted) {
+    if (result.success) {
       setTestCompleted(true);
       setTimerActive(false);
     } else {
@@ -273,10 +278,10 @@ const StudentTestPanel = () => {
   };
 
   const handleAnswerSelect = (questionId, answerIndex) => {
-    setAnswers({
-      ...answers,
+    setAnswers(prev => ({
+      ...prev,
       [questionId]: answerIndex
-    });
+    }));
   };
 
   const handleNextQuestion = () => {
@@ -349,7 +354,6 @@ const StudentTestPanel = () => {
   }
 
   if (!testStarted && !testCompleted) {
-    // Calculate stats
     const totalDuration = availableTests.reduce((sum, test) => sum + (test.duration || 0), 0);
     const totalQuestions = availableTests.reduce((sum, test) => sum + (test.totalQuestions || 0), 0);
     
@@ -409,7 +413,7 @@ const StudentTestPanel = () => {
 
         <div className="max-w-7xl mx-auto px-4 pb-12">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {availableTests.map((test, index) => (
+            {availableTests.map((test) => (
               <div 
                 key={test.id} 
                 className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden transform hover:-translate-y-1"
@@ -520,7 +524,6 @@ const StudentTestPanel = () => {
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-        {/* Test Header */}
         <div className="bg-white shadow-lg sticky top-0 z-10">
           <div className="max-w-5xl mx-auto px-4 py-4">
             <div className="flex justify-between items-center mb-3">
@@ -569,7 +572,6 @@ const StudentTestPanel = () => {
           </div>
         </div>
 
-        {/* Question Area */}
         <div className="max-w-5xl mx-auto px-4 py-8">
           <div className="bg-white rounded-2xl shadow-xl p-8">
             <div className="mb-6">
@@ -692,7 +694,7 @@ const StudentTestPanel = () => {
     }
 
     const eligibilityStatus = scoreDetails?.isEligible;
-    const totalScore = scoreDetails?.score || Math.round((percentage / 100) * (scoreDetails?.totalMarks || questions.reduce((sum, q) => sum + q.marks, 0)));
+    const obtainedMarks = scoreDetails?.obtainedMarks || 0;
     const totalPossibleMarks = scoreDetails?.totalMarks || questions.reduce((sum, q) => sum + q.marks, 0);
 
     return (
@@ -732,7 +734,7 @@ const StudentTestPanel = () => {
                 <div className="text-sm text-gray-500">Attempted</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-yellow-600">{totalScore}</div>
+                <div className="text-2xl font-bold text-yellow-600">{obtainedMarks}</div>
                 <div className="text-sm text-gray-500">Score Obtained</div>
               </div>
               <div>

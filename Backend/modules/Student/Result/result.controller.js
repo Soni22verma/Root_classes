@@ -1,53 +1,63 @@
-import { Test } from "../models/test.model.js";
-import { Result } from "../models/result.model.js";
+import { Test } from "../../Admin/CreateTest/createtest.model.js";
+import { Result } from "./result.model.js";
 
 export const submitTest = async (req, res) => {
   try {
     const { studentId, testId, answers } = req.body;
 
-    const test = await Test.findById(testId);
+    console.log('Received submission:', { studentId, testId, answers });
 
+    // Find the test
+    const test = await Test.findById(testId);
     if (!test) {
       return res.status(404).json({
+        success: false,
         message: "Test not found",
       });
     }
 
+    // Check if already attempted
     const alreadyAttempted = await Result.findOne({ studentId, testId });
-
     if (alreadyAttempted) {
       return res.status(400).json({
+        success: false,
         message: "You already attempted this test",
       });
     }
 
     let obtainedMarks = 0;
     let totalMarks = 0;
-
     const formattedAnswers = [];
 
+    // Calculate scores
     test.questions.forEach((q) => {
       totalMarks += q.marks;
-
-      const userAnswer = answers[q._id.toString()];
-
+      
+      const questionIdStr = q._id.toString();
+      const userAnswer = answers[questionIdStr];
+      
+      // Convert both to numbers for comparison
       const isCorrect = Number(userAnswer) === Number(q.correctAnswer);
-
+      
+    
+      
       if (isCorrect) {
         obtainedMarks += q.marks;
       }
 
       formattedAnswers.push({
         questionId: q._id,
-        selectedAnswer: userAnswer,
+        selectedAnswer: userAnswer !== undefined ? String(userAnswer) : null,
         isCorrect: isCorrect,
       });
     });
 
     const percentage = (obtainedMarks / totalMarks) * 100;
-
     const isEligible = percentage >= 70;
 
+    console.log(`Total Marks: ${totalMarks}, Obtained: ${obtainedMarks}, Percentage: ${percentage}%`);
+
+    // Save result
     const result = await Result.create({
       studentId,
       testId,
@@ -65,8 +75,9 @@ export const submitTest = async (req, res) => {
     });
 
   } catch (error) {
-    console.log(error);
+    console.error('Error in submitTest:', error);
     res.status(500).json({
+      success: false,
       message: error.message,
     });
   }
