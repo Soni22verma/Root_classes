@@ -44,8 +44,7 @@ const api = {
         submitTest:Base_Url+"/result/submit_test"
      },
      enrollment:{
-       enrollCourse:Base_Url+"/student/enroll-course",
-
+       enrollCourse:Base_Url+"/enrollment/enroll-course",
      },
      payment:{
        createPayment:Base_Url+"/payment/create-payment",

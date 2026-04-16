@@ -16,7 +16,8 @@ import createcourseRouter from "./modules/instructor/createCourse/createCourse.r
 import testRouter from "./modules/Admin/CreateTest/createtest.routes.js";
 import resultRouter from "./modules/Student/Result/result.routes.js";
 import enrollmentRouter from "./modules/Admin/enrollment/enrollment.routes.js";
-import paymentRouter from "./modules/Admin/enrollment/payment.routes.js";
+import paymentRouter from "./modules/Student/enrollStudent/payment.routes.js";
+import enrollRouter from "./modules/Student/enrollStudent/enrollStudent.routes.js";
 
 dotenv.config();
 
@@ -47,6 +48,7 @@ app.use("/enroll",enrollmentRouter)
 app.use("/test",testRouter)
 app.use("/result",resultRouter)
 app.use("/payment",paymentRouter)
+app.use("/enrollment",enrollRouter)
 
 
 // Test route

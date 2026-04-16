@@ -1,19 +1,13 @@
-// CourseDetails.jsx
 import React, { useState, useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import useStudentStore from '../../../Store/studentstore';
 import api from '../../../services/endpoints';
-import { useCourseStore } from '../../../Store/courseStore';
 
 const loadRazorpayScript = () => {
   return new Promise((resolve) => {
-    if (window.Razorpay) {
-      resolve(true);
-      return;
-    }
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
     script.onload = () => resolve(true);
     script.onerror = () => resolve(false);
     document.body.appendChild(script);
@@ -21,7 +15,6 @@ const loadRazorpayScript = () => {
 };
 
 const CourseDetails = () => {
-  const{courseId} = useCourseStore()
   const location = useLocation();
   const navigate = useNavigate();
   const { student } = useStudentStore();
@@ -49,11 +42,7 @@ const CourseDetails = () => {
       setLoading(false);
       return;
     }
-
-    if (courseId) {
-      fetchCourseById();
-    }
-  }, [courseId, location.state]);
+  }, [location.state]);
 
   useEffect(() => {
     if (studentId && course?._id) {
@@ -61,48 +50,12 @@ const CourseDetails = () => {
     }
   }, [studentId, course]);
 
-  const fetchCourseById = async () => {
-    try {
-      setLoading(true);
-      let courseData = null;
-      
-      const res = await axios.get(api.fullcourse.getfullcourse);
-      let coursesData = [];
-      
-      if (res.data?.success && res.data?.data?.data) {
-        coursesData = res.data.data.data;
-      } else if (res.data?.data && Array.isArray(res.data.data)) {
-        coursesData = res.data.data;
-      } else if (Array.isArray(res.data)) {
-        coursesData = res.data;
-      }
-      
-      courseData = coursesData.find(c => c._id === courseId);
-      
-      if (courseData) {
-        setCourse(courseData);
-        const initialExpanded = {};
-        courseData.modules?.forEach((_, idx) => {
-          initialExpanded[idx] = false;
-        });
-        setExpandedModules(initialExpanded);
-      } else {
-        setError('Course not found');
-      }
-    } catch (err) {
-      console.error("Error fetching course:", err);
-      setError('Failed to load course details');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const checkEnrollmentStatus = async () => {
     try {
       const res = await axios.get(`${api.student.getStudentProfile}/${studentId}`);
       if (res.data?.success && res.data?.data) {
         const studentData = res.data.data;
-        if (studentData.enrolledCourses && studentData.enrolledCourses.includes(courseId)) {
+        if (studentData.enrolledCourses && studentData.enrolledCourses.includes(course._id)) {
           setIsEnrolled(true);
         }
       }
@@ -142,54 +95,213 @@ const CourseDetails = () => {
   };
 
   const isCompletelyFree = () => {
-    if (!course?.modules) return false;
-    
-    if (course.price === 0) return true;
-    
-    return !hasPaidContent();
+    return (!course?.price || course?.price === 0) && !hasPaidContent();
+  };
+
+  const isPaidCourse = () => {
+    return (course?.price && course?.price > 0) || hasPaidContent();
   };
 
   const getEnrollmentRequirement = () => {
     if (isCompletelyFree()) {
-      return { type: 'free', message: 'This course is completely free! Enroll now to get full access.', action: 'Enroll Now' };
+      return { type: 'free', message: 'This course is completely free!', action: 'View Course' };
     } else if (hasPaidContent() && hasPreviewContent()) {
-      return { type: 'mixed', message: 'This course has both free preview and paid content. Enroll with payment to access all topics.', action: `Enroll Now - ₹${course?.price || 0}` };
+      return { type: 'mixed', message: 'This course has both free preview and paid content.', action: `Enroll Now - ₹${course?.price || 0}` };
     } else if (hasPaidContent() && !hasPreviewContent()) {
       return { type: 'paid', message: 'Full course access requires payment.', action: `Enroll Now - ₹${course?.price || 0}` };
+    } else if (course?.price > 0) {
+      return { type: 'paid', message: 'This is a premium course.', action: `Enroll Now - ₹${course?.price || 0}` };
     } else {
-      return { type: 'preview', message: 'All topics are available as free preview!', action: 'Enroll Now' };
+      return { type: 'preview', message: 'All topics are available as free preview!', action: 'View Course' };
     }
   };
 
-  const createRazorpayPayment = async () => {
-    try {
-      const response = await axios.post(api.payment.createPayment, {
-        amount: course.price || 0,
-        currency: 'INR',
-        studentId: studentId,
-        courseId: courseId,
-        courseName: course.title
-      });
+const createRazorpayPayment = async () => {
+  try {
+    const response = await axios.post(api.payment.createPayment, {
+      courseId: course._id,
+      studentId: studentId,
+    });
 
-      if (response.data.success) {
-        return response.data.order;
-      } else {
-        throw new Error('Failed to create order');
+    if (response.data.success) {
+      // Store enrollmentId in component state or ref instead of window
+      return {
+        order: response.data.order,
+        enrollmentId: response.data.enrollmentId
+      };
+    } else {
+      throw new Error(response.data.message || 'Failed to create order');
+    }
+  } catch (error) {
+    console.error("Error creating order:", error);
+    throw error;
+  }
+};
+
+const verifyPayment = async (paymentData, enrollmentId) => {
+  try {
+    const verificationData = {
+      razorpay_order_id: paymentData.razorpay_order_id,
+      razorpay_payment_id: paymentData.razorpay_payment_id,
+      razorpay_signature: paymentData.razorpay_signature,
+      enrollmentId: enrollmentId
+    };
+    
+    console.log("Sending verification data:", verificationData);
+    
+    const response = await axios.post(api.payment.verifyPayment, verificationData);
+    
+    console.log("Verification response:", response.data);
+    
+    if (response.data.success) {
+      console.log("Payment verified, enrollment status:", response.data.data?.status);
+    }
+    
+    return response.data;
+  } catch (error) {
+    console.error("Error verifying payment:", error);
+    console.error("Error response:", error.response?.data);
+    throw error;
+  }
+};
+
+  const completeEnrollment = async () => {
+    try {
+      setEnrollmentLoading(true);
+      const res = await axios.get(`${api.student.getStudentProfile}/${studentId}`);
+      if (res.data?.success && res.data?.data) {
+        const studentData = res.data.data;
+        if (studentData.enrolledCourses && studentData.enrolledCourses.includes(course._id)) {
+          setIsEnrolled(true);
+        }
       }
+      
+      setShowEnrollmentMessage({
+        show: true,
+        message: "Payment successful! You are now enrolled in the course! 🎉",
+        type: 'success'
+      });
+      
+      setTimeout(() => {
+        setShowEnrollmentMessage({ show: false, message: '', type: '' });
+      }, 2000);
     } catch (error) {
-      console.error("Error creating order:", error);
-      throw error;
+      console.error("Error after payment:", error);
+      setShowEnrollmentMessage({
+        show: true,
+        message: "Payment successful but please contact support to complete enrollment.",
+        type: 'error'
+      });
+      setTimeout(() => setShowEnrollmentMessage({ show: false, message: '', type: '' }), 3000);
+    } finally {
+      setEnrollmentLoading(false);
     }
   };
 
-  const verifyPayment = async (paymentData) => {
-    try {
-      const response = await axios.post(api.payment.verifyPayment, paymentData);
-      return response.data;
-    } catch (error) {
-      console.error("Error verifying payment:", error);
-      throw error;
-    }
+const processRazorpayPayment = async () => {
+  const isScriptLoaded = await loadRazorpayScript();
+  if (!isScriptLoaded) {
+    setShowEnrollmentMessage({
+      show: true,
+      message: "Failed to load payment gateway. Please try again.",
+      type: 'error'
+    });
+    setTimeout(() => setShowEnrollmentMessage({ show: false, message: '', type: '' }), 3000);
+    return;
+  }
+
+  setPaymentProcessing(true);
+
+  try {
+    const { order, enrollmentId } = await createRazorpayPayment();
+    
+    const options = {
+      key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+      amount: order.amount,
+      currency: order.currency,
+      name: course.title,
+      description: `Enrollment for ${course.title}`,
+      order_id: order.id,
+      handler: async (response) => {
+        try {
+          const paymentVerification = await verifyPayment({
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature,
+          }, enrollmentId);
+
+          if (paymentVerification.success) {
+            setIsEnrolled(true);
+            setShowEnrollmentMessage({
+              show: true,
+              message: "Payment successful! You are now enrolled in the course! 🎉",
+              type: 'success'
+            });
+            setTimeout(() => {
+              setShowEnrollmentMessage({ show: false, message: '', type: '' });
+            }, 3000);
+          } else {
+            setShowEnrollmentMessage({
+              show: true,
+              message: "Payment verification failed. Please contact support.",
+              type: 'error'
+            });
+            setTimeout(() => setShowEnrollmentMessage({ show: false, message: '', type: '' }), 3000);
+          }
+        } catch (error) {
+          console.error("Verification error:", error);
+          setShowEnrollmentMessage({
+            show: true,
+            message: "Payment verification failed. Please contact support.",
+            type: 'error'
+          });
+          setTimeout(() => setShowEnrollmentMessage({ show: false, message: '', type: '' }), 3000);
+        } finally {
+          setPaymentProcessing(false);
+        }
+      },
+      prefill: {
+        name: student?.name || '',
+        email: student?.email || '',
+        contact: student?.phone || ''
+      },
+      notes: {
+        studentId: studentId,
+        courseId: course._id
+      },
+      theme: {
+        color: '#3B82F6'
+      },
+      modal: {
+        ondismiss: () => {
+          setPaymentProcessing(false);
+          setShowEnrollmentMessage({
+            show: true,
+            message: "Payment cancelled",
+            type: 'info'
+          });
+          setTimeout(() => setShowEnrollmentMessage({ show: false, message: '', type: '' }), 3000);
+        }
+      }
+    };
+
+    const razorpay = new window.Razorpay(options);
+    razorpay.open();
+  } catch (error) {
+    console.error("Payment error:", error);
+    setShowEnrollmentMessage({
+      show: true,
+      message: error.message || "Failed to process payment. Please try again.",
+      type: 'error'
+    });
+    setTimeout(() => setShowEnrollmentMessage({ show: false, message: '', type: '' }), 3000);
+    setPaymentProcessing(false);
+  }
+};
+
+  const handlePayment = async () => {
+    setShowPaymentModal(false);
+    await processRazorpayPayment();
   };
 
   const handleEnrollClick = () => {
@@ -204,207 +316,33 @@ const CourseDetails = () => {
     }
 
     if (isCompletelyFree()) {
-      enrollForFree();
+      handleViewCourse();
       return;
     }
 
-    // If course has paid content, show payment modal
-    if (hasPaidContent() || (course.price && course.price > 0)) {
+    if (isPaidCourse()) {
       setShowPaymentModal(true);
       return;
     }
     
-    // Default: try free enrollment
-    enrollForFree();
+    handleViewCourse();
   };
 
-  const handlePayment = async () => {
-    setShowPaymentModal(false);
-    
-    if (paymentMethod === 'razorpay') {
-      await processRazorpayPayment();
-    } else {
-      // Add other payment methods here if needed
-      await processRazorpayPayment();
-    }
-  };
-
-  const processRazorpayPayment = async () => {
-    const isScriptLoaded = await loadRazorpayScript();
-    if (!isScriptLoaded) {
-      setShowEnrollmentMessage({
-        show: true,
-        message: "Failed to load payment gateway. Please try again.",
-        type: 'error'
-      });
-      setTimeout(() => setShowEnrollmentMessage({ show: false, message: '', type: '' }), 3000);
-      return;
-    }
-
-    setPaymentProcessing(true);
-
-    try {
-      const order = await createRazorpayPayment();
-      
-      const options = {
-        key: process.env.REACT_APP_RAZORPAY_KEY_ID,
-        amount: order.amount,
-        currency: order.currency,
-        name: course.title,
-        description: `Enrollment for ${course.title}`,
-        order_id: order.id,
-        handler: async (response) => {
-          try {
-            const paymentVerification = await verifyPayment({
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-              studentId: studentId,
-              courseId: courseId
-            });
-
-            if (paymentVerification.success) {
-              await completeEnrollment();
-            } else {
-              setShowEnrollmentMessage({
-                show: true,
-                message: "Payment verification failed. Please contact support.",
-                type: 'error'
-              });
-              setTimeout(() => setShowEnrollmentMessage({ show: false, message: '', type: '' }), 3000);
-            }
-          } catch (error) {
-            console.error("Verification error:", error);
-            setShowEnrollmentMessage({
-              show: true,
-              message: "Payment verification failed. Please contact support.",
-              type: 'error'
-            });
-            setTimeout(() => setShowEnrollmentMessage({ show: false, message: '', type: '' }), 3000);
-          } finally {
-            setPaymentProcessing(false);
-          }
-        },
-        prefill: {
-          name: student?.name || '',
-          email: student?.email || '',
-          contact: student?.phone || ''
-        },
-        notes: {
-          studentId: studentId,
-          courseId: courseId
-        },
-        theme: {
-          color: '#3B82F6'
-        },
-        modal: {
-          ondismiss: () => {
-            setPaymentProcessing(false);
-            setShowEnrollmentMessage({
-              show: true,
-              message: "Payment cancelled",
-              type: 'info'
-            });
-            setTimeout(() => setShowEnrollmentMessage({ show: false, message: '', type: '' }), 3000);
-          }
-        }
-      };
-
-      const razorpay = new window.Razorpay(options);
-      razorpay.open();
-    } catch (error) {
-      console.error("Payment error:", error);
-      setShowEnrollmentMessage({
-        show: true,
-        message: error.message || "Failed to process payment. Please try again.",
-        type: 'error'
-      });
-      setTimeout(() => setShowEnrollmentMessage({ show: false, message: '', type: '' }), 3000);
-      setPaymentProcessing(false);
-    }
-  };
-
-  const enrollForFree = async () => {
-    try {
-      setEnrollmentLoading(true);
-      console.log(studentId,"hhhhhhhhhhhh")
-
-      const res = await axios.post(api.enrollment.enrollCourse, {
-        studentId: studentId,
-        courseId: courseId
-      });
-      console.log(res)
-      if (res.data.message === "Already enrolled") {
-        setShowEnrollmentMessage({
-          show: true,
-          message: "You are already enrolled in this course!",
-          type: 'info'
-        });
-        setIsEnrolled(true);
-        setTimeout(() => setShowEnrollmentMessage({ show: false, message: '', type: '' }), 3000);
-      } else if (res.data.success) {
-        setShowEnrollmentMessage({
-          show: true,
-          message: "Successfully enrolled in the course! 🎉",
-          type: 'success'
-        });
-        setIsEnrolled(true);
-        
-        setTimeout(() => {
-          setShowEnrollmentMessage({ show: false, message: '', type: '' });
-          navigate('/stdprofile');
-        }, 2000);
-      }
-    } catch (error) {
-      console.log(error);
-      setShowEnrollmentMessage({
-        show: true,
-        message: error.response?.data?.message || "Failed to enroll. Please try again.",
-        type: 'error'
-      });
-      setTimeout(() => setShowEnrollmentMessage({ show: false, message: '', type: '' }), 3000);
-    } finally {
-      setEnrollmentLoading(false);
-    }
-  };
-
-  const completeEnrollment = async () => {
-    try {
-      setEnrollmentLoading(true);
-      const res = await axios.post(api.enrollment.enrollCourse, {
-        studentId: studentId,
-        courseId: courseId
-      });
-      
-      if (res.data.success) {
-        setShowEnrollmentMessage({
-          show: true,
-          message: "Payment successful! You are now enrolled in the course! 🎉",
-          type: 'success'
-        });
-        setIsEnrolled(true);
-        
-        setTimeout(() => {
-          setShowEnrollmentMessage({ show: false, message: '', type: '' });
-          navigate('/stdprofile');
-        }, 2000);
-      } else {
-        throw new Error(res.data.message || "Enrollment failed");
-      }
-    } catch (error) {
-      console.error("Enrollment error after payment:", error);
-      setShowEnrollmentMessage({
-        show: true,
-        message: "Payment successful but enrollment failed. Please contact support.",
-        type: 'error'
-      });
-      setTimeout(() => setShowEnrollmentMessage({ show: false, message: '', type: '' }), 3000);
-    } finally {
-      setEnrollmentLoading(false);
+  const handleViewCourse = () => {
+    if (isEnrolled || isCompletelyFree()) {
+      navigate(`/course-content/${course._id}`, { state: { course } });
+    } else if (isCompletelyFree()) {
+      navigate(`/course-content/${course._id}`, { state: { course } });
     }
   };
 
   const handlePlayVideo = (videoUrl, topicTitle, isPreviewFree) => {
+    if (isCompletelyFree()) {
+      setCurrentVideo({ url: videoUrl, title: topicTitle });
+      setShowVideoPlayer(true);
+      return;
+    }
+    
     if (!isEnrolled && !isPreviewFree) {
       setShowEnrollmentMessage({
         show: true,
@@ -419,6 +357,11 @@ const CourseDetails = () => {
   };
 
   const handleViewNotes = (notesUrl, topicTitle, isPreviewFree) => {
+    if (isCompletelyFree()) {
+      window.open(notesUrl, '_blank');
+      return;
+    }
+    
     if (!isEnrolled && !isPreviewFree) {
       setShowEnrollmentMessage({
         show: true,
@@ -534,6 +477,8 @@ const CourseDetails = () => {
   const freeTopics = calculateFreeTopics();
   const paidTopics = calculatePaidTopics();
   const enrollmentInfo = getEnrollmentRequirement();
+  const isFree = isCompletelyFree();
+  const isPaid = isPaidCourse();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -552,9 +497,8 @@ const CourseDetails = () => {
         </div>
       )}
 
-      {/* Payment Modal - Improved Version */}
-      {showPaymentModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 backdrop-blur-sm" onClick={() => !paymentProcessing && setShowPaymentModal(false)}>
+      {showPaymentModal && isPaid && (
+        <div className="fixed inset-0 bg-black/60 bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => !paymentProcessing && setShowPaymentModal(false)}>
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl transform transition-all" onClick={(e) => e.stopPropagation()}>
             <div className="text-center mb-6">
               <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -642,7 +586,6 @@ const CourseDetails = () => {
         </div>
       )}
 
-      {/* Rest of your component remains the same */}
       {/* Header Section */}
       <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-20 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-6">
@@ -665,20 +608,23 @@ const CourseDetails = () => {
                 <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">
                   {course.level || 'Beginner'}
                 </span>
-                {!isEnrolled && hasPaidContent() && (
-                  <span className="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-sm font-medium">
-                    Premium Course
-                  </span>
-                )}
-                {!isEnrolled && isCompletelyFree() && (
+                {isFree ? (
                   <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium">
                     Free Course
                   </span>
-                )}
-                {!isEnrolled && hasPreviewContent() && hasPaidContent() && (
-                  <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">
-                    Free Preview Available
-                  </span>
+                ) : (
+                  <>
+                    {!isEnrolled && (
+                      <span className="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-sm font-medium">
+                        Premium Course
+                      </span>
+                    )}
+                    {!isEnrolled && hasPreviewContent() && (
+                      <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">
+                        Free Preview Available
+                      </span>
+                    )}
+                  </>
                 )}
               </div>
               <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">{course.title}</h1>
@@ -712,10 +658,10 @@ const CourseDetails = () => {
                   <>
                     <div className="text-center mb-4">
                       <div className="text-3xl font-bold text-gray-900">
-                        {course.price && course.price > 0 ? (
-                          <>₹{course.price.toLocaleString('en-IN')}</>
-                        ) : (
+                        {isFree ? (
                           'Free'
+                        ) : (
+                          <>₹{course.price?.toLocaleString('en-IN') || 'Premium'}</>
                         )}
                       </div>
                       <p className="text-gray-500 text-sm mt-1">{enrollmentInfo.message}</p>
@@ -732,25 +678,27 @@ const CourseDetails = () => {
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                           </svg>
-                          {paymentProcessing ? 'Processing...' : 'Enrolling...'}
+                          {paymentProcessing ? 'Processing...' : 'Loading...'}
                         </span>
                       ) : (
                         enrollmentInfo.action
                       )}
                     </button>
                     
-                    <div className="mt-4 space-y-2 text-xs text-gray-500">
-                      <div className="flex justify-between">
-                        <span>Free Topics:</span>
-                        <span className="font-semibold text-green-600">{freeTopics} topics</span>
-                      </div>
-                      {paidTopics > 0 && (
+                    {!isFree && (
+                      <div className="mt-4 space-y-2 text-xs text-gray-500">
                         <div className="flex justify-between">
-                          <span>Premium Topics:</span>
-                          <span className="font-semibold text-orange-600">{paidTopics} topics</span>
+                          <span>Free Topics:</span>
+                          <span className="font-semibold text-green-600">{freeTopics} topics</span>
                         </div>
-                      )}
-                    </div>
+                        {paidTopics > 0 && (
+                          <div className="flex justify-between">
+                            <span>Premium Topics:</span>
+                            <span className="font-semibold text-orange-600">{paidTopics} topics</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </>
                 ) : (
                   <div className="text-center">
@@ -762,10 +710,10 @@ const CourseDetails = () => {
                     <p className="font-semibold text-gray-900 text-lg">You're enrolled!</p>
                     <p className="text-sm text-gray-600 mt-1">Full access to all content</p>
                     <button
-                      onClick={() => navigate('/stdprofile')}
+                      onClick={handleViewCourse}
                       className="mt-4 text-blue-600 hover:text-blue-700 font-medium text-sm inline-flex items-center gap-1"
                     >
-                      Go to Dashboard
+                      Start Learning
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
@@ -962,7 +910,7 @@ const CourseDetails = () => {
                               <div className="px-6 pb-4 space-y-2">
                                 {chapter.topics?.map((topic, topicIndex) => {
                                   const isPreviewFree = topic.isPreviewFree === true;
-                                  const canAccess = isEnrolled || isPreviewFree;
+                                  const canAccess = isEnrolled || isPreviewFree || isFree;
                                   
                                   return (
                                     <div key={topic._id || topicIndex} className="ml-6 border border-gray-200 rounded-xl bg-white overflow-hidden hover:shadow-md transition-shadow">
@@ -992,14 +940,16 @@ const CourseDetails = () => {
                                               <span className="ml-2 text-xs text-gray-500">⏱️ {topic.duration} min</span>
                                             )}
                                             <div className="flex gap-2 mt-1">
-                                              {!isEnrolled && isPreviewFree && (
+                                              {!isFree && !isEnrolled && isPreviewFree && (
                                                 <span className="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full">Free Preview</span>
                                               )}
-                                              {!isEnrolled && !isPreviewFree && (
+                                              {!isFree && !isEnrolled && !isPreviewFree && (
                                                 <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">Premium Content</span>
                                               )}
-                                              {isEnrolled && (
-                                                <span className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">Enrolled Access</span>
+                                              {(isEnrolled || isFree) && (
+                                                <span className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+                                                  {isFree ? 'Free Access' : 'Enrolled Access'}
+                                                </span>
                                               )}
                                             </div>
                                           </div>

@@ -15,13 +15,10 @@ const ClassroomCourses = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [categories, setCategories] = useState([]);
   const [enrolledCourses, setEnrolledCourses] = useState([]);
-  const [fetchingEnrolled, setFetchingEnrolled] = useState(false);
 
   // Extensive collection of diverse dummy images for different course types
   const getRandomImageForCourse = (courseId, courseTitle, category) => {
-    // Create a consistent but unique image based on course ID
     const imageSets = {
-      // Technology & Programming
       programming: [
         'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=500&h=250&fit=crop',
         'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=500&h=250&fit=crop',
@@ -29,7 +26,6 @@ const ClassroomCourses = () => {
         'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=500&h=250&fit=crop',
         'https://images.unsplash.com/photo-1587620962725-abab7fe55159?w=500&h=250&fit=crop',
       ],
-      // Business & Marketing
       business: [
         'https://images.unsplash.com/photo-1444653614773-995cb1ef9efa?w=500&h=250&fit=crop',
         'https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=500&h=250&fit=crop',
@@ -37,7 +33,6 @@ const ClassroomCourses = () => {
         'https://images.unsplash.com/photo-1573164713988-8665fc963095?w=500&h=250&fit=crop',
         'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=500&h=250&fit=crop',
       ],
-      // Design & Creative
       design: [
         'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=500&h=250&fit=crop',
         'https://images.unsplash.com/photo-1581291518633-83b4ebd1d83e?w=500&h=250&fit=crop',
@@ -45,7 +40,6 @@ const ClassroomCourses = () => {
         'https://images.unsplash.com/photo-1586717791821-3f44a563fa4c?w=500&h=250&fit=crop',
         'https://images.unsplash.com/photo-1581291518633-83b4ebd1d83e?w=500&h=250&fit=crop',
       ],
-      // Data Science & AI
       data: [
         'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=500&h=250&fit=crop',
         'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=500&h=250&fit=crop',
@@ -53,7 +47,6 @@ const ClassroomCourses = () => {
         'https://images.unsplash.com/photo-1518186285589-2f7649de83e0?w=500&h=250&fit=crop',
         'https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=500&h=250&fit=crop',
       ],
-      // Marketing & Social Media
       marketing: [
         'https://images.unsplash.com/photo-1432888498266-38ffec3eaf0a?w=500&h=250&fit=crop',
         'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=500&h=250&fit=crop',
@@ -61,7 +54,6 @@ const ClassroomCourses = () => {
         'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=500&h=250&fit=crop',
         'https://images.unsplash.com/photo-1533750349088-cd871a92f312?w=500&h=250&fit=crop',
       ],
-      // Development & Coding
       development: [
         'https://images.unsplash.com/photo-1516116216624-53e697fedbea?w=500&h=250&fit=crop',
         'https://images.unsplash.com/photo-1523800503107-5bc3ba2a6f81?w=500&h=250&fit=crop',
@@ -69,21 +61,15 @@ const ClassroomCourses = () => {
         'https://images.unsplash.com/photo-1522252234503-e356532cafd5?w=500&h=250&fit=crop',
         'https://images.unsplash.com/photo-1504639725590-34d0984388bd?w=500&h=250&fit=crop',
       ],
-      // Default fallback images
       default: [
         'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=500&h=250&fit=crop',
         'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=500&h=250&fit=crop',
         'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=500&h=250&fit=crop',
         'https://images.unsplash.com/photo-1552664730-d307ca884978?w=500&h=250&fit=crop',
         'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=500&h=250&fit=crop',
-        'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=500&h=250&fit=crop',
-        'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=500&h=250&fit=crop',
-        'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=500&h=250&fit=crop',
-        'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=500&h=250&fit=crop',
       ]
     };
 
-    // Determine image category based on course category or title
     let imageCategory = 'default';
     const categoryName = (category || '').toLowerCase();
     const titleName = (courseTitle || '').toLowerCase();
@@ -103,7 +89,6 @@ const ClassroomCourses = () => {
     }
 
     const images = imageSets[imageCategory];
-    // Use course ID to get consistent unique image for each course
     const hash = parseInt(courseId?.toString().slice(-4) || '0', 16) || courseId?.length || 0;
     return images[hash % images.length];
   };
@@ -138,13 +123,9 @@ const ClassroomCourses = () => {
   };
 
   const fetchEnrolledCourses = async () => {
-    if (!studentId) {
-      setFetchingEnrolled(false);
-      return;
-    }
+    if (!studentId) return;
 
     try {
-      setFetchingEnrolled(true);
       const res = await axios.get(`${api.student.getStudentProfile}/${studentId}`);
       if (res.data?.success && res.data?.data) {
         const studentData = res.data.data;
@@ -152,24 +133,32 @@ const ClassroomCourses = () => {
       }
     } catch (error) {
       console.error("Error fetching enrolled courses:", error);
-    } finally {
-      setFetchingEnrolled(false);
     }
   };
 
-  const hasFreePreviewContent = (course) => {
+  const hasPaidContent = (course) => {
     if (!course?.modules) return false;
     
     for (const module of course.modules) {
       for (const chapter of module.chapters || []) {
         for (const topic of chapter.topics || []) {
-          if (topic.isPreviewFree === true) {
+          if (topic.isPreviewFree === false) {
             return true;
           }
         }
       }
     }
     return false;
+  };
+
+  // Check if course is free (price is 0 AND no paid content)
+  const isFreeCourse = (course) => {
+    return (!course.price || course.price === 0) && !hasPaidContent(course);
+  };
+
+  // Check if course is paid (price > 0 OR has paid content)
+  const isPaidCourse = (course) => {
+    return (course.price && course.price > 0) || hasPaidContent(course);
   };
 
   const getCoursePriceDisplay = (course) => {
@@ -179,29 +168,11 @@ const ClassroomCourses = () => {
       return `₹${course.price.toLocaleString('en-IN')}`;
     }
     
-    if (hasFreePreviewContent(course)) {
-      return 'Free Preview';
+    if (hasPaidContent(course)) {
+      return 'Premium';
     }
     
     return 'Free';
-  };
-
-  const getCourseStatusBadge = (course) => {
-    const enrolled = isAlreadyEnrolled(course._id);
-    
-    if (enrolled) {
-      return { text: 'Enrolled', variant: 'enrolled' };
-    }
-    
-    if (course.price && course.price > 0) {
-      return { text: 'Paid', variant: 'paid' };
-    }
-    
-    if (hasFreePreviewContent(course)) {
-      return { text: 'Preview', variant: 'preview' };
-    }
-    
-    return { text: 'Free', variant: 'free' };
   };
 
   useEffect(() => {
@@ -219,6 +190,7 @@ const ClassroomCourses = () => {
   };
 
   const handleViewDetails = (course) => {
+    // Pass the course data to CourseDetails page
     navigate(`/coursedetails`, { state: { course } });
   };
 
@@ -290,23 +262,11 @@ const ClassroomCourses = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-8">
             {filteredCourses.map((course) => {
               const enrolled = isAlreadyEnrolled(course._id);
-              const status = getCourseStatusBadge(course);
               const priceDisplay = getCoursePriceDisplay(course);
               const courseImage = getRandomImageForCourse(course._id, course.title, course.category?.name);
+              const isFree = isFreeCourse(course);
+              const isPaid = isPaidCourse(course);
               
-              const getBadgeStyles = () => {
-                switch(status.variant) {
-                  case 'enrolled':
-                    return 'bg-green-100 text-green-700';
-                  case 'paid':
-                    return 'bg-orange-100 text-orange-700';
-                  case 'preview':
-                    return 'bg-purple-100 text-purple-700';
-                  default:
-                    return 'bg-blue-100 text-blue-700';
-                }
-              };
-
               return (
                 <div
                   key={course._id}
@@ -319,16 +279,28 @@ const ClassroomCourses = () => {
                       alt={course.title}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                       onError={(e) => {
-                        // Fallback if image fails to load
                         e.target.src = 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=500&h=250&fit=crop';
                       }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                     
-                    {/* Price Badge */}
-                    {!enrolled && course.price > 0 && (
+                    {/* Price Badge - Only show for paid courses */}
+                    {!enrolled && isPaid && course.price > 0 && (
                       <div className="absolute top-3 right-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-bold px-3 py-1.5 rounded-lg shadow-lg">
                         ₹{course.price}
+                      </div>
+                    )}
+                    
+                    {!enrolled && isPaid && (!course.price || course.price === 0) && (
+                      <div className="absolute top-3 right-3 bg-gradient-to-r from-orange-600 to-red-600 text-white text-sm font-bold px-3 py-1.5 rounded-lg shadow-lg">
+                        Premium
+                      </div>
+                    )}
+                    
+                    {/* Free Badge for free courses */}
+                    {!enrolled && isFree && (
+                      <div className="absolute top-3 right-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white text-sm font-bold px-3 py-1.5 rounded-lg shadow-lg">
+                        Free
                       </div>
                     )}
                     
@@ -343,8 +315,12 @@ const ClassroomCourses = () => {
                   {/* Course Content */}
                   <div className="p-6">
                     <div className="flex items-center justify-between mb-3">
-                      <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${getBadgeStyles()}`}>
-                        {status.text}
+                      <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
+                        enrolled ? 'bg-green-100 text-green-700' : 
+                        isFree ? 'bg-green-100 text-green-700' : 
+                        'bg-orange-100 text-orange-700'
+                      }`}>
+                        {enrolled ? 'Enrolled' : (isFree ? 'Free Course' : 'Premium Course')}
                       </span>
                     </div>
 
@@ -379,12 +355,9 @@ const ClassroomCourses = () => {
                       <span className="text-2xl font-bold text-gray-900">
                         {priceDisplay}
                       </span>
-                      {!enrolled && hasFreePreviewContent(course) && course.price === 0 && (
-                        <span className="text-xs text-purple-600 font-medium">Preview Available</span>
-                      )}
                     </div>
 
-                    {/* View Details Button - Blue */}
+                    {/* View Details Button - Same for both free and paid courses */}
                     <button
                       onClick={() => handleViewDetails(course)}
                       className="w-full px-4 py-2.5 text-center text-sm font-semibold rounded-lg transition-all duration-200 transform hover:scale-105 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-md hover:shadow-lg"
@@ -393,9 +366,15 @@ const ClassroomCourses = () => {
                     </button>
 
                     {/* Additional Info */}
-                    {!enrolled && course.price > 0 && (
+                    {!enrolled && isPaid && (
                       <p className="text-xs text-gray-400 text-center mt-3">
                         💳 Secure payment gateway
+                      </p>
+                    )}
+
+                    {!enrolled && isFree && (
+                      <p className="text-xs text-green-600 text-center mt-3">
+                        🎓 Completely free - Start learning today!
                       </p>
                     )}
 
