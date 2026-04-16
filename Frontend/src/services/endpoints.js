@@ -45,6 +45,9 @@ const api = {
      },
      enrollment:{
        enrollCourse:Base_Url+"/student/enroll-course"
+     },
+     scholarship:{
+        apply:Base_Url+"/scholarship/apply"
      }
 }
 
