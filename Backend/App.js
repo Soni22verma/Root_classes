@@ -17,6 +17,7 @@ import testRouter from "./modules/Admin/CreateTest/createtest.routes.js";
 import resultRouter from "./modules/Student/Result/result.routes.js";
 import enrollmentRouter from "./modules/Admin/enrollment/enrollment.routes.js";
 import scholarshipRouter from "./modules/Student/Scholrship/scholarship.routes.js";
+import paymentRouter from "./modules/Admin/enrollment/payment.routes.js";
 
 dotenv.config();
 

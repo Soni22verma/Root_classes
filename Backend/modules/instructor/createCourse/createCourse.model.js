@@ -12,9 +12,9 @@ const topicSchema = new mongoose.Schema({
 
   notesPublicId: { type: String},
 
-  duration: {type: Number  },
+  duration: {type: Number},
 
-  isPreviewFree: {type: Boolean, default: false},
+  isPreviewFree: {type: Boolean, default: true},
 
   order: { type: Number},
 

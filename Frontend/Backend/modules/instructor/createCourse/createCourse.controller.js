@@ -1,0 +1,863 @@
+import mongoose from "mongoose";
+import { Course } from "./createCourse.model.js";
+import { Category } from "../../Admin/category/category.model.js";
+import cloudinary from "../../../config/cloudinary.js";
+import User from "../../Student/student.model.js"
+
+
+  export const createCourse = async (req, res) => {
+    try {
+      const { title, description, category, level,price } = req.body;
+      console.log(req.body,"dfffffffffffffffffffff")
+
+      if (!title || !category) {
+        return res.status(400).json({
+          success: false,
+          message: "Title and Category are required",
+        });
+      }
+
+      if(!price){
+        return res.status(400).json({
+          message:"price is required",
+          error:true,
+          success:false
+        })
+      }
+
+      if (!mongoose.Types.ObjectId.isValid(category)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid Category ID",
+        });
+      }
+
+      const categoryExists = await Category.findById(category);
+      if (!categoryExists) {
+        return res.status(404).json({
+          success: false,
+          message: "Category not found",
+        });
+      }
+     console.log(req.user)
+      const course = await Course.create({
+        title,
+        description,
+        category,
+        price,
+        level: level || "beginner",
+        instructor: req.user?.id, 
+        modules: [],
+      });
+
+
+      console.log("USER:", req.user);
+
+      res.status(201).json({
+        success: true,
+        message: "Course created successfully",
+        data: course,
+      });
+
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  };
+
+export const GetCategory = async(req,res,next)=>{
+    try {
+        const categories = await Category.find().select("name")
+        return res.status(200).json({
+            message:"this is categories",
+            success:true,
+            data:categories
+        })
+        
+    } catch (error) {
+        next(error)
+    }
+}
+export const GetCreatedCourse = async(req,res,next)=>{
+    try {
+        const CreatedCourse = await Course.find()
+        return res.status(200).json({
+            message:"fatch all course successfully",
+            error:false,
+            success:true,
+            data:CreatedCourse
+        })
+        
+    } catch (error) {
+        next(error)
+    }
+}
+
+
+
+export const UpdateCourse = async (req, res, next) => {
+  try {
+    const { courseId, title, description, category, level,price } = req.body;
+
+    // 🔥 1. Check courseId
+    if (!courseId) {
+      return res.status(400).json({
+        message: "Course ID is required",
+        error: true,
+        success: false,
+      });
+    }
+
+    // 🔥 2. Check course exists
+    const existingCourse = await Course.findById(courseId);
+    if (!existingCourse) {
+      return res.status(404).json({
+        message: "Course not found",
+        error: true,
+        success: false,
+      });
+    }
+
+    // 🔥 3. Optional: Validate category
+    if (category && !mongoose.Types.ObjectId.isValid(category)) {
+      return res.status(400).json({
+        message: "Invalid category ID",
+        success: false,
+        error: true,
+      });
+    }
+
+    // 🔥 4. Update course
+    const updatedCourse = await Course.findByIdAndUpdate(
+      courseId,
+      {
+        title: title || existingCourse.title,
+        description: description || existingCourse.description,
+        category: category || existingCourse.category,
+        level: level || existingCourse.level,
+        price: price || existingCourse.price,
+      },
+      { returnDocument: "after" }
+    );
+
+    // 🔥 5. Send response
+    res.status(200).json({
+      message: "Course updated successfully",
+      success: true,
+      error: false,
+      data: updatedCourse,
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const DeleteCourse = async(req,res,next)=>{
+    try {
+        const {courseId} = req.body;
+        const deletecourse = await Course.findByIdAndDelete(courseId)
+        return res.status(200).json({
+            message:"course deleted successfully",
+            error:false,
+            success:true,
+            data:deletecourse
+        })
+
+        
+    } catch (error) {
+       next(error)  
+    }
+}
+
+
+export const handleGetCourseById = async (req, res, next) => {
+  try {
+    console.log("Fetching course by ID");
+    const { courseId } = req.body;
+    
+    if (!courseId) {
+      return res.status(400).json({
+        message: "courseId is required",
+        success: false
+      });
+    }
+
+    // ✅ CORRECT: Use lowercase 'category' (field name from schema)
+    const course = await Course.findById(courseId).populate('category');
+    
+    // If you want to populate instructor too:
+    // const course = await Course.findById(courseId).populate('category').populate('instructor');
+
+    if (!course) {
+      return res.status(404).json({
+        message: "Course not found",
+        success: false
+      });
+    }
+
+    return res.status(200).json({
+      message: "Course details fetched successfully",
+      success: true,
+      data: course
+    });
+
+  } catch (error) {
+    console.log(error, "Error from handleGetCourseById");
+    return res.status(500).json({
+      message: "Internal server error",
+      success: false,
+      error: error.message
+    });
+  }
+};
+
+
+export const handleAddModule = async (req, res, next) => {
+  try {
+    const { title, courseId } = req.body;
+    console.log(req.body, "this is my request body of handleAddModule");
+
+    // Validate required fields
+    if (!title || !courseId) {
+      return res.status(400).json({
+        message: "Title and courseId are required",
+        success: false
+      });
+    }
+
+    // Find the course by ID
+    const course = await Course.findById(courseId);
+    
+    if (!course) {
+      return res.status(404).json({
+        message: "Course not found",
+        success: false
+      });
+    }
+
+    // Create new module object
+    const newModule = {
+      title: title,
+      chapters: []  // Empty chapters array initially
+    };
+
+    // Push the new module to the course modules array
+    course.modules.push(newModule);
+    
+    // Save the course
+    await course.save();
+
+    // Get the newly added module (last one in the array)
+    const addedModule = course.modules[course.modules.length - 1];
+
+    return res.status(200).json({
+      message: "Module added successfully",
+      success: true,
+      data: {
+        module: addedModule,
+        course: course
+      }
+    });
+
+  } catch (error) {
+    console.error("Error in handleAddModule:", error);
+    return res.status(500).json({
+      message: "Internal server error",
+      success: false,
+      error: error.message
+    });
+  }
+};
+
+export const handleUpdateModule = async (req, res, next) => {
+  try {
+    const { courseId, moduleId, title } = req.body;
+
+    if (!courseId || !moduleId || !title) {
+      return res.status(400).json({
+        message: "courseId, moduleId, and title are required",
+        success: false
+      });
+    }
+
+    const course = await Course.findById(courseId);
+    
+    if (!course) {
+      return res.status(404).json({
+        message: "Course not found",
+        success: false
+      });
+    }
+
+    // Find the module by id and update its title
+    const module = course.modules.id(moduleId);
+    if (!module) {
+      return res.status(404).json({
+        message: "Module not found",
+        success: false
+      });
+    }
+
+    module.title = title;
+    await course.save();
+
+    return res.status(200).json({
+      message: "Module updated successfully",
+      success: true,
+      data: course
+    });
+
+  } catch (error) {
+    console.error("Error in handleUpdateModule:", error);
+    return res.status(500).json({
+      message: "Internal server error",
+      success: false,
+      error: error.message
+    });
+  }
+};
+
+export const handleDeleteModule = async (req, res, next) => {
+  try {
+    const { courseId, moduleId } = req.body;
+
+    if (!courseId || !moduleId) {
+      return res.status(400).json({
+        message: "courseId and moduleId are required",
+        success: false
+      });
+    }
+
+    const course = await Course.findByIdAndUpdate(
+      courseId,
+      {
+        $pull: { modules: { _id: moduleId } }
+      },
+      { new: true }
+    );
+
+    if (!course) {
+      return res.status(404).json({
+        message: "Course not found",
+        success: false
+      });
+    }
+
+    return res.status(200).json({
+      message: "Module deleted successfully",
+      success: true,
+      data: course
+    });
+
+  } catch (error) {
+    console.error("Error in handleDeleteModule:", error);
+    return res.status(500).json({
+      message: "Internal server error",
+      success: false,
+      error: error.message
+    });
+  }
+};
+
+export const handleAddChapter = async (req, res, next) => {
+  try {
+    const { courseId, moduleId, title } = req.body;
+
+    if (!courseId || !moduleId || !title) {
+      return res.status(400).json({
+        message: "courseId, moduleId, and title are required",
+        success: false
+      });
+    }
+
+    const course = await Course.findById(courseId);
+    
+    if (!course) {
+      return res.status(404).json({
+        message: "Course not found",
+        success: false
+      });
+    }
+
+    // Find the module
+    const module = course.modules.id(moduleId);
+    if (!module) {
+      return res.status(404).json({
+        message: "Module not found",
+        success: false
+      });
+    }
+
+    // Add new chapter
+    const newChapter = {
+      title: title,
+      topics: []
+    };
+    
+    module.chapters.push(newChapter);
+    await course.save();
+
+    const addedChapter = module.chapters[module.chapters.length - 1];
+
+    return res.status(200).json({
+      message: "Chapter added successfully",
+      success: true,
+      data: {
+        chapter: addedChapter,
+        course: course
+      }
+    });
+
+  } catch (error) {
+    console.error("Error in handleAddChapter:", error);
+    return res.status(500).json({
+      message: "Internal server error",
+      success: false,
+      error: error.message
+    });
+  }
+};
+
+export const handleUpdateChapter = async (req, res, next) => {
+  try {
+    const { courseId, moduleId, chapterId, title } = req.body;
+
+    if (!courseId || !moduleId || !chapterId || !title) {
+      return res.status(400).json({
+        message: "courseId, moduleId, chapterId, and title are required",
+        success: false
+      });
+    }
+
+    const course = await Course.findById(courseId);
+    
+    if (!course) {
+      return res.status(404).json({
+        message: "Course not found",
+        success: false
+      });
+    }
+
+    const module = course.modules.id(moduleId);
+    if (!module) {
+      return res.status(404).json({
+        message: "Module not found",
+        success: false
+      });
+    }
+
+    const chapter = module.chapters.id(chapterId);
+    if (!chapter) {
+      return res.status(404).json({
+        message: "Chapter not found",
+        success: false
+      });
+    }
+
+    chapter.title = title;
+    await course.save();
+
+    return res.status(200).json({
+      message: "Chapter updated successfully",
+      success: true,
+      data: course
+    });
+
+  } catch (error) {
+    console.error("Error in handleUpdateChapter:", error);
+    return res.status(500).json({
+      message: "Internal server error",
+      success: false,
+      error: error.message
+    });
+  }
+};
+
+
+export const handleDeleteChapter = async (req, res) => {
+  try {
+    const { courseId, moduleId, chapterId } = req.body;
+
+    if (!courseId || !moduleId || !chapterId) {
+      return res.status(400).json({
+        success: false,
+        message: "courseId, moduleId, and chapterId are required"
+      });
+    }
+
+    const course = await Course.findById(courseId);
+
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: "Course not found"
+      });
+    }
+
+    const module = course.modules.id(moduleId);
+
+    if (!module) {
+      return res.status(404).json({
+        success: false,
+        message: "Module not found"
+      });
+    }
+
+    const chapter = module.chapters.id(chapterId);
+
+    if (!chapter) {
+      return res.status(404).json({
+        success: false,
+        message: "Chapter not found"
+      });
+    }
+
+    // delete chapter
+    chapter.deleteOne();
+
+    await course.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Chapter deleted successfully",
+      data: course
+    });
+
+  } catch (error) {
+    console.error("Error in handleDeleteChapter:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message
+    });
+  }
+};
+
+
+export const handleAddTopic = async (req, res) => {
+  try {
+    const {
+      courseId,
+      moduleId,
+      chapterId,
+      title,
+      description,
+      isPreviewFree,
+      order
+    } = req.body;
+
+    if (!courseId || !moduleId || !chapterId || !title) {
+      return res.status(400).json({
+        success: false,
+        message: "courseId, moduleId, chapterId, and title are required"
+      });
+    }
+
+    const course = await Course.findById(courseId);
+
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: "Course not found"
+      });
+    }
+
+    const module = course.modules.id(moduleId);
+
+    if (!module) {
+      return res.status(404).json({
+        success: false,
+        message: "Module not found"
+      });
+    }
+
+    const chapter = module.chapters.id(chapterId);
+
+    if (!chapter) {
+      return res.status(404).json({
+        success: false,
+        message: "Chapter not found"
+      });
+    }
+
+    let videoUrl = "";
+    let videoPublicId = "";
+
+    let notesUrl = "";
+    let notesPublicId = "";
+
+    if (req.files?.video) {
+      const videoUpload = await cloudinary.uploader.upload(
+        req.files.video[0].path,
+        {
+          folder: "lms/videos",
+          resource_type: "video"
+        }
+      );
+
+      videoUrl = videoUpload.secure_url;
+      videoPublicId = videoUpload.public_id;
+    }
+
+    if (req.files?.notes) {
+      const notesUpload = await cloudinary.uploader.upload(
+        req.files.notes[0].path,
+        {
+          folder: "lms/notes",
+          resource_type: "raw"
+        }
+      );
+
+      notesUrl = notesUpload.secure_url;
+      notesPublicId = notesUpload.public_id;
+    }
+
+    const newTopic = {
+      title,
+      description,
+      videoUrl,
+      videoPublicId,
+      notesUrl,
+      notesPublicId,
+      isPreviewFree,
+      order
+    };
+
+    chapter.topics.push(newTopic);
+
+    await course.save();
+
+    const addedTopic = chapter.topics[chapter.topics.length - 1];
+
+    res.status(200).json({
+      success: true,
+      message: "Topic added successfully",
+      data: addedTopic
+    });
+
+  } catch (error) {
+    console.error("Error in handleAddTopic:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Internal server error"
+    });
+  }
+};
+
+
+export const handleEditTopic = async (req, res) => {
+  try {
+    const {
+      courseId,
+      moduleId,
+      chapterId,
+      topicId,
+      title,
+      description,
+      isPreviewFree,
+      order
+    } = req.body;
+
+    if (!courseId || !moduleId || !chapterId || !topicId) {
+      return res.status(400).json({
+        success: false,
+        message: "courseId, moduleId, chapterId and topicId are required"
+      });
+    }
+
+    const course = await Course.findById(courseId);
+
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: "Course not found"
+      });
+    }
+
+    const module = course.modules.id(moduleId);
+
+    if (!module) {
+      return res.status(404).json({
+        success: false,
+        message: "Module not found"
+      });
+    }
+
+    const chapter = module.chapters.id(chapterId);
+
+    if (!chapter) {
+      return res.status(404).json({
+        success: false,
+        message: "Chapter not found"
+      });
+    }
+
+    const topic = chapter.topics.id(topicId);
+
+    if (!topic) {
+      return res.status(404).json({
+        success: false,
+        message: "Topic not found"
+      });
+    }
+
+    // Update text fields
+    if (title) topic.title = title;
+    if (description) topic.description = description;
+    if (order) topic.order = order;
+    if (isPreviewFree !== undefined) topic.isPreviewFree = isPreviewFree;
+
+    // Upload new video
+    if (req.files?.video) {
+      const videoUpload = await cloudinary.uploader.upload(
+        req.files.video[0].path,
+        {
+          folder: "lms/videos",
+          resource_type: "video"
+        }
+      );
+
+      topic.videoUrl = videoUpload.secure_url;
+      topic.videoPublicId = videoUpload.public_id;
+    }
+
+    // Upload new notes
+    if (req.files?.notes) {
+      const notesUpload = await cloudinary.uploader.upload(
+        req.files.notes[0].path,
+        {
+          folder: "lms/notes",
+          resource_type: "raw"
+        }
+      );
+
+      topic.notesUrl = notesUpload.secure_url;
+      topic.notesPublicId = notesUpload.public_id;
+    }
+
+    await course.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Topic updated successfully",
+      data: topic
+    });
+
+  } catch (error) {
+    console.error("Error in handleEditTopic:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Internal server error"
+    });
+  }
+};
+
+export const DeleteTopic = async (req, res) => {
+  try {
+    const { courseId, moduleId, chapterId, topicId } = req.body;
+
+    if (!courseId || !moduleId || !chapterId || !topicId) {
+      return res.status(400).json({
+        success: false,
+        message: "courseId, moduleId, chapterId, topicId are required"
+      });
+    }
+
+    const course = await Course.findById(courseId);
+
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: "Course not found"
+      });
+    }
+
+    const module = course.modules.id(moduleId);
+
+    if (!module) {
+      return res.status(404).json({
+        success: false,
+        message: "Module not found"
+      });
+    }
+
+    const chapter = module.chapters.id(chapterId);
+
+    if (!chapter) {
+      return res.status(404).json({
+        success: false,
+        message: "Chapter not found"
+      });
+    }
+
+    const topic = chapter.topics.id(topicId);
+
+    if (!topic) {
+      return res.status(404).json({
+        success: false,
+        message: "Topic not found"
+      });
+    }
+
+    topic.deleteOne();
+
+    await course.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Topic deleted successfully"
+    });
+
+  } catch (error) {
+    console.error("Error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Internal server error"
+    });
+  }
+};
+
+export const getFullCourseDetails = async (req, res) => {
+  try {
+
+
+    const course = await Course.find()
+      .populate("category", "name") 
+      .populate("instructor","fullName email");
+
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: "Course not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Full course fetched successfully",
+      data: course,
+    });
+
+  } catch (error) {
+    console.error("Error in getFullCourseDetails:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+};
+
+
+
+
+
+
+
+
