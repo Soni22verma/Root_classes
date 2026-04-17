@@ -196,43 +196,7 @@ const StudentProfile = () => {
         }
     };
 
-    const calculateTotalTopics = () => {
-        let totalTopics = 0;
-        enrolledCourses.forEach(course => {
-            if (course.modules) {
-                course.modules.forEach(module => {
-                    if (module.chapters) {
-                        module.chapters.forEach(chapter => {
-                            if (chapter.topics) {
-                                totalTopics += chapter.topics.length;
-                            }
-                        });
-                    }
-                });
-            }
-        });
-        return totalTopics;
-    };
-
-    const calculateTotalDuration = () => {
-        let totalMinutes = 0;
-        enrolledCourses.forEach(course => {
-            if (course.modules) {
-                course.modules.forEach(module => {
-                    if (module.chapters) {
-                        module.chapters.forEach(chapter => {
-                            if (chapter.topics) {
-                                chapter.topics.forEach(topic => {
-                                    totalMinutes += topic.duration || 10;
-                                });
-                            }
-                        });
-                    }
-                });
-            }
-        });
-        return Math.floor(totalMinutes / 60);
-    };
+  
 
     useEffect(() => {
         if (student || getStudentId()) {
@@ -270,15 +234,9 @@ const StudentProfile = () => {
         );
     }
 
-    const totalTopics = calculateTotalTopics();
-    const totalHours = calculateTotalDuration();
-    const totalCourses = enrolledCourses.length;
+ 
 
-    const stats = [
-        { label: 'Total Hours', value: totalHours.toString(), icon: '⏱️' },
-        { label: 'Total Topics', value: totalTopics.toString(), icon: '📖' },
-        { label: 'Enrolled Courses', value: totalCourses.toString(), icon: '📚' },
-    ];
+   
 
     const profileImageUrl = studentData.profileImage || studentData.profilePicture || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format';
 
@@ -364,21 +322,7 @@ const StudentProfile = () => {
                     </div>
                 </div>
 
-                {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    {stats.map((stat, idx) => (
-                        <div key={idx} className="bg-white rounded-lg shadow-md p-4">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-gray-500 text-sm">{stat.label}</p>
-                                    <p className="text-2xl font-bold text-gray-800 mt-1">{stat.value}</p>
-                                </div>
-                                <div className="text-2xl">{stat.icon}</div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-
+               
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Contact Information */}
                     <div className="bg-white rounded-lg shadow-md p-5">
@@ -440,84 +384,7 @@ const StudentProfile = () => {
                     </div>
                 </div>
 
-                {/* My Courses Section */}
-                <div className="mt-6 bg-white rounded-lg shadow-md overflow-hidden">
-                    <div className="px-5 py-4 border-b border-gray-200">
-                        <h3 className="text-lg font-semibold text-gray-800">My Enrolled Courses</h3>
-                        <p className="text-sm text-gray-500 mt-1">{totalCourses} course(s) enrolled</p>
-                    </div>
-                    <div className="p-5">
-                        {enrolledCourses.length > 0 ? (
-                            <div className="space-y-4">
-                                {enrolledCourses.map((course, idx) => (
-                                    <div key={course._id || idx} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
-                                        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
-                                            <div className="flex-1">
-                                                <div className="flex items-center gap-2 mb-2">
-                                                    <div className="w-8 h-8 bg-blue-100 rounded-md flex items-center justify-center">
-                                                        <span className="text-blue-600 font-bold text-sm">{idx + 1}</span>
-                                                    </div>
-                                                    <h4 className="font-semibold text-gray-800 text-lg">{course.title}</h4>
-                                                </div>
-                                                <p className="text-gray-600 text-sm mb-3">{course.description}</p>
-                                                
-                                                {/* Course Stats */}
-                                                <div className="flex flex-wrap gap-3 mb-3">
-                                                    <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
-                                                        Level: {course.level || 'Beginner'}
-                                                    </span>
-                                                    <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
-                                                        Modules: {course.modules?.length || 0}
-                                                    </span>
-                                                    <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
-                                                        Topics: {course.modules?.reduce((acc, module) => 
-                                                            acc + (module.chapters?.reduce((acc2, chapter) => 
-                                                                acc2 + (chapter.topics?.length || 0), 0) || 0), 0)}
-                                                    </span>
-                                                </div>
-                                                
-                                                {/* Module Preview */}
-                                                {course.modules && course.modules.length > 0 && (
-                                                    <details className="mt-2">
-                                                        <summary className="text-sm text-blue-600 cursor-pointer hover:text-blue-700">
-                                                            View Modules ({course.modules.length})
-                                                        </summary>
-                                                        <div className="mt-2 space-y-2 pl-4">
-                                                            {course.modules.slice(0, 2).map((module, mIdx) => (
-                                                                <div key={mIdx} className="text-sm">
-                                                                    <span className="font-medium text-gray-700">Module {mIdx + 1}:</span>
-                                                                    <span className="text-gray-600 ml-2">{module.title}</span>
-                                                                    <span className="text-gray-400 text-xs ml-2">
-                                                                        ({module.chapters?.length || 0} chapters)
-                                                                    </span>
-                                                                </div>
-                                                            ))}
-                                                            {course.modules.length > 2 && (
-                                                                <p className="text-xs text-gray-400">+ {course.modules.length - 2} more modules</p>
-                                                            )}
-                                                        </div>
-                                                    </details>
-                                                )}
-                                            </div>
-                                            
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="text-center py-8">
-                                <div className="text-5xl mb-3">📚</div>
-                                <p className="text-gray-500 mb-4">You haven't enrolled in any courses yet</p>
-                                <button 
-                                    onClick={() => navigate('/course')}
-                                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
-                                >
-                                    Browse Courses
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                </div>
+              
             </div>
 
             {/* Edit Profile Modal */}

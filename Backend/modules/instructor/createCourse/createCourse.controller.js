@@ -17,13 +17,7 @@ import User from "../../Student/student.model.js"
         });
       }
 
-      if(!price){
-        return res.status(400).json({
-          message:"price is required",
-          error:true,
-          success:false
-        })
-      }
+    
 
       if (!mongoose.Types.ObjectId.isValid(category)) {
         return res.status(400).json({
@@ -546,40 +540,42 @@ export const handleAddTopic = async (req, res) => {
       title,
       description,
       isPreviewFree,
-      order
+      order,
+      videoType,
+      youtubeUrl
     } = req.body;
+
+    const isPreviewFreeBool =
+      isPreviewFree === "true" || isPreviewFree === true;
 
     if (!courseId || !moduleId || !chapterId || !title) {
       return res.status(400).json({
         success: false,
-        message: "courseId, moduleId, chapterId, and title are required"
+        message: "courseId, moduleId, chapterId, and title are required",
       });
     }
 
     const course = await Course.findById(courseId);
-
     if (!course) {
       return res.status(404).json({
         success: false,
-        message: "Course not found"
+        message: "Course not found",
       });
     }
 
     const module = course.modules.id(moduleId);
-
     if (!module) {
       return res.status(404).json({
         success: false,
-        message: "Module not found"
+        message: "Module not found",
       });
     }
 
     const chapter = module.chapters.id(chapterId);
-
     if (!chapter) {
       return res.status(404).json({
         success: false,
-        message: "Chapter not found"
+        message: "Chapter not found",
       });
     }
 
@@ -589,12 +585,45 @@ export const handleAddTopic = async (req, res) => {
     let notesUrl = "";
     let notesPublicId = "";
 
-    if (req.files?.video) {
+
+    if (videoType === "youtube") {
+      if (!youtubeUrl) {
+        return res.status(400).json({
+          success: false,
+          message: "YouTube URL is required",
+        });
+      }
+
+      if (
+        !youtubeUrl.includes("youtube.com") &&
+        !youtubeUrl.includes("youtu.be")
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid YouTube URL",
+        });
+      }
+
+      videoUrl = youtubeUrl;
+    }
+
+    else if (videoType === "upload") {
+      if (!req.files?.video) {
+        return res.status(400).json({
+          success: false,
+          message: "Video file is required",
+        });
+      }
+
+      const videoFile = Array.isArray(req.files.video)
+        ? req.files.video[0]
+        : req.files.video;
+
       const videoUpload = await cloudinary.uploader.upload(
-        req.files.video[0].path,
+        videoFile.path,
         {
           folder: "lms/videos",
-          resource_type: "video"
+          resource_type: "video",
         }
       );
 
@@ -603,11 +632,15 @@ export const handleAddTopic = async (req, res) => {
     }
 
     if (req.files?.notes) {
+      const notesFile = Array.isArray(req.files.notes)
+        ? req.files.notes[0]
+        : req.files.notes;
+
       const notesUpload = await cloudinary.uploader.upload(
-        req.files.notes[0].path,
+        notesFile.path,
         {
           folder: "lms/notes",
-          resource_type: "raw"
+          resource_type: "raw",
         }
       );
 
@@ -617,17 +650,20 @@ export const handleAddTopic = async (req, res) => {
 
     const newTopic = {
       title,
-      description,
+      description: description || "",
+      videoType: videoType || "upload",
       videoUrl,
       videoPublicId,
+      youtubeUrl: videoType === "youtube" ? youtubeUrl : "",
       notesUrl,
       notesPublicId,
-      isPreviewFree,
-      order
+      isPreviewFree: isPreviewFreeBool,
+      order: order || 0,
+      resources: [],
+      createdAt: new Date(),
     };
 
     chapter.topics.push(newTopic);
-
     await course.save();
 
     const addedTopic = chapter.topics[chapter.topics.length - 1];
@@ -635,7 +671,7 @@ export const handleAddTopic = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Topic added successfully",
-      data: addedTopic
+      data: addedTopic,
     });
 
   } catch (error) {
@@ -643,7 +679,7 @@ export const handleAddTopic = async (req, res) => {
 
     res.status(500).json({
       success: false,
-      message: "Internal server error"
+      message: error.message || "Internal server error",
     });
   }
 };
@@ -659,7 +695,9 @@ export const handleEditTopic = async (req, res) => {
       title,
       description,
       isPreviewFree,
-      order
+      order,
+      videoType,
+      youtubeUrl
     } = req.body;
 
     if (!courseId || !moduleId || !chapterId || !topicId) {
@@ -670,7 +708,6 @@ export const handleEditTopic = async (req, res) => {
     }
 
     const course = await Course.findById(courseId);
-
     if (!course) {
       return res.status(404).json({
         success: false,
@@ -679,7 +716,6 @@ export const handleEditTopic = async (req, res) => {
     }
 
     const module = course.modules.id(moduleId);
-
     if (!module) {
       return res.status(404).json({
         success: false,
@@ -688,7 +724,6 @@ export const handleEditTopic = async (req, res) => {
     }
 
     const chapter = module.chapters.id(chapterId);
-
     if (!chapter) {
       return res.status(404).json({
         success: false,
@@ -697,7 +732,6 @@ export const handleEditTopic = async (req, res) => {
     }
 
     const topic = chapter.topics.id(topicId);
-
     if (!topic) {
       return res.status(404).json({
         success: false,
@@ -705,14 +739,32 @@ export const handleEditTopic = async (req, res) => {
       });
     }
 
-    // Update text fields
+    // ✅ Update basic fields
     if (title) topic.title = title;
     if (description) topic.description = description;
     if (order) topic.order = order;
     if (isPreviewFree !== undefined) topic.isPreviewFree = isPreviewFree;
 
-    // Upload new video
-    if (req.files?.video) {
+    let videoUrl = topic.videoUrl;
+    let videoPublicId = topic.videoPublicId;
+
+    // 🎬 VIDEO LOGIC (YouTube + Upload)
+    if (videoType === "youtube" && youtubeUrl) {
+      topic.videoType = "youtube";
+      topic.youtubeUrl = youtubeUrl;
+
+      // old uploaded video हटाना (optional but recommended)
+      if (topic.videoPublicId) {
+        await cloudinary.uploader.destroy(topic.videoPublicId, {
+          resource_type: "video"
+        });
+      }
+
+      topic.videoUrl = youtubeUrl;
+      topic.videoPublicId = "";
+
+    } 
+    else if (req.files?.video) {
       const videoUpload = await cloudinary.uploader.upload(
         req.files.video[0].path,
         {
@@ -721,11 +773,13 @@ export const handleEditTopic = async (req, res) => {
         }
       );
 
+      topic.videoType = "upload";
       topic.videoUrl = videoUpload.secure_url;
       topic.videoPublicId = videoUpload.public_id;
+      topic.youtubeUrl = "";
     }
 
-    // Upload new notes
+    // 📄 NOTES UPDATE
     if (req.files?.notes) {
       const notesUpload = await cloudinary.uploader.upload(
         req.files.notes[0].path,

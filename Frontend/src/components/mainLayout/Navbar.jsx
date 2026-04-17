@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { Menu, X, User, LogOut, ChevronDown, LayoutDashboard, UserCircle } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import useStudentStore from '../../Store/studentstore';
+import { SiCoursera } from "react-icons/si";
 
 const Navbar = () => {
   const { student, logout, setStudent } = useStudentStore();
@@ -186,6 +187,9 @@ const Navbar = () => {
   const handleProflie = async()=>{
     navigate("/stdprofile")
   }
+  const handlePurches = async()=>{
+    navigate("/purchescourse")
+  }
 
   return (
     <nav className="bg-white shadow-md sticky top-0 z-50">
@@ -277,11 +281,19 @@ const Navbar = () => {
                       </Link> 
                       <div 
                         onClick={() => handleProflie()}
-                        className="flex items-center space-x-3 px-4 py-2 text-gray-700 hover:bg-gray-50 transition group"
+                        className="flex items-center space-x-3 px-4 py-2 text-gray-700 hover:bg-gray-50 transition group cursor-pointer"
                       >
                         <UserCircle size={18} className="text-gray-500 group-hover:text-indigo-600" />
                         <span>My Profile</span>
                       </div>
+                      <div 
+                        onClick={() => handlePurches()}
+                        className="flex items-center space-x-3 px-4 py-2 text-gray-700 hover:bg-gray-50 transition group cursor-pointer"
+                      >
+                        <SiCoursera  size={18} className="text-gray-500 group-hover:text-indigo-600" />
+                        <span>My Purches Courses</span>
+                      </div>
+                      
                     </div>
 
                     {/* Logout Button */}

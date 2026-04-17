@@ -1,30 +1,50 @@
 import mongoose from "mongoose";
+
 const topicSchema = new mongoose.Schema({
-  title: {   type: String,required: true,trim: true},
+  title: {
+    type: String,
+    required: true,
+    trim: true,
+  },
 
-  description: {   type: String },
+  description: String,
 
-  videoUrl: {type: String},
+  videoType: {
+    type: String,
+    enum: ["upload", "youtube"],
+    default: "upload",
+  },
 
-  videoPublicId: {type: String},
+  videoUrl: String,
+  videoPublicId: String,
 
-  notesUrl: { type: String},
+  youtubeUrl: String,
 
-  notesPublicId: { type: String},
+  notesUrl: String,
+  notesPublicId: String,
 
-  duration: {type: Number},
+  duration: Number,
 
-  isPreviewFree: {type: Boolean, default: true},
+  isPreviewFree: {
+    type: Boolean,
+    default: true,
+  },
 
-  order: { type: Number},
+  order: Number,
 
   resources: [
-    { title: String, fileUrl: String}
+    {
+      title: String,
+      fileUrl: String,
+    },
   ],
 
-  createdAt: {type: Date, default: Date.now
-  }
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
 });
+
 const chapterSchema = new mongoose.Schema({
   title: { type: String, required: true },
   topics: [topicSchema],
@@ -44,7 +64,6 @@ const courseSchema = new mongoose.Schema({
   category: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Category",
-  
   },
 
   instructor: {
@@ -53,7 +72,7 @@ const courseSchema = new mongoose.Schema({
   },
 
   duration: { type: String },
-  price: { type: Number,default:0 },
+  price: { type: Number, default: null },
 
   level: {
     type: String,
@@ -61,11 +80,9 @@ const courseSchema = new mongoose.Schema({
     default: "beginner",
   },
 
-
-
   modules: [moduleSchema],
 
   createdAt: { type: Date, default: Date.now },
 });
 
-export const Course= mongoose.model("Course", courseSchema);
+export const Course = mongoose.model("Course", courseSchema);

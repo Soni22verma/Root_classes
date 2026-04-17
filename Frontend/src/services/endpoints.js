@@ -48,13 +48,13 @@ const api = {
      },
      scholarship:{
         apply:Base_Url+"/scholarship/apply",
-       enrollCourse:Base_Url+"/student/enroll-course",
 
        enrollCourse:Base_Url+"/enrollment/enroll-course",
      },
      payment:{
        createPayment:Base_Url+"/payment/create-payment",
-       verifyPayment:Base_Url+"/payment/verify-payment"
+       verifyPayment:Base_Url+"/payment/verify-payment",
+       getPurchesCourse:Base_Url+"/payment/get-my-course"
      }
 }
 

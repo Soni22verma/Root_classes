@@ -17,7 +17,7 @@ const loadRazorpayScript = () => {
 const CourseDetails = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { student } = useStudentStore();
+  const { student, setStudent } = useStudentStore();
   const studentId = student?._id;
 
   const [course, setCourse] = useState(null);
@@ -42,8 +42,15 @@ const CourseDetails = () => {
       setLoading(false);
       return;
     }
+    // If no course in state, fetch from API
+    const fetchCourse = async () => {
+      // Implement course fetching logic here if needed
+      setLoading(false);
+    };
+    fetchCourse();
   }, [location.state]);
 
+  // Check enrollment on component mount and when student/course changes
   useEffect(() => {
     if (studentId && course?._id) {
       checkEnrollmentStatus();
@@ -51,13 +58,27 @@ const CourseDetails = () => {
   }, [studentId, course]);
 
   const checkEnrollmentStatus = async () => {
+    if (!studentId || !course?._id) return;
+    
     try {
+      console.log("Checking enrollment for student:", studentId, "course:", course._id);
       const res = await axios.get(`${api.student.getStudentProfile}/${studentId}`);
+      
       if (res.data?.success && res.data?.data) {
         const studentData = res.data.data;
-        if (studentData.enrolledCourses && studentData.enrolledCourses.includes(course._id)) {
-          setIsEnrolled(true);
+        const enrolled = studentData.enrolledCourses && studentData.enrolledCourses.includes(course._id);
+        
+        console.log("Enrollment status:", enrolled);
+        console.log("Student's enrolled courses:", studentData.enrolledCourses);
+        
+        setIsEnrolled(enrolled);
+        
+        // Update the store if needed
+        if (setStudent && enrolled !== (student?.enrolledCourses?.includes(course._id) || false)) {
+          setStudent(studentData);
         }
+      } else {
+        console.log("Failed to get student data:", res.data);
       }
     } catch (error) {
       console.error("Error checking enrollment status:", error);
@@ -103,8 +124,11 @@ const CourseDetails = () => {
   };
 
   const getEnrollmentRequirement = () => {
+    if (isEnrolled) {
+      return { type: 'enrolled', message: 'You are already enrolled in this course', action: 'Continue Learning' };
+    }
     if (isCompletelyFree()) {
-      return { type: 'free', message: 'This course is completely free!', action: 'View Course' };
+      return { type: 'free', message: 'This course is completely free!', action: 'Start Learning' };
     } else if (hasPaidContent() && hasPreviewContent()) {
       return { type: 'mixed', message: 'This course has both free preview and paid content.', action: `Enroll Now - ₹${course?.price || 0}` };
     } else if (hasPaidContent() && !hasPreviewContent()) {
@@ -112,192 +136,185 @@ const CourseDetails = () => {
     } else if (course?.price > 0) {
       return { type: 'paid', message: 'This is a premium course.', action: `Enroll Now - ₹${course?.price || 0}` };
     } else {
-      return { type: 'preview', message: 'All topics are available as free preview!', action: 'View Course' };
+      return { type: 'preview', message: 'All topics are available as free preview!', action: 'Start Learning' };
     }
   };
 
-const createRazorpayPayment = async () => {
-  try {
-    const response = await axios.post(api.payment.createPayment, {
-      courseId: course._id,
-      studentId: studentId,
-    });
-
-    if (response.data.success) {
-      // Store enrollmentId in component state or ref instead of window
-      return {
-        order: response.data.order,
-        enrollmentId: response.data.enrollmentId
-      };
-    } else {
-      throw new Error(response.data.message || 'Failed to create order');
-    }
-  } catch (error) {
-    console.error("Error creating order:", error);
-    throw error;
-  }
-};
-
-const verifyPayment = async (paymentData, enrollmentId) => {
-  try {
-    const verificationData = {
-      razorpay_order_id: paymentData.razorpay_order_id,
-      razorpay_payment_id: paymentData.razorpay_payment_id,
-      razorpay_signature: paymentData.razorpay_signature,
-      enrollmentId: enrollmentId
-    };
-    
-    console.log("Sending verification data:", verificationData);
-    
-    const response = await axios.post(api.payment.verifyPayment, verificationData);
-    
-    console.log("Verification response:", response.data);
-    
-    if (response.data.success) {
-      console.log("Payment verified, enrollment status:", response.data.data?.status);
-    }
-    
-    return response.data;
-  } catch (error) {
-    console.error("Error verifying payment:", error);
-    console.error("Error response:", error.response?.data);
-    throw error;
-  }
-};
-
-  const completeEnrollment = async () => {
+  const createRazorpayPayment = async () => {
     try {
-      setEnrollmentLoading(true);
-      const res = await axios.get(`${api.student.getStudentProfile}/${studentId}`);
-      if (res.data?.success && res.data?.data) {
-        const studentData = res.data.data;
-        if (studentData.enrolledCourses && studentData.enrolledCourses.includes(course._id)) {
-          setIsEnrolled(true);
-        }
+      const response = await axios.post(api.payment.createPayment, {
+        courseId: course._id,
+        studentId: studentId,
+      });
+
+      if (response.data.success) {
+        return {
+          order: response.data.order,
+          enrollmentId: response.data.enrollmentId
+        };
+      } else {
+        throw new Error(response.data.message || 'Failed to create order');
+      }
+    } catch (error) {
+      console.error("Error creating order:", error);
+      throw error;
+    }
+  };
+
+  const verifyPayment = async (paymentData, enrollmentId) => {
+    try {
+      const verificationData = {
+        razorpay_order_id: paymentData.razorpay_order_id,
+        razorpay_payment_id: paymentData.razorpay_payment_id,
+        razorpay_signature: paymentData.razorpay_signature,
+        enrollmentId: enrollmentId
+      };
+      
+      console.log("Sending verification data:", verificationData);
+      
+      const response = await axios.post(api.payment.verifyPayment, verificationData);
+      
+      console.log("Verification response:", response.data);
+      
+      if (response.data.success) {
+        console.log("Payment verified, enrollment status:", response.data.data?.status);
       }
       
-      setShowEnrollmentMessage({
-        show: true,
-        message: "Payment successful! You are now enrolled in the course! 🎉",
-        type: 'success'
-      });
-      
-      setTimeout(() => {
-        setShowEnrollmentMessage({ show: false, message: '', type: '' });
-      }, 2000);
+      return response.data;
     } catch (error) {
-      console.error("Error after payment:", error);
+      console.error("Error verifying payment:", error);
+      console.error("Error response:", error.response?.data);
+      throw error;
+    }
+  };
+
+  const refreshStudentData = async () => {
+    if (!studentId) return null;
+    
+    try {
+      const res = await axios.get(`${api.student.getStudentProfile}/${studentId}`);
+      if (res.data?.success && res.data?.data) {
+        const updatedStudent = res.data.data;
+        
+        // Update the store
+        if (setStudent) {
+          setStudent(updatedStudent);
+        }
+        
+        return updatedStudent;
+      }
+    } catch (error) {
+      console.error("Error refreshing student data:", error);
+    }
+    return null;
+  };
+
+  const processRazorpayPayment = async () => {
+    const isScriptLoaded = await loadRazorpayScript();
+    if (!isScriptLoaded) {
       setShowEnrollmentMessage({
         show: true,
-        message: "Payment successful but please contact support to complete enrollment.",
+        message: "Failed to load payment gateway. Please try again.",
         type: 'error'
       });
       setTimeout(() => setShowEnrollmentMessage({ show: false, message: '', type: '' }), 3000);
-    } finally {
-      setEnrollmentLoading(false);
+      return;
     }
-  };
 
-const processRazorpayPayment = async () => {
-  const isScriptLoaded = await loadRazorpayScript();
-  if (!isScriptLoaded) {
-    setShowEnrollmentMessage({
-      show: true,
-      message: "Failed to load payment gateway. Please try again.",
-      type: 'error'
-    });
-    setTimeout(() => setShowEnrollmentMessage({ show: false, message: '', type: '' }), 3000);
-    return;
-  }
+    setPaymentProcessing(true);
 
-  setPaymentProcessing(true);
+    try {
+      const { order, enrollmentId } = await createRazorpayPayment();
+      
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        amount: order.amount,
+        currency: order.currency,
+        name: course.title,
+        description: `Enrollment for ${course.title}`,
+        order_id: order.id,
+        handler: async (response) => {
+          try {
+            const paymentVerification = await verifyPayment({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            }, enrollmentId);
 
-  try {
-    const { order, enrollmentId } = await createRazorpayPayment();
-    
-    const options = {
-      key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-      amount: order.amount,
-      currency: order.currency,
-      name: course.title,
-      description: `Enrollment for ${course.title}`,
-      order_id: order.id,
-      handler: async (response) => {
-        try {
-          const paymentVerification = await verifyPayment({
-            razorpay_order_id: response.razorpay_order_id,
-            razorpay_payment_id: response.razorpay_payment_id,
-            razorpay_signature: response.razorpay_signature,
-          }, enrollmentId);
-
-          if (paymentVerification.success) {
-            setIsEnrolled(true);
+            if (paymentVerification.success) {
+              // Refresh student data to get updated enrolled courses
+              await refreshStudentData();
+              
+              // Update local enrollment state
+              setIsEnrolled(true);
+              
+              setShowEnrollmentMessage({
+                show: true,
+                message: "Payment successful! You are now enrolled in the course! 🎉",
+                type: 'success'
+              });
+              
+              setTimeout(() => {
+                setShowEnrollmentMessage({ show: false, message: '', type: '' });
+              }, 3000);
+            } else {
+              setShowEnrollmentMessage({
+                show: true,
+                message: "Payment verification failed. Please contact support.",
+                type: 'error'
+              });
+              setTimeout(() => setShowEnrollmentMessage({ show: false, message: '', type: '' }), 3000);
+            }
+          } catch (error) {
+            console.error("Verification error:", error);
             setShowEnrollmentMessage({
               show: true,
-              message: "Payment successful! You are now enrolled in the course! 🎉",
-              type: 'success'
-            });
-            setTimeout(() => {
-              setShowEnrollmentMessage({ show: false, message: '', type: '' });
-            }, 3000);
-          } else {
-            setShowEnrollmentMessage({
-              show: true,
-              message: "Payment verification failed. Please contact support.",
+              message: error.response?.data?.message || "Payment verification failed. Please contact support.",
               type: 'error'
             });
             setTimeout(() => setShowEnrollmentMessage({ show: false, message: '', type: '' }), 3000);
+          } finally {
+            setPaymentProcessing(false);
           }
-        } catch (error) {
-          console.error("Verification error:", error);
-          setShowEnrollmentMessage({
-            show: true,
-            message: "Payment verification failed. Please contact support.",
-            type: 'error'
-          });
-          setTimeout(() => setShowEnrollmentMessage({ show: false, message: '', type: '' }), 3000);
-        } finally {
-          setPaymentProcessing(false);
+        },
+        prefill: {
+          name: student?.name || '',
+          email: student?.email || '',
+          contact: student?.phone || ''
+        },
+        notes: {
+          studentId: studentId,
+          courseId: course._id
+        },
+        theme: {
+          color: '#3B82F6'
+        },
+        modal: {
+          ondismiss: () => {
+            setPaymentProcessing(false);
+            setShowEnrollmentMessage({
+              show: true,
+              message: "Payment cancelled",
+              type: 'info'
+            });
+            setTimeout(() => setShowEnrollmentMessage({ show: false, message: '', type: '' }), 3000);
+          }
         }
-      },
-      prefill: {
-        name: student?.name || '',
-        email: student?.email || '',
-        contact: student?.phone || ''
-      },
-      notes: {
-        studentId: studentId,
-        courseId: course._id
-      },
-      theme: {
-        color: '#3B82F6'
-      },
-      modal: {
-        ondismiss: () => {
-          setPaymentProcessing(false);
-          setShowEnrollmentMessage({
-            show: true,
-            message: "Payment cancelled",
-            type: 'info'
-          });
-          setTimeout(() => setShowEnrollmentMessage({ show: false, message: '', type: '' }), 3000);
-        }
-      }
-    };
+      };
 
-    const razorpay = new window.Razorpay(options);
-    razorpay.open();
-  } catch (error) {
-    console.error("Payment error:", error);
-    setShowEnrollmentMessage({
-      show: true,
-      message: error.message || "Failed to process payment. Please try again.",
-      type: 'error'
-    });
-    setTimeout(() => setShowEnrollmentMessage({ show: false, message: '', type: '' }), 3000);
-    setPaymentProcessing(false);
-  }
-};
+      const razorpay = new window.Razorpay(options);
+      razorpay.open();
+    } catch (error) {
+      console.error("Payment error:", error);
+      setShowEnrollmentMessage({
+        show: true,
+        message: error.response?.data?.message || error.message || "Failed to process payment. Please try again.",
+        type: 'error'
+      });
+      setTimeout(() => setShowEnrollmentMessage({ show: false, message: '', type: '' }), 3000);
+      setPaymentProcessing(false);
+    }
+  };
 
   const handlePayment = async () => {
     setShowPaymentModal(false);
@@ -312,6 +329,11 @@ const processRazorpayPayment = async () => {
         type: 'error'
       });
       setTimeout(() => setShowEnrollmentMessage({ show: false, message: '', type: '' }), 3000);
+      return;
+    }
+
+    if (isEnrolled) {
+      handleViewCourse();
       return;
     }
 
@@ -331,19 +353,14 @@ const processRazorpayPayment = async () => {
   const handleViewCourse = () => {
     if (isEnrolled || isCompletelyFree()) {
       navigate(`/course-content/${course._id}`, { state: { course } });
-    } else if (isCompletelyFree()) {
-      navigate(`/course-content/${course._id}`, { state: { course } });
     }
   };
 
   const handlePlayVideo = (videoUrl, topicTitle, isPreviewFree) => {
-    if (isCompletelyFree()) {
-      setCurrentVideo({ url: videoUrl, title: topicTitle });
-      setShowVideoPlayer(true);
-      return;
-    }
+    // Check if user has access
+    const hasAccess = isEnrolled || isPreviewFree || isCompletelyFree();
     
-    if (!isEnrolled && !isPreviewFree) {
+    if (!hasAccess) {
       setShowEnrollmentMessage({
         show: true,
         message: "You need to enroll in this course to access this video!",
@@ -352,17 +369,16 @@ const processRazorpayPayment = async () => {
       setTimeout(() => setShowEnrollmentMessage({ show: false, message: '', type: '' }), 3000);
       return;
     }
+    
     setCurrentVideo({ url: videoUrl, title: topicTitle });
     setShowVideoPlayer(true);
   };
 
   const handleViewNotes = (notesUrl, topicTitle, isPreviewFree) => {
-    if (isCompletelyFree()) {
-      window.open(notesUrl, '_blank');
-      return;
-    }
+    // Check if user has access
+    const hasAccess = isEnrolled || isPreviewFree || isCompletelyFree();
     
-    if (!isEnrolled && !isPreviewFree) {
+    if (!hasAccess) {
       setShowEnrollmentMessage({
         show: true,
         message: "You need to enroll in this course to access these notes!",
@@ -371,6 +387,7 @@ const processRazorpayPayment = async () => {
       setTimeout(() => setShowEnrollmentMessage({ show: false, message: '', type: '' }), 3000);
       return;
     }
+    
     window.open(notesUrl, '_blank');
   };
 
@@ -497,7 +514,7 @@ const processRazorpayPayment = async () => {
         </div>
       )}
 
-      {showPaymentModal && isPaid && (
+      {showPaymentModal && isPaid && !isEnrolled && (
         <div className="fixed inset-0 bg-black/60 bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => !paymentProcessing && setShowPaymentModal(false)}>
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl transform transition-all" onClick={(e) => e.stopPropagation()}>
             <div className="text-center mb-6">
@@ -526,7 +543,6 @@ const processRazorpayPayment = async () => {
               </div>
             </div>
 
-            {/* Payment Method Selection */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
               <div className="space-y-2">
@@ -586,21 +602,25 @@ const processRazorpayPayment = async () => {
         </div>
       )}
 
-      {/* Header Section */}
-      <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-20 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <button 
-            onClick={() => navigate('/course')}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-4 transition-colors group"
-          >
-            <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            Back to Courses
-          </button>
+      {/* Main Content Wrapper - Two Column Layout */}
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className="flex flex-col lg:flex-row gap-8">
           
-          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
-            <div className="flex-1">
+          {/* LEFT COLUMN - Scrollable Content */}
+          <div className="flex-1 min-w-0 overflow-y-auto">
+            {/* Back Button */}
+            <button 
+              onClick={() => navigate('/course')}
+              className="flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-6 transition-colors group"
+            >
+              <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Back to Courses
+            </button>
+
+            {/* Course Header Info */}
+            <div className="mb-6">
               <div className="flex items-center gap-3 mb-3 flex-wrap">
                 <span className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-3 py-1 rounded-full text-sm font-medium">
                   {course.category?.name || 'General'}
@@ -614,6 +634,11 @@ const processRazorpayPayment = async () => {
                   </span>
                 ) : (
                   <>
+                    {isEnrolled && (
+                      <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium">
+                        Enrolled ✓
+                      </span>
+                    )}
                     {!isEnrolled && (
                       <span className="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-sm font-medium">
                         Premium Course
@@ -651,9 +676,347 @@ const processRazorpayPayment = async () => {
                 </div>
               </div>
             </div>
-            
-            <div className="lg:w-80">
-              <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6">
+
+            {/* Tabs */}
+            <div className="border-b border-gray-200 bg-white/80 sticky top-0 z-10">
+              <div className="flex gap-8">
+                <button
+                  onClick={() => setActiveTab('overview')}
+                  className={`py-4 px-1 font-medium transition-all duration-200 border-b-2 ${
+                    activeTab === 'overview'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-600 hover:text-gray-800'
+                  }`}
+                >
+                  Overview
+                </button>
+                <button
+                  onClick={() => setActiveTab('curriculum')}
+                  className={`py-4 px-1 font-medium transition-all duration-200 border-b-2 ${
+                    activeTab === 'curriculum'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-600 hover:text-gray-800'
+                  }`}
+                >
+                  Curriculum
+                </button>
+              </div>
+            </div>
+
+            {/* Tab Content */}
+            <div className="py-6">
+              {activeTab === 'overview' ? (
+                <div className="space-y-6">
+                  {/* About Section */}
+                  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
+                    <h2 className="text-xl font-bold text-gray-900 mb-4">About this course</h2>
+                    <p className="text-gray-700 leading-relaxed">{course.description || 'No description available'}</p>
+                  </div>
+
+                  {/* What you'll learn */}
+                  {course.whatYouWillLearn && course.whatYouWillLearn.length > 0 && (
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
+                      <h2 className="text-xl font-bold text-gray-900 mb-4">What you'll learn</h2>
+                      <div className="grid md:grid-cols-2 gap-3">
+                        {course.whatYouWillLearn.map((item, idx) => (
+                          <div key={idx} className="flex items-start gap-2 group">
+                            <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-green-200 transition-colors">
+                              <svg className="w-3 h-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            </div>
+                            <span className="text-gray-700">{item}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Requirements */}
+                  {course.requirements && course.requirements.length > 0 && (
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
+                      <h2 className="text-xl font-bold text-gray-900 mb-4">Requirements</h2>
+                      <ul className="space-y-2">
+                        {course.requirements.map((req, idx) => (
+                          <li key={idx} className="flex items-start gap-2 group">
+                            <div className="w-5 h-5 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-orange-200 transition-colors">
+                              <svg className="w-3 h-3 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                              </svg>
+                            </div>
+                            <span className="text-gray-700">{req}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Instructor Info */}
+                  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
+                    <h3 className="font-bold text-gray-900 mb-4">Instructor</h3>
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                        {course.instructor?.name?.charAt(0) || 'T'}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-900">{course.instructor?.name || 'Expert Instructor'}</p>
+                        <p className="text-sm text-gray-500">{course.instructor?.title || 'Professional Trainer'}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Course Stats */}
+                  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
+                    <h3 className="font-bold text-gray-900 mb-4">Course Statistics</h3>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                        <span className="text-gray-600">Total Modules</span>
+                        <span className="font-semibold text-gray-900 bg-blue-50 px-3 py-1 rounded-full">{course.modules?.length || 0}</span>
+                      </div>
+                      <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                        <span className="text-gray-600">Total Topics</span>
+                        <span className="font-semibold text-gray-900 bg-purple-50 px-3 py-1 rounded-full">{totalTopics}</span>
+                      </div>
+                      <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                        <span className="text-gray-600">Free Topics</span>
+                        <span className="font-semibold text-green-600 bg-green-50 px-3 py-1 rounded-full">{freeTopics}</span>
+                      </div>
+                      {paidTopics > 0 && (
+                        <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                          <span className="text-gray-600">Premium Topics</span>
+                          <span className="font-semibold text-orange-600 bg-orange-50 px-3 py-1 rounded-full">{paidTopics}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between items-center py-2">
+                        <span className="text-gray-600">Total Duration</span>
+                        <span className="font-semibold text-gray-900 bg-green-50 px-3 py-1 rounded-full">{Math.floor(totalDuration / 60)}h {totalDuration % 60}min</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* Curriculum Tab */
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                  <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
+                    <h2 className="text-xl font-bold text-gray-900">Course Curriculum</h2>
+                    <p className="text-gray-600 mt-1">{course.modules?.length || 0} modules • {totalTopics} topics • {freeTopics} free previews</p>
+                  </div>
+
+                  {course.modules && course.modules.length > 0 ? (
+                    <div className="divide-y divide-gray-200">
+                      {course.modules.map((module, moduleIndex) => (
+                        <div key={module._id || moduleIndex} className="bg-white">
+                          {/* Module Header */}
+                          <button
+                            onClick={() => toggleModule(moduleIndex)}
+                            className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors text-left group"
+                          >
+                            <div className="flex items-center gap-3 flex-1">
+                              <svg className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${expandedModules[moduleIndex] ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                              <div>
+                                <h3 className="font-semibold text-gray-900">
+                                  Module {moduleIndex + 1}: {module.title}
+                                </h3>
+                                {module.description && (
+                                  <p className="text-sm text-gray-500 mt-0.5">{module.description}</p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3 text-sm text-gray-500">
+                              <span>{module.chapters?.reduce((acc, ch) => acc + (ch.topics?.length || 0), 0)} topics</span>
+                            </div>
+                          </button>
+
+                          {/* Module Content */}
+                          {expandedModules[moduleIndex] && (
+                            <div className="border-t border-gray-100 bg-gray-50">
+                              {module.chapters?.map((chapter, chapterIndex) => (
+                                <div key={chapter._id || chapterIndex} className="border-b border-gray-100 last:border-b-0">
+                                  {/* Chapter Header */}
+                                  <button
+                                    onClick={() => toggleChapter(moduleIndex, chapterIndex)}
+                                    className="w-full px-6 py-3 flex items-center justify-between hover:bg-gray-100 transition-colors text-left"
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <svg className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${expandedChapters[`${moduleIndex}-${chapterIndex}`] ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                      </svg>
+                                      <span className="font-medium text-gray-800">
+                                        Chapter {chapterIndex + 1}: {chapter.title}
+                                      </span>
+                                    </div>
+                                    <span className="text-xs text-gray-500">{chapter.topics?.length || 0} topics</span>
+                                  </button>
+
+                                  {/* Topics List */}
+                                  {expandedChapters[`${moduleIndex}-${chapterIndex}`] && (
+                                    <div className="px-6 pb-4 space-y-2">
+                                      {chapter.topics?.map((topic, topicIndex) => {
+                                        const isPreviewFree = topic.isPreviewFree === true;
+                                        const hasAccess = isEnrolled || isPreviewFree || isCompletelyFree();
+                                        
+                                        return (
+                                          <div key={topic._id || topicIndex} className="ml-6 border border-gray-200 rounded-xl bg-white overflow-hidden hover:shadow-md transition-shadow">
+                                            <div className="p-4 flex items-center justify-between flex-wrap gap-3">
+                                              <div className="flex items-center gap-3 flex-1">
+                                                <div className="flex-shrink-0">
+                                                  {hasAccess ? (
+                                                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                                                      <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                                      </svg>
+                                                    </div>
+                                                  ) : (
+                                                    <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                                                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                                      </svg>
+                                                    </div>
+                                                  )}
+                                                </div>
+                                                <div>
+                                                  <span className="font-medium text-gray-900">
+                                                    {topicIndex + 1}. {topic.title}
+                                                  </span>
+                                                  {topic.duration && (
+                                                    <span className="ml-2 text-xs text-gray-500">⏱️ {topic.duration} min</span>
+                                                  )}
+                                                  <div className="flex gap-2 mt-1">
+                                                    {isEnrolled && (
+                                                      <span className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+                                                        Enrolled Access ✓
+                                                      </span>
+                                                    )}
+                                                    {!isEnrolled && isPreviewFree && (
+                                                      <span className="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full">Free Preview</span>
+                                                    )}
+                                                    {!isEnrolled && !isPreviewFree && !isCompletelyFree() && (
+                                                      <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">Premium Content</span>
+                                                    )}
+                                                    {isCompletelyFree() && !isEnrolled && (
+                                                      <span className="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full">Free Access</span>
+                                                    )}
+                                                  </div>
+                                                </div>
+                                              </div>
+                                              
+                                              <div className="flex gap-2">
+                                                {topic.videoUrl && (
+                                                  <button
+                                                    onClick={() => handlePlayVideo(topic.videoUrl, topic.title, isPreviewFree)}
+                                                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-1 ${
+                                                      hasAccess
+                                                        ? 'bg-red-500 hover:bg-red-600 text-white shadow-sm'
+                                                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                    }`}
+                                                    disabled={!hasAccess}
+                                                  >
+                                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                                      <path d="M8 5v14l11-7z" />
+                                                    </svg>
+                                                    Watch
+                                                  </button>
+                                                )}
+                                                {topic.notesUrl && (
+                                                  <button
+                                                    onClick={() => handleViewNotes(topic.notesUrl, topic.title, isPreviewFree)}
+                                                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-1 ${
+                                                      hasAccess
+                                                        ? 'bg-blue-500 hover:bg-blue-600 text-white shadow-sm'
+                                                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                    }`}
+                                                    disabled={!hasAccess}
+                                                  >
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                    </svg>
+                                                    Notes
+                                                  </button>
+                                                )}
+                                                <button
+                                                  onClick={() => showTopicDetails(topic)}
+                                                  className="px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 transition-all duration-200 flex items-center gap-1"
+                                                >
+                                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                  </svg>
+                                                  Details
+                                                </button>
+                                              </div>
+                                            </div>
+
+                                            {selectedTopic?._id === topic._id && (
+                                              <div className="border-t border-gray-100 p-4 bg-gray-50">
+                                                <div className="space-y-3 text-sm">
+                                                  {topic.description && (
+                                                    <div>
+                                                      <span className="font-semibold text-gray-700">Description:</span>
+                                                      <p className="text-gray-600 mt-1">{topic.description}</p>
+                                                    </div>
+                                                  )}
+                                                  {topic.resources && topic.resources.length > 0 && (
+                                                    <div>
+                                                      <span className="font-semibold text-gray-700">Resources:</span>
+                                                      <ul className="mt-2 space-y-1">
+                                                        {topic.resources.map((resource, idx) => (
+                                                          <li key={idx}>
+                                                            <a href={resource.fileUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 text-sm flex items-center gap-1">
+                                                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+                                                              </svg>
+                                                              {resource.title || `Resource ${idx + 1}`}
+                                                            </a>
+                                                          </li>
+                                                        ))}
+                                                      </ul>
+                                                    </div>
+                                                  )}
+                                                  <button
+                                                    onClick={() => setSelectedTopic(null)}
+                                                    className="text-xs text-gray-500 hover:text-gray-700 mt-2"
+                                                  >
+                                                    Hide details
+                                                  </button>
+                                                </div>
+                                              </div>
+                                            )}
+                                          </div>
+                                        );
+                                      })}
+                                      {(!chapter.topics || chapter.topics.length === 0) && (
+                                        <div className="ml-6 p-4 text-gray-500 text-sm italic bg-white rounded-lg">
+                                          No topics in this chapter yet.
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                              {(!module.chapters || module.chapters.length === 0) && (
+                                <div className="px-6 py-4 text-gray-500 text-sm italic">
+                                  No chapters in this module yet.
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-8 text-center">
+                      <p className="text-gray-500">No content available for this course yet.</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="lg:w-80 flex-shrink-0">
+            <div className="lg:sticky lg:top-24">
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                 {!isEnrolled ? (
                   <>
                     <div className="text-center mb-4">
@@ -724,347 +1087,6 @@ const processRazorpayPayment = async () => {
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="border-b border-gray-200 bg-white/80 backdrop-blur-sm sticky top-[88px] z-10">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex gap-8">
-            <button
-              onClick={() => setActiveTab('overview')}
-              className={`py-4 px-1 font-medium transition-all duration-200 border-b-2 ${
-                activeTab === 'overview'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-600 hover:text-gray-800'
-              }`}
-            >
-              Overview
-            </button>
-            <button
-              onClick={() => setActiveTab('curriculum')}
-              className={`py-4 px-1 font-medium transition-all duration-200 border-b-2 ${
-                activeTab === 'curriculum'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-600 hover:text-gray-800'
-              }`}
-            >
-              Curriculum
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {activeTab === 'overview' ? (
-          <div className="grid lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
-              {/* About Section */}
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">About this course</h2>
-                <p className="text-gray-700 leading-relaxed">{course.description || 'No description available'}</p>
-              </div>
-
-              {/* What you'll learn */}
-              {course.whatYouWillLearn && course.whatYouWillLearn.length > 0 && (
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
-                  <h2 className="text-xl font-bold text-gray-900 mb-4">What you'll learn</h2>
-                  <div className="grid md:grid-cols-2 gap-3">
-                    {course.whatYouWillLearn.map((item, idx) => (
-                      <div key={idx} className="flex items-start gap-2 group">
-                        <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-green-200 transition-colors">
-                          <svg className="w-3 h-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                        </div>
-                        <span className="text-gray-700">{item}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Requirements */}
-              {course.requirements && course.requirements.length > 0 && (
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
-                  <h2 className="text-xl font-bold text-gray-900 mb-4">Requirements</h2>
-                  <ul className="space-y-2">
-                    {course.requirements.map((req, idx) => (
-                      <li key={idx} className="flex items-start gap-2 group">
-                        <div className="w-5 h-5 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-orange-200 transition-colors">
-                          <svg className="w-3 h-3 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                          </svg>
-                        </div>
-                        <span className="text-gray-700">{req}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-6">
-              {/* Instructor Info */}
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
-                <h3 className="font-bold text-gray-900 mb-4">Instructor</h3>
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                    {course.instructor?.name?.charAt(0) || 'T'}
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-900">{course.instructor?.name || 'Expert Instructor'}</p>
-                    <p className="text-sm text-gray-500">{course.instructor?.title || 'Professional Trainer'}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Course Stats */}
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
-                <h3 className="font-bold text-gray-900 mb-4">Course Statistics</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                    <span className="text-gray-600">Total Modules</span>
-                    <span className="font-semibold text-gray-900 bg-blue-50 px-3 py-1 rounded-full">{course.modules?.length || 0}</span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                    <span className="text-gray-600">Total Topics</span>
-                    <span className="font-semibold text-gray-900 bg-purple-50 px-3 py-1 rounded-full">{totalTopics}</span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                    <span className="text-gray-600">Free Topics</span>
-                    <span className="font-semibold text-green-600 bg-green-50 px-3 py-1 rounded-full">{freeTopics}</span>
-                  </div>
-                  {paidTopics > 0 && (
-                    <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                      <span className="text-gray-600">Premium Topics</span>
-                      <span className="font-semibold text-orange-600 bg-orange-50 px-3 py-1 rounded-full">{paidTopics}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between items-center py-2">
-                    <span className="text-gray-600">Total Duration</span>
-                    <span className="font-semibold text-gray-900 bg-green-50 px-3 py-1 rounded-full">{Math.floor(totalDuration / 60)}h {totalDuration % 60}min</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : (
-          /* Curriculum Tab with Dropdowns and Topic Details */
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
-              <h2 className="text-xl font-bold text-gray-900">Course Curriculum</h2>
-              <p className="text-gray-600 mt-1">{course.modules?.length || 0} modules • {totalTopics} topics • {freeTopics} free previews</p>
-            </div>
-
-            {course.modules && course.modules.length > 0 ? (
-              <div className="divide-y divide-gray-200">
-                {course.modules.map((module, moduleIndex) => (
-                  <div key={module._id || moduleIndex} className="bg-white">
-                    {/* Module Header */}
-                    <button
-                      onClick={() => toggleModule(moduleIndex)}
-                      className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors text-left group"
-                    >
-                      <div className="flex items-center gap-3 flex-1">
-                        <svg className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${expandedModules[moduleIndex] ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                        <div>
-                          <h3 className="font-semibold text-gray-900">
-                            Module {moduleIndex + 1}: {module.title}
-                          </h3>
-                          {module.description && (
-                            <p className="text-sm text-gray-500 mt-0.5">{module.description}</p>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 text-sm text-gray-500">
-                        <span>{module.chapters?.reduce((acc, ch) => acc + (ch.topics?.length || 0), 0)} topics</span>
-                      </div>
-                    </button>
-
-                    {/* Module Content */}
-                    {expandedModules[moduleIndex] && (
-                      <div className="border-t border-gray-100 bg-gray-50">
-                        {module.chapters?.map((chapter, chapterIndex) => (
-                          <div key={chapter._id || chapterIndex} className="border-b border-gray-100 last:border-b-0">
-                            {/* Chapter Header */}
-                            <button
-                              onClick={() => toggleChapter(moduleIndex, chapterIndex)}
-                              className="w-full px-6 py-3 flex items-center justify-between hover:bg-gray-100 transition-colors text-left"
-                            >
-                              <div className="flex items-center gap-2">
-                                <svg className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${expandedChapters[`${moduleIndex}-${chapterIndex}`] ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                </svg>
-                                <span className="font-medium text-gray-800">
-                                  Chapter {chapterIndex + 1}: {chapter.title}
-                                </span>
-                              </div>
-                              <span className="text-xs text-gray-500">{chapter.topics?.length || 0} topics</span>
-                            </button>
-
-                            {/* Topics List */}
-                            {expandedChapters[`${moduleIndex}-${chapterIndex}`] && (
-                              <div className="px-6 pb-4 space-y-2">
-                                {chapter.topics?.map((topic, topicIndex) => {
-                                  const isPreviewFree = topic.isPreviewFree === true;
-                                  const canAccess = isEnrolled || isPreviewFree || isFree;
-                                  
-                                  return (
-                                    <div key={topic._id || topicIndex} className="ml-6 border border-gray-200 rounded-xl bg-white overflow-hidden hover:shadow-md transition-shadow">
-                                      {/* Topic Header */}
-                                      <div className="p-4 flex items-center justify-between flex-wrap gap-3">
-                                        <div className="flex items-center gap-3 flex-1">
-                                          <div className="flex-shrink-0">
-                                            {canAccess ? (
-                                              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                                                <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                                                </svg>
-                                              </div>
-                                            ) : (
-                                              <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                                                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                                                </svg>
-                                              </div>
-                                            )}
-                                          </div>
-                                          <div>
-                                            <span className="font-medium text-gray-900">
-                                              {topicIndex + 1}. {topic.title}
-                                            </span>
-                                            {topic.duration && (
-                                              <span className="ml-2 text-xs text-gray-500">⏱️ {topic.duration} min</span>
-                                            )}
-                                            <div className="flex gap-2 mt-1">
-                                              {!isFree && !isEnrolled && isPreviewFree && (
-                                                <span className="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full">Free Preview</span>
-                                              )}
-                                              {!isFree && !isEnrolled && !isPreviewFree && (
-                                                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">Premium Content</span>
-                                              )}
-                                              {(isEnrolled || isFree) && (
-                                                <span className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
-                                                  {isFree ? 'Free Access' : 'Enrolled Access'}
-                                                </span>
-                                              )}
-                                            </div>
-                                          </div>
-                                        </div>
-                                        
-                                        <div className="flex gap-2">
-                                          {topic.videoUrl && (
-                                            <button
-                                              onClick={() => handlePlayVideo(topic.videoUrl, topic.title, isPreviewFree)}
-                                              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-1 ${
-                                                canAccess
-                                                  ? 'bg-red-500 hover:bg-red-600 text-white shadow-sm'
-                                                  : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                              }`}
-                                              disabled={!canAccess}
-                                            >
-                                              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                                                <path d="M8 5v14l11-7z" />
-                                              </svg>
-                                              Watch
-                                            </button>
-                                          )}
-                                          {topic.notesUrl && (
-                                            <button
-                                              onClick={() => handleViewNotes(topic.notesUrl, topic.title, isPreviewFree)}
-                                              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-1 ${
-                                                canAccess
-                                                  ? 'bg-blue-500 hover:bg-blue-600 text-white shadow-sm'
-                                                  : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                              }`}
-                                              disabled={!canAccess}
-                                            >
-                                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                              </svg>
-                                              Notes
-                                            </button>
-                                          )}
-                                          <button
-                                            onClick={() => showTopicDetails(topic)}
-                                            className="px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 transition-all duration-200 flex items-center gap-1"
-                                          >
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                            Details
-                                          </button>
-                                        </div>
-                                      </div>
-
-                                      {/* Topic Details - Expandable */}
-                                      {selectedTopic?._id === topic._id && (
-                                        <div className="border-t border-gray-100 p-4 bg-gray-50">
-                                          <div className="space-y-3 text-sm">
-                                            {topic.description && (
-                                              <div>
-                                                <span className="font-semibold text-gray-700">Description:</span>
-                                                <p className="text-gray-600 mt-1">{topic.description}</p>
-                                              </div>
-                                            )}
-                                            {topic.resources && topic.resources.length > 0 && (
-                                              <div>
-                                                <span className="font-semibold text-gray-700">Resources:</span>
-                                                <ul className="mt-2 space-y-1">
-                                                  {topic.resources.map((resource, idx) => (
-                                                    <li key={idx}>
-                                                      <a href={resource.fileUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 text-sm flex items-center gap-1">
-                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-                                                        </svg>
-                                                        {resource.title || `Resource ${idx + 1}`}
-                                                      </a>
-                                                    </li>
-                                                  ))}
-                                                </ul>
-                                              </div>
-                                            )}
-                                            <button
-                                              onClick={() => setSelectedTopic(null)}
-                                              className="text-xs text-gray-500 hover:text-gray-700 mt-2"
-                                            >
-                                              Hide details
-                                            </button>
-                                          </div>
-                                        </div>
-                                      )}
-                                    </div>
-                                  );
-                                })}
-                                {(!chapter.topics || chapter.topics.length === 0) && (
-                                  <div className="ml-6 p-4 text-gray-500 text-sm italic bg-white rounded-lg">
-                                    No topics in this chapter yet.
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                        {(!module.chapters || module.chapters.length === 0) && (
-                          <div className="px-6 py-4 text-gray-500 text-sm italic">
-                            No chapters in this module yet.
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="p-8 text-center">
-                <p className="text-gray-500">No content available for this course yet.</p>
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Video Player Modal */}

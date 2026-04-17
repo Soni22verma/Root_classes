@@ -10,6 +10,7 @@ import StudentProfile from "../components/Student/StudentProfile";
 import Layout from "../Layout"
 import Courses from "../pages/Student/Course/Courses";
 import CourseDetails from "../pages/Student/Course/CourseDetails"
+import PurchesCourses from "../components/Student/PurchesCourses";
 
 const StudentRoutes = [
 
@@ -62,6 +63,10 @@ const StudentRoutes = [
                 path: "/stdprofile",
                 element: <StudentProfile />,
             },
+            {
+                path:"/purchescourse",
+                element:<PurchesCourses/>
+            }
         ]
     }
 
