@@ -49,7 +49,7 @@ const api ={
         getfullcourse:Base_Url+"/course/get-full-course"
     },
     enroll:{
-      getpurchesCourse:Base_Url+"/enroll/get-enrollment"
+      getpurchesCourse:Base_Url+"/enroll/get-purches-course"
     },
     test:{
       createTest:Base_Url+"/test/create_test",
