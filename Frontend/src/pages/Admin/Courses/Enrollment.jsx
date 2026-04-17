@@ -19,49 +19,19 @@ const Enrollment = () => {
     const [showModal, setShowModal] = useState(false);
     const itemsPerPage = 10;
 
-    const GetEnrollment = async () => {
-        try {
-            setLoading(true);
-            const res = await axios.get(api.enroll.getEnrollment);
-            console.log(res, "this is all enrollments");
-            
-            if (res.data.success && res.data.data) {
-                const transformedData = res.data.data.map(enrollment => ({
-                    _id: enrollment._id,
-                    enrollmentId: enrollment._id,
-                    studentName: enrollment.student?.fullName || 'N/A',
-                    email: enrollment.student?.email || 'N/A',
-                    studentId: enrollment.student?._id || 'N/A',
-                    courseTitle: enrollment.course?.title || 'N/A',
-                    courseId: enrollment.course?._id || 'N/A',
-                    courseLevel: enrollment.course?.level || 'N/A',
-                    courseDescription: enrollment.course?.description || 'No description',
-                    enrollmentDate: enrollment.enrolledAt,
-                    amount: enrollment.amount || 0,
-                    status: enrollment.status || 'Active',
-                    paymentStatus: enrollment.paymentStatus || 'Pending',
-                    enrolledAt: enrollment.enrolledAt,
-                    phone: enrollment.student?.phone || 'N/A',
-                    studentGender: enrollment.student?.gender || 'N/A',
-                    studentClass: enrollment.student?.currentClass || 'N/A',
-                    studentAddress: enrollment.student?.address || 'N/A',
-                    instructor: enrollment.course?.instructor?.name || 'Root Classes',
-                    duration: calculateCourseDuration(enrollment.course),
-                    level: enrollment.course?.level || 'Beginner',
-                    studentAvatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(enrollment.student?.fullName || 'S')}&background=4F46E5&color=fff`
-                }));
-                setEnrollments(transformedData);
-            } else {
-                setEnrollments([]);
-            }
-        } catch (error) {
-            console.error("Error fetching enrollments:", error);
-            setError(error.response?.data?.message || "Failed to fetch enrollments");
-        } finally {
-            setLoading(false);
-        }
-    };
+  const GetAllPurchesCourse = async()=>{
+    try {
+        const res = await axios.get(api.enroll.getpurchesCourse)
+        console.log(res)
+        
+    } catch (error) {
+    console.log(error)
+    }
+  }
 
+  useEffect(()=>{
+    GetAllPurchesCourse()
+  },[])
     const calculateCourseDuration = (course) => {
         if (!course || !course.modules) return 'N/A';
         let totalMinutes = 0;
@@ -81,9 +51,7 @@ const Enrollment = () => {
         return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
     };
 
-    useEffect(() => {
-        GetEnrollment();
-    }, []);
+    
 
     const getStatusBadge = (status) => {
         const statusConfig = {

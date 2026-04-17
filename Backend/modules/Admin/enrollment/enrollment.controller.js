@@ -1,16 +1,23 @@
-import Enrollment from './enrollment.model.js'
+import { EnrollStudent } from "../../Student/enrollStudent/enrollStudent.model.js";
 
-export const getAllEnrollments = async (req, res) => {
+export const getAllPurchasedCourses = async (req, res) => {
   try {
-    const enrollments = await Enrollment.find()
+    const purchases = await EnrollStudent.find()
       .populate("student", "fullName email")
-      .populate("course", "title description level");
+      .populate("course", "title price");
 
-    res.json({
+    res.status(200).json({
       success: true,
-      data: enrollments,
+      message: "All purchased courses fetched",
+      data: purchases
     });
+
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Error fetching purchases:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Internal server error"
+    });
   }
 };

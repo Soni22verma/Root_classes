@@ -1,7 +1,6 @@
 import express, { Router } from 'express'
-import { getAllEnrollments } from './enrollment.controller.js'
-
+import {getAllPurchasedCourses} from "../enrollment/enrollment.controller.js"
 const enrollmentRouter = Router()
-enrollmentRouter.get("/get-enrollment",getAllEnrollments)
+enrollmentRouter.get("/get-purches-course",getAllPurchasedCourses)
 
 export default enrollmentRouter
