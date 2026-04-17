@@ -19,39 +19,92 @@ const Enrollment = () => {
     const [showModal, setShowModal] = useState(false);
     const itemsPerPage = 10;
 
-  const GetAllPurchesCourse = async()=>{
-    try {
-        const res = await axios.get(api.enroll.getpurchesCourse)
-        console.log(res)
-        
-    } catch (error) {
-    console.log(error)
-    }
-  }
+    const GetAllPurchesCourse = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const res = await axios.get(api.enroll.getpurchesCourse);
+            console.log("API Response:", res.data);
+            
+            if (res.data && res.data.success && res.data.data) {
+                // Transform the data to match the component's expected structure
+                const transformedData = transformEnrollmentData(res.data.data);
+                setEnrollments(transformedData);
+            } else {
+                setEnrollments([]);
+            }
+        } catch (error) {
+            console.error("Error fetching enrollments:", error);
+            setError(error.response?.data?.message || "Failed to fetch enrollments");
+            setEnrollments([]);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-  useEffect(()=>{
-    GetAllPurchesCourse()
-  },[])
+    // Transform the API data to match the component's expected structure
+    const transformEnrollmentData = (data) => {
+        if (!Array.isArray(data)) return [];
+        
+        return data.map(enrollment => {
+            // Extract course information
+            const course = enrollment.course || {};
+            const studentInfo = enrollment.student || {};
+            
+            return {
+                _id: enrollment._id,
+                enrollmentId: enrollment.orderId || enrollment._id,
+                studentId: studentInfo._id || enrollment.student,
+                studentName: studentInfo.fullName || 'Unknown Student',
+                email: studentInfo.email || 'No email',
+                phone: studentInfo.phone || 'N/A',
+                studentGender: studentInfo.gender || 'Not specified',
+                studentClass: studentInfo.class || 'N/A',
+                studentAddress: studentInfo.address || 'N/A',
+                studentAvatar: studentInfo.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(studentInfo.fullName || 'Student')}&background=6366f1&color=fff`,
+                courseTitle: course.title || 'Unknown Course',
+                courseDescription: course.description || 'No description available',
+                instructor: course.instructor || 'Unknown Instructor',
+                level: course.level || 'Beginner',
+                duration: calculateCourseDuration(course),
+                amount: enrollment.amount || course.price || 0,
+                status: enrollment.status === 'success' ? 'Active' : 
+                        enrollment.status === 'pending' ? 'Pending' : 
+                        enrollment.status === 'cancelled' ? 'Cancelled' : 'Active',
+                paymentStatus: enrollment.paymentStatus === 'success' ? 'Paid' :
+                              enrollment.paymentStatus === 'pending' ? 'Pending' :
+                              enrollment.paymentStatus === 'failed' ? 'Failed' : 'Paid',
+                enrollmentDate: enrollment.enrolledAt || enrollment.createdAt || new Date().toISOString(),
+                orderId: enrollment.orderId,
+                paymentId: enrollment.paymentId
+            };
+        });
+    };
+
     const calculateCourseDuration = (course) => {
         if (!course || !course.modules) return 'N/A';
         let totalMinutes = 0;
-        course.modules.forEach(module => {
-            if (module.chapters) {
-                module.chapters.forEach(chapter => {
-                    if (chapter.topics) {
-                        chapter.topics.forEach(topic => {
-                            totalMinutes += topic.duration || 10;
-                        });
-                    }
-                });
-            }
-        });
+        if (course.modules && Array.isArray(course.modules)) {
+            course.modules.forEach(module => {
+                if (module.chapters && Array.isArray(module.chapters)) {
+                    module.chapters.forEach(chapter => {
+                        if (chapter.topics && Array.isArray(chapter.topics)) {
+                            chapter.topics.forEach(topic => {
+                                totalMinutes += topic.duration || 10;
+                            });
+                        }
+                    });
+                }
+            });
+        }
         const hours = Math.floor(totalMinutes / 60);
         const minutes = totalMinutes % 60;
         return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
     };
 
-    
+    useEffect(() => {
+        GetAllPurchesCourse();
+    }, []);
 
     const getStatusBadge = (status) => {
         const statusConfig = {
@@ -277,7 +330,7 @@ const Enrollment = () => {
                     <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-6">
                         <strong>Error:</strong> {error}
                         <button
-                            onClick={GetEnrollment}
+                            onClick={GetAllPurchesCourse}
                             className="ml-4 text-red-700 font-semibold hover:text-red-800 underline"
                         >
                             Try Again
@@ -296,7 +349,7 @@ const Enrollment = () => {
                         <h3 className="mt-2 text-sm font-medium text-gray-900">No enrollments found</h3>
                         <p className="mt-1 text-sm text-gray-500">No students have enrolled in any courses yet.</p>
                         <button
-                            onClick={GetEnrollment}
+                            onClick={GetAllPurchesCourse}
                             className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
                         >
                             Refresh
@@ -360,6 +413,9 @@ const Enrollment = () => {
                                                             className="h-10 w-10 rounded-full object-cover"
                                                             src={enrollment.studentAvatar}
                                                             alt={enrollment.studentName}
+                                                            onError={(e) => {
+                                                                e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(enrollment.studentName)}&background=6366f1&color=fff`;
+                                                            }}
                                                         />
                                                     </div>
                                                     <div className="ml-3">
@@ -510,6 +566,9 @@ const Enrollment = () => {
                                             src={selectedEnrollment.studentAvatar}
                                             alt={selectedEnrollment.studentName}
                                             className="w-16 h-16 rounded-full object-cover"
+                                            onError={(e) => {
+                                                e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedEnrollment.studentName)}&background=6366f1&color=fff`;
+                                            }}
                                         />
                                     </div>
                                 </div>
@@ -591,6 +650,7 @@ const Enrollment = () => {
                                 </div>
                             </div>
 
+                            {/* Enrollment Details */}
                             <div>
                                 <h3 className="text-lg font-semibold text-slate-800 mb-3 flex items-center gap-2">
                                     <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -606,6 +666,14 @@ const Enrollment = () => {
                                     <div>
                                         <span className="text-xs text-slate-500 block">Amount Paid</span>
                                         <span className="text-sm font-semibold text-indigo-600">₹{parseFloat(selectedEnrollment.amount).toLocaleString()}</span>
+                                    </div>
+                                    <div>
+                                        <span className="text-xs text-slate-500 block">Order ID</span>
+                                        <span className="text-sm font-mono text-slate-600">{selectedEnrollment.orderId || 'N/A'}</span>
+                                    </div>
+                                    <div>
+                                        <span className="text-xs text-slate-500 block">Payment ID</span>
+                                        <span className="text-sm font-mono text-slate-600">{selectedEnrollment.paymentId || 'N/A'}</span>
                                     </div>
                                     <div>
                                         <span className="text-xs text-slate-500 block">Enrollment Status</span>
