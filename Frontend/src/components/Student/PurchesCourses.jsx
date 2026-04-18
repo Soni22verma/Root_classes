@@ -86,6 +86,7 @@ const PurchasedCourse = () => {
     }, [selectedTopic]);
 
     const handlePurchasedCourses = async () => {
+        
         if (!studentId) {
             console.log("Student ID not available yet");
             setError("Student information not loaded");
