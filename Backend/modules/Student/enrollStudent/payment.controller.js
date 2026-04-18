@@ -205,6 +205,7 @@ export const verifyPayment = async (req, res) => {
 export const GetMyCourse = async(req,res,next)=>{
   try {
     const {studentId} = req.body;
+    console.log(studentId , "fghjkl;ghjkl;jjjjjjjjjjjjjjjj")
      
     const enrollment = await EnrollStudent.find({
       student:studentId,

@@ -52,6 +52,7 @@ app.use("/payment",paymentRouter)
 app.use("/scholarship" ,scholarshipRouter)
 // Test route
 
+
 app.get("/", (req, res) => {
   res.send("Server is running 🚀");
 });
