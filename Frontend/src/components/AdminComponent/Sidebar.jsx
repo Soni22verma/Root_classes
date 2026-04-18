@@ -162,15 +162,15 @@ const AdminSidebar = ({ isMobileOpen, setIsMobileOpen }) => {
 
     // Admin-specific menu items
     const adminItems = [
-      {
-        name: 'Student Management',
-        icon: Users,
-        submenu: [
-          { name: 'All Students', path: '/admin/allstudent', icon: Users },
-          // { name: 'Student Attendance', path: '/admin/students/attendance', icon: Calendar },
-          // { name: 'Student Fees', path: '/admin/students/fees', icon: DollarSign }
-        ]
-      },
+      // {
+      //   name: 'Student Management',
+      //   icon: Users,
+      //   submenu: [
+      //     { name: 'All Students', path: '/admin/allstudent', icon: Users },
+      //     // { name: 'Student Attendance', path: '/admin/students/attendance', icon: Calendar },
+      //     // { name: 'Student Fees', path: '/admin/students/fees', icon: DollarSign }
+      //   ]
+      // },
       {
         name: 'Course Management',
         icon: BookOpen,

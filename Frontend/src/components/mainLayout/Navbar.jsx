@@ -43,7 +43,6 @@ const Navbar = () => {
         }
       }
       
-      
       // Check for user in localStorage (alternative key)
       const storedUser = localStorage.getItem('user');
       if (storedUser) {
@@ -133,6 +132,18 @@ const Navbar = () => {
     return '';
   };
 
+  // Function to check if user is admin or instructor
+  const isAdminOrInstructor = () => {
+    const role = student?.role;
+    return role === "admin" || role === "instructor";
+  };
+
+  // Function to check if user is student
+  const isStudent = () => {
+    const role = student?.role;
+    return role === "student" || (!role && isLoggedIn); // Default to student if no role but logged in
+  };
+
   const handleLogout = () => {
     // Clear all possible storage keys
     localStorage.removeItem("user");
@@ -178,19 +189,21 @@ const Navbar = () => {
     { name: 'Online Courses', path: '/onlinecourse' },
     { name: 'Up to 100% Scholarship', path: '/schollarship' },
     { name: 'Test List', path: '/test' },
-    
     { name: 'Blog', path: '/blog' },
     { name: 'Contact', path: '/contact' },
   ];
 
+  const handleProfile = async() => {
+    navigate("/stdprofile");
+  };
 
+  const handlePurchases = async() => {
+    navigate("/purchescourse");
+  };
 
-  const handleProflie = async()=>{
-    navigate("/stdprofile")
-  }
-  const handlePurches = async()=>{
-    navigate("/purchescourse")
-  }
+  const handleDashboard = async() => {
+    navigate("/admin/");
+  };
 
   return (
     <nav className="bg-white shadow-md sticky top-0 z-50">
@@ -261,40 +274,47 @@ const Navbar = () => {
                       </div>
                     </div>
 
-                    {/* Menu Items */}
+                    {/* Menu Items - Role Based */}
                     <div className="py-2">
-                      <Link
-                        to="/admin/"
-                        onClick={() => setIsDropdownOpen(false)}
-                        className="flex items-center space-x-3 px-4 py-2 text-gray-700 hover:bg-gray-50 transition group"
-                      >
-
-                        {student?.role === "admin" || student?.role === "instructor" ? 
-                        <>
+                      {/* Admin/Instructor Dashboard */}
+                      {isAdminOrInstructor() && (
+                        <div 
+                          onClick={() => {
+                            handleDashboard();
+                            setIsDropdownOpen(false);
+                          }}
+                          className="flex items-center space-x-3 px-4 py-2 text-gray-700 hover:bg-gray-50 transition group cursor-pointer"
+                        >
                           <LayoutDashboard size={18} className="text-gray-500 group-hover:text-indigo-600" />
+                          <span>Dashboard</span>
+                        </div>
+                      )}
 
-                          <span>Dashboard</span> 
-
+                      {/* Student Menu Items */}
+                      {isStudent() && (
+                        <>
+                          <div 
+                            onClick={() => {
+                              handleProfile();
+                              setIsDropdownOpen(false);
+                            }}
+                            className="flex items-center space-x-3 px-4 py-2 text-gray-700 hover:bg-gray-50 transition group cursor-pointer"
+                          >
+                            <UserCircle size={18} className="text-gray-500 group-hover:text-indigo-600" />
+                            <span>My Profile</span>
+                          </div>
+                          <div 
+                            onClick={() => {
+                              handlePurchases();
+                              setIsDropdownOpen(false);
+                            }}
+                            className="flex items-center space-x-3 px-4 py-2 text-gray-700 hover:bg-gray-50 transition group cursor-pointer"
+                          >
+                            <SiCoursera size={18} className="text-gray-500 group-hover:text-indigo-600" />
+                            <span>My Purchased Courses</span>
+                          </div>
                         </>
-                        
-                        :""
-                      }
-                      </Link> 
-                      <div 
-                        onClick={() => handleProflie()}
-                        className="flex items-center space-x-3 px-4 py-2 text-gray-700 hover:bg-gray-50 transition group cursor-pointer"
-                      >
-                        <UserCircle size={18} className="text-gray-500 group-hover:text-indigo-600" />
-                        <span>My Profile</span>
-                      </div>
-                      <div 
-                        onClick={() => handlePurches()}
-                        className="flex items-center space-x-3 px-4 py-2 text-gray-700 hover:bg-gray-50 transition group cursor-pointer"
-                      >
-                        <SiCoursera  size={18} className="text-gray-500 group-hover:text-indigo-600" />
-                        <span>My Purches Courses</span>
-                      </div>
-                      
+                      )}
                     </div>
 
                     {/* Logout Button */}
@@ -364,24 +384,38 @@ const Navbar = () => {
                     </div>
                   </div>
                   
-                  {/* Mobile Dropdown Items */}
-                  <Link
-                    to="/dashboard"
-                    className="flex items-center space-x-3 px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <LayoutDashboard size={18} />
-                    <span>Dashboard</span>
-                  </Link>
-                  
-                  <Link
-                    to="/stdprofile"
-                    className="flex items-center space-x-3 px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <UserCircle size={18} />
-                    <span>My Profile</span>
-                  </Link>
+                  {/* Mobile Menu Items - Role Based */}
+                  {isAdminOrInstructor() && (
+                    <Link
+                      to="/admin/"
+                      className="flex items-center space-x-3 px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <LayoutDashboard size={18} />
+                      <span>Dashboard</span>
+                    </Link>
+                  )}
+
+                  {isStudent() && (
+                    <>
+                      <Link
+                        to="/stdprofile"
+                        className="flex items-center space-x-3 px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <UserCircle size={18} />
+                        <span>My Profile</span>
+                      </Link>
+                      <Link
+                        to="/purchescourse"
+                        className="flex items-center space-x-3 px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <SiCoursera size={18} />
+                        <span>My Purchased Courses</span>
+                      </Link>
+                    </>
+                  )}
                   
                   <button
                     onClick={handleLogout}
