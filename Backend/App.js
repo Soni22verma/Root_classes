@@ -48,7 +48,7 @@ app.use("/course",createcourseRouter)
 app.use("/enroll",enrollmentRouter)
 app.use("/test",testRouter)
 app.use("/result",resultRouter)
-app.use("/api/payment",paymentRouter)
+app.use("/payment",paymentRouter)
 app.use("/scholarship" ,scholarshipRouter)
 // Test route
 
