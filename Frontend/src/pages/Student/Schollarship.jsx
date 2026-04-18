@@ -156,6 +156,7 @@ import React, { useState } from 'react';
 import api from '../../services/endpoints.js';
 import axios from "axios";
 import useStudentStore from '../../Store/studentstore.js';
+import { toast } from 'react-toastify';
 
 const ScholarshipForm = () => {
 
@@ -182,7 +183,7 @@ const ScholarshipForm = () => {
 
       const payload = {
         ...formData,
-        studentId: student?._id   // store se student id bhej rahe hain
+        studentId: student?._id  
       };
 
       console.log("Form submitted:", payload);
@@ -193,6 +194,7 @@ const ScholarshipForm = () => {
 
     } catch (error) {
       console.log(error?.response, "error from scholarship apply");
+      toast.error("You are not eligible for scholarship. You need 70% or more marks. Your highest score is 5%.")
     }
   };
 

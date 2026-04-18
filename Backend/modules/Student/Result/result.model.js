@@ -36,9 +36,7 @@ const resultSchema = new mongoose.Schema(
 
     answers: [
       {
-        questionId: {
-          type: mongoose.Schema.Types.ObjectId,
-        },
+        questionId: mongoose.Schema.Types.ObjectId,
         selectedAnswer: String,
         isCorrect: Boolean,
       },
@@ -48,10 +46,15 @@ const resultSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    isCompleted:{
+      type:Boolean,
+      default:false
+    }
   },
   { timestamps: true }
 );
 
-resultSchema.index({ studentId: 1, testId: 1 });
+// 🔥 IMPORTANT (1 student = 1 test only)
+resultSchema.index({ studentId: 1, testId: 1 }, { unique: true });
 
 export const Result = mongoose.model("Result", resultSchema);

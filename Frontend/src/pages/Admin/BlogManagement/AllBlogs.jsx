@@ -122,7 +122,7 @@ const AdminBlogPanel = () => {
                 formDataToSend.append("imageUrl", formData.imageUrl);
             }
 
-             await axios.post(api.blog.createblog, formDataToSend);
+            await axios.post(api.blog.createblog, formDataToSend);
             toast.success("Blog created successfully");
             await GetBlogs();
 
@@ -155,7 +155,7 @@ const AdminBlogPanel = () => {
         try {
             const formDataToSend = new FormData();
             formDataToSend.append("title", formData.title);
-            formDataToSend.append("blogId",blogIdToUpdate)
+            formDataToSend.append("blogId", blogIdToUpdate);
             formDataToSend.append("author", formData.author);
             formDataToSend.append("category", formData.category);
             formDataToSend.append("content", formData.content);
@@ -197,20 +197,21 @@ const AdminBlogPanel = () => {
     };
 
     const handleDelete = async (id) => {
-            if (!deletingBlogId) {
-        alert('BlogId is messing');
-        return;
-    }
+        if (!deletingBlogId) {
+            alert('BlogId is missing');
+            return;
+        }
 
         if (window.confirm('Are you sure you want to delete this blog?')) {
             setLoading(true);
             try {
-                   console.log("Deleting blog with ID:", deletingBlogId);
-                await axios.post(api.blog.deleteblog,{blogId:deletingBlogId});
+                console.log("Deleting blog with ID:", deletingBlogId);
+                await axios.post(api.blog.deleteblog, { blogId: deletingBlogId });
                 setSuccessMessage('Blog deleted successfully!');
                 toast.success('Blog deleted successfully!');
                 setTimeout(() => setSuccessMessage(''), 3000);
                 setDeletingBlogId(null);
+                await GetBlogs();
             } catch (error) {
                 console.error('Error deleting blog:', error);
                 setErrors({ submit: 'Failed to delete blog' });
@@ -328,7 +329,6 @@ const AdminBlogPanel = () => {
             setTimeout(() => setSuccessMessage(''), 2000);
         } catch (error) {
             console.error('Error updating status:', error);
-            // Optimistic update
             const updatedBlogs = blogs.map(blog =>
                 blog.id === id ? { ...blog, status: newStatus } : blog
             );
@@ -374,44 +374,44 @@ const AdminBlogPanel = () => {
 
     return (
         <div className="min-h-screen bg-gray-100 overflow-x-hidden">
-            {/* Admin Header */}
+            {/* Admin Header - Responsive */}
             <header className="bg-gray-200 text-gray-600 shadow-sm">
-                <div className="max-w-7xl mx-auto px-4 py-5">
-                    <h1 className="text-2xl font-bold">Blog Admin Panel</h1>
-                    <p className="text-gray-400 text-sm mt-0.5">Manage your blog posts</p>
+                <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-5">
+                    <h1 className="text-xl sm:text-2xl font-bold">Blog Admin Panel</h1>
+                    <p className="text-gray-400 text-xs sm:text-sm mt-0.5">Manage your blog posts</p>
                 </div>
             </header>
 
-            <main className="max-w-7xl mx-auto px-4 py-6">
+            <main className="px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6">
                 {/* Loading Overlay */}
                 {loading && (
                     <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center">
-                        <div className="bg-white rounded-lg p-4 flex items-center gap-3">
-                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-600"></div>
-                            <span className="text-sm text-gray-700">Processing...</span>
+                        <div className="bg-white rounded-lg p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
+                            <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-indigo-600"></div>
+                            <span className="text-xs sm:text-sm text-gray-700">Processing...</span>
                         </div>
                     </div>
                 )}
 
-                {/* Success Message */}
+                {/* Success Message - Responsive */}
                 {successMessage && (
-                    <div className="mb-5 p-3 bg-green-100 border border-green-400 text-green-700 rounded-lg flex items-center justify-between text-sm">
+                    <div className="mb-4 p-2.5 sm:p-3 bg-green-100 border border-green-400 text-green-700 rounded-lg flex items-center justify-between text-xs sm:text-sm">
                         <span>{successMessage}</span>
                         <button onClick={() => setSuccessMessage('')} className="text-green-700 hover:text-green-900">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                             </svg>
                         </button>
                     </div>
                 )}
 
-                {/* Error Message */}
+                {/* Error Messages - Responsive */}
                 {errors.fetch && (
-                    <div className="mb-5 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
+                    <div className="mb-4 p-2.5 sm:p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-xs sm:text-sm">
                         {errors.fetch}
                         <button
                             onClick={() => GetBlogs()}
-                            className="ml-3 text-red-700 underline hover:text-red-900"
+                            className="ml-2 sm:ml-3 text-red-700 underline hover:text-red-900"
                         >
                             Retry
                         </button>
@@ -419,30 +419,30 @@ const AdminBlogPanel = () => {
                 )}
 
                 {errors.submit && (
-                    <div className="mb-5 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
+                    <div className="mb-4 p-2.5 sm:p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-xs sm:text-sm">
                         {errors.submit}
                     </div>
                 )}
 
-                {/* Header with Create Button and Filter */}
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-5">
+                {/* Header with Create Button and Filter - Responsive */}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-5">
                     <button
                         onClick={openCreateModal}
-                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition duration-200 font-medium text-sm shadow-sm"
+                        className="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition duration-200 font-medium text-xs sm:text-sm shadow-sm w-full sm:w-auto"
                     >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                         </svg>
                         Create New Blog
                     </button>
 
                     {/* Status Filter */}
-                    <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-600">Filter by status:</span>
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <span className="text-xs sm:text-sm text-gray-600">Filter:</span>
                         <select
                             value={statusFilter}
                             onChange={(e) => setStatusFilter(e.target.value)}
-                            className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white"
+                            className="flex-1 sm:flex-none px-2 sm:px-3 py-1.5 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white"
                         >
                             <option value="all">All ({blogs.length})</option>
                             <option value="published">Published ({blogs.filter(b => b.status === 'published').length})</option>
@@ -451,32 +451,32 @@ const AdminBlogPanel = () => {
                     </div>
                 </div>
 
-                {/* Modal Overlay */}
+                {/* Modal Overlay - Responsive */}
                 {isFormOpen && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center">
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
                         <div
                             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
                             onClick={closeModal}
                         ></div>
 
-                        {/* Modal Content */}
-                        <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
-                            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-                                <h2 className="text-xl font-semibold text-gray-800">
+                        {/* Modal Content - Responsive */}
+                        <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-auto max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
+                            <div className="sticky top-0 bg-white border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 flex justify-between items-center">
+                                <h2 className="text-base sm:text-lg md:text-xl font-semibold text-gray-800">
                                     {editingId ? 'Edit Blog Post' : 'Create New Blog Post'}
                                 </h2>
                                 <button
                                     onClick={closeModal}
                                     className="text-gray-400 hover:text-gray-600 transition-colors"
                                 >
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                     </svg>
                                 </button>
                             </div>
 
-                            <form onSubmit={handleSubmit} className="p-6">
-                                <div className="space-y-5">
+                            <form onSubmit={handleSubmit} className="p-4 sm:p-6">
+                                <div className="space-y-4 sm:space-y-5">
                                     {/* Title */}
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -487,7 +487,7 @@ const AdminBlogPanel = () => {
                                             name="title"
                                             value={formData.title}
                                             onChange={handleInputChange}
-                                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition ${errors.title ? 'border-red-500' : 'border-gray-300'
+                                            className={`w-full px-3 py-2 text-sm sm:text-base border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition ${errors.title ? 'border-red-500' : 'border-gray-300'
                                                 }`}
                                             placeholder="Enter blog title"
                                             autoFocus
@@ -495,8 +495,8 @@ const AdminBlogPanel = () => {
                                         {errors.title && <p className="mt-1 text-xs text-red-500">{errors.title}</p>}
                                     </div>
 
-                                    {/* Author and Category Row */}
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {/* Author and Category Row - Responsive Grid */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                                 Author *
@@ -506,7 +506,7 @@ const AdminBlogPanel = () => {
                                                 name="author"
                                                 value={formData.author}
                                                 onChange={handleInputChange}
-                                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition ${errors.author ? 'border-red-500' : 'border-gray-300'
+                                                className={`w-full px-3 py-2 text-sm sm:text-base border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition ${errors.author ? 'border-red-500' : 'border-gray-300'
                                                     }`}
                                                 placeholder="Author name"
                                             />
@@ -522,7 +522,7 @@ const AdminBlogPanel = () => {
                                                 name="category"
                                                 value={formData.category}
                                                 onChange={handleInputChange}
-                                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition ${errors.category ? 'border-red-500' : 'border-gray-300'
+                                                className={`w-full px-3 py-2 text-sm sm:text-base border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition ${errors.category ? 'border-red-500' : 'border-gray-300'
                                                     }`}
                                                 placeholder="e.g., Technology, Lifestyle"
                                             />
@@ -535,7 +535,7 @@ const AdminBlogPanel = () => {
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
                                             Status *
                                         </label>
-                                        <div className="flex gap-4">
+                                        <div className="flex flex-wrap gap-3 sm:gap-4">
                                             <label className="flex items-center gap-2 cursor-pointer">
                                                 <input
                                                     type="radio"
@@ -543,9 +543,9 @@ const AdminBlogPanel = () => {
                                                     value="draft"
                                                     checked={formData.status === 'draft'}
                                                     onChange={handleInputChange}
-                                                    className="w-4 h-4 text-yellow-600 focus:ring-yellow-500"
+                                                    className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-yellow-600 focus:ring-yellow-500"
                                                 />
-                                                <span className="text-sm text-gray-700">Draft</span>
+                                                <span className="text-xs sm:text-sm text-gray-700">Draft</span>
                                             </label>
                                             <label className="flex items-center gap-2 cursor-pointer">
                                                 <input
@@ -554,15 +554,15 @@ const AdminBlogPanel = () => {
                                                     value="published"
                                                     checked={formData.status === 'published'}
                                                     onChange={handleInputChange}
-                                                    className="w-4 h-4 text-green-600 focus:ring-green-500"
+                                                    className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-600 focus:ring-green-500"
                                                 />
-                                                <span className="text-sm text-gray-700">Published</span>
+                                                <span className="text-xs sm:text-sm text-gray-700">Published</span>
                                             </label>
                                         </div>
                                         {errors.status && <p className="mt-1 text-xs text-red-500">{errors.status}</p>}
                                     </div>
 
-                                    {/* Image Upload Section */}
+                                    {/* Image Upload Section - Responsive */}
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
                                             Featured Image
@@ -574,7 +574,7 @@ const AdminBlogPanel = () => {
                                                 <img
                                                     src={imagePreview}
                                                     alt="Preview"
-                                                    className="w-24 h-24 rounded-lg object-cover border border-gray-200"
+                                                    className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-lg object-cover border border-gray-200"
                                                     onError={(e) => { e.target.src = fallbackImage; }}
                                                 />
                                                 <button
@@ -582,17 +582,17 @@ const AdminBlogPanel = () => {
                                                     onClick={clearImage}
                                                     className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition"
                                                 >
-                                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                                     </svg>
                                                 </button>
                                             </div>
                                         )}
 
-                                        {/* Two Column Layout for Upload Options */}
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {/* Two Column Layout for Upload Options - Responsive */}
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                             <div>
-                                                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-indigo-400 transition">
+                                                <div className="border-2 border-dashed border-gray-300 rounded-lg p-3 sm:p-4 text-center hover:border-indigo-400 transition">
                                                     <input
                                                         type="file"
                                                         ref={fileInputRef}
@@ -605,10 +605,10 @@ const AdminBlogPanel = () => {
                                                         htmlFor="image-upload"
                                                         className="cursor-pointer flex flex-col items-center"
                                                     >
-                                                        <svg className="w-8 h-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <svg className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-gray-400 mb-1 sm:mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                                         </svg>
-                                                        <span className="text-sm text-gray-600">Browse from computer</span>
+                                                        <span className="text-xs sm:text-sm text-gray-600">Browse from computer</span>
                                                         <span className="text-xs text-gray-400 mt-1">PNG, JPG up to 5MB</span>
                                                     </label>
                                                 </div>
@@ -616,7 +616,7 @@ const AdminBlogPanel = () => {
 
                                             {/* URL Upload */}
                                             <div>
-                                                <div className="border border-gray-300 rounded-lg p-3">
+                                                <div className="border border-gray-300 rounded-lg p-2.5 sm:p-3">
                                                     <label className="block text-xs font-medium text-gray-500 mb-1">
                                                         Or enter image URL
                                                     </label>
@@ -625,7 +625,7 @@ const AdminBlogPanel = () => {
                                                         name="imageUrl"
                                                         value={formData.imageUrl}
                                                         onChange={handleInputChange}
-                                                        className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
+                                                        className="w-full px-2 sm:px-3 py-1.5 text-xs sm:text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
                                                         placeholder="https://example.com/image.jpg"
                                                     />
                                                 </div>
@@ -642,8 +642,8 @@ const AdminBlogPanel = () => {
                                             name="content"
                                             value={formData.content}
                                             onChange={handleInputChange}
-                                            rows="6"
-                                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition resize-none ${errors.content ? 'border-red-500' : 'border-gray-300'
+                                            rows={6}
+                                            className={`w-full px-3 py-2 text-sm sm:text-base border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition resize-none ${errors.content ? 'border-red-500' : 'border-gray-300'
                                                 }`}
                                             placeholder="Write your blog content here..."
                                         />
@@ -651,19 +651,19 @@ const AdminBlogPanel = () => {
                                     </div>
                                 </div>
 
-                                {/* Form Buttons */}
-                                <div className="flex gap-3 mt-8 pt-4 border-t border-gray-100">
+                                {/* Form Buttons - Responsive */}
+                                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-6 sm:mt-8 pt-4 border-t border-gray-100">
                                     <button
                                         type="submit"
                                         disabled={loading}
-                                        className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="order-1 sm:order-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                                     >
                                         {loading ? 'Processing...' : (editingId ? 'Update Blog' : 'Create Blog')}
                                     </button>
                                     <button
                                         type="button"
                                         onClick={closeModal}
-                                        className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition duration-200 font-medium"
+                                        className="order-2 sm:order-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition duration-200 font-medium text-sm"
                                     >
                                         Cancel
                                     </button>
@@ -673,21 +673,21 @@ const AdminBlogPanel = () => {
                     </div>
                 )}
 
-                {/* Blogs Table */}
+                {/* Blogs Table - Responsive */}
                 <div className="bg-white rounded-xl shadow-md overflow-hidden">
-                    <div className="bg-gray-50 px-5 py-3 border-b border-gray-200 flex justify-between items-center">
-                        <h2 className="text-lg font-semibold text-gray-800">All Blog Posts</h2>
-                        <span className="text-sm text-gray-500">
+                    <div className="bg-gray-50 px-4 sm:px-5 py-2.5 sm:py-3 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                        <h2 className="text-base sm:text-lg font-semibold text-gray-800">All Blog Posts</h2>
+                        <span className="text-xs sm:text-sm text-gray-500">
                             Showing {filteredBlogs.length} of {blogs.length} blogs
                         </span>
                     </div>
 
                     {filteredBlogs.length === 0 ? (
-                        <div className="text-center py-12">
-                            <svg className="w-16 h-16 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="text-center py-8 sm:py-12">
+                            <svg className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
                             </svg>
-                            <p className="mt-4 text-gray-500">
+                            <p className="mt-3 sm:mt-4 text-sm text-gray-500">
                                 {statusFilter !== 'all'
                                     ? `No ${statusFilter} blog posts found.`
                                     : 'No blog posts yet. Click "Create New Blog" to get started!'}
@@ -698,81 +698,72 @@ const AdminBlogPanel = () => {
                             <table className="w-full">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Author</th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                        <th className="px-3 sm:px-4 py-2.5 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
+                                        <th className="px-3 sm:px-4 py-2.5 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                                        <th className="hidden sm:table-cell px-3 sm:px-4 py-2.5 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Author</th>
+                                        <th className="hidden md:table-cell px-3 sm:px-4 py-2.5 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                                        <th className="px-3 sm:px-4 py-2.5 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                        <th className="hidden lg:table-cell px-3 sm:px-4 py-2.5 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                                        <th className="px-3 sm:px-4 py-2.5 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200">
                                     {filteredBlogs.map((blog) => (
                                         <tr key={blog.id} className="hover:bg-gray-50 transition">
-                                            <td className="px-4 py-3 whitespace-nowrap">
+                                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap">
                                                 {blog.imageUrl ? (
                                                     <img
                                                         src={blog.imageUrl}
                                                         alt={blog.title}
-                                                        className="w-10 h-10 rounded-lg object-cover"
+                                                        className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg object-cover"
                                                         onError={(e) => {
                                                             e.target.onerror = null;
                                                             e.target.src = fallbackImage;
                                                         }}
                                                     />
                                                 ) : (
-                                                    <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                                                        <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                                                        <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                                         </svg>
                                                     </div>
                                                 )}
                                             </td>
-                                            <td className="px-4 py-3">
-                                                <div className="max-w-xs">
-                                                    <p className="font-medium text-gray-900 text-sm truncate">{blog.title}</p>
-                                                    <p className="text-xs text-gray-500 truncate">{blog.content?.substring(0, 60) || ''}...</p>
+                                            <td className="px-3 sm:px-4 py-3">
+                                                <div className="max-w-[150px] sm:max-w-xs">
+                                                    <p className="font-medium text-gray-900 text-xs sm:text-sm truncate">{blog.title}</p>
+                                                    <p className="text-xs text-gray-500 hidden sm:block truncate">{blog.content?.substring(0, 50) || ''}...</p>
                                                 </div>
                                             </td>
-                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{blog.author}</td>
-                                            <td className="px-4 py-3 whitespace-nowrap">
-                                                <span className="px-2 py-0.5 text-xs rounded-full bg-indigo-100 text-indigo-700">
+                                            <td className="hidden sm:table-cell px-3 sm:px-4 py-3 whitespace-nowrap text-xs sm:text-sm text-gray-600">{blog.author}</td>
+                                            <td className="hidden md:table-cell px-3 sm:px-4 py-3 whitespace-nowrap">
+                                                <span className="px-1.5 sm:px-2 py-0.5 text-xs rounded-full bg-indigo-100 text-indigo-700">
                                                     {blog.category}
                                                 </span>
                                             </td>
-                                            <td className="px-4 py-3 whitespace-nowrap">
-                                                <div className="flex items-center gap-2">
-                                                    {getStatusBadge(blog.status)}
-                                                    {/* <select
-                                                        value={blog.status}
-                                                        onChange={(e) => handleStatusChange(blog.id, e.target.value)}
-                                                        className="text-xs border border-gray-300 rounded px-1 py-0.5 focus:ring-1 focus:ring-indigo-500 outline-none bg-white"
-                                                    >
-                                                        
-                                                    </select> */}
-                                                </div>
+                                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap">
+                                                {getStatusBadge(blog.status)}
                                             </td>
-                                            <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-500">
+                                            <td className="hidden lg:table-cell px-3 sm:px-4 py-3 whitespace-nowrap text-xs text-gray-500">
                                                 {formatDate(blog.createdAt)}
                                             </td>
-                                            <td className="px-4 py-3 whitespace-nowrap">
-                                                <div className="flex gap-1.5">
+                                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap">
+                                                <div className="flex gap-1 sm:gap-1.5">
                                                     <button
                                                         onClick={() => openEditModal(blog)}
-                                                        className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                                                        className="p-1 sm:p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition"
                                                         title="Edit"
                                                     >
-                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                                         </svg>
                                                     </button>
                                                     <button
-                                                        onClick={() =>{ handleDelete(blog.id), setDeletingBlogId(blog._id || blog.id);}}
-                                                        className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition"
+                                                        onClick={() => { handleDelete(blog.id); setDeletingBlogId(blog.id); }}
+                                                        className="p-1 sm:p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition"
                                                         title="Delete"
                                                     >
-                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                         </svg>
                                                     </button>
@@ -786,47 +777,47 @@ const AdminBlogPanel = () => {
                     )}
                 </div>
 
-                {/* Blog Statistics Summary */}
+                {/* Blog Statistics Summary - Responsive */}
                 {blogs.length > 0 && (
-                    <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div className="bg-white rounded-lg shadow p-4">
+                    <div className="mt-5 sm:mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                        <div className="bg-white rounded-lg shadow p-3 sm:p-4">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm text-gray-500">Total Blogs</p>
-                                    <p className="text-2xl font-bold text-gray-800">{blogs.length}</p>
+                                    <p className="text-xs sm:text-sm text-gray-500">Total Blogs</p>
+                                    <p className="text-xl sm:text-2xl font-bold text-gray-800">{blogs.length}</p>
                                 </div>
-                                <div className="bg-indigo-100 rounded-full p-3">
-                                    <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div className="bg-indigo-100 rounded-full p-2 sm:p-3">
+                                    <svg className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
                                     </svg>
                                 </div>
                             </div>
                         </div>
-                        <div className="bg-white rounded-lg shadow p-4">
+                        <div className="bg-white rounded-lg shadow p-3 sm:p-4">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm text-gray-500">Published</p>
-                                    <p className="text-2xl font-bold text-green-600">
+                                    <p className="text-xs sm:text-sm text-gray-500">Published</p>
+                                    <p className="text-xl sm:text-2xl font-bold text-green-600">
                                         {blogs.filter(b => b.status === 'published').length}
                                     </p>
                                 </div>
-                                <div className="bg-green-100 rounded-full p-3">
-                                    <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div className="bg-green-100 rounded-full p-2 sm:p-3">
+                                    <svg className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
                                 </div>
                             </div>
                         </div>
-                        <div className="bg-white rounded-lg shadow p-4">
+                        <div className="bg-white rounded-lg shadow p-3 sm:p-4">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm text-gray-500">Drafts</p>
-                                    <p className="text-2xl font-bold text-yellow-600">
+                                    <p className="text-xs sm:text-sm text-gray-500">Drafts</p>
+                                    <p className="text-xl sm:text-2xl font-bold text-yellow-600">
                                         {blogs.filter(b => b.status === 'draft').length}
                                     </p>
                                 </div>
-                                <div className="bg-yellow-100 rounded-full p-3">
-                                    <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div className="bg-yellow-100 rounded-full p-2 sm:p-3">
+                                    <svg className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                     </svg>
                                 </div>

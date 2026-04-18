@@ -1,7 +1,7 @@
 import Home from "../components/Home/Home";
 import StudentLogin from "../components/Student/StudentLogin";
 import StudentRegister from "../components/Student/StudentRegister";
-import OnlineCourse from "../pages/Student/OnlineCourse";
+// import OnlineCourse from "../pages/Student/OnlineCourse";
 import Schollarship from "../pages/Student/Schollarship";
 import TestList from "../pages/Student/TestList";
 import Blog from "../pages/Student/Blog";
@@ -39,10 +39,10 @@ const StudentRoutes = [
                 path:"/coursedetails",
                 element: <CourseDetails/>
             },
-            {
-                path: "/onlinecourse",
-                element: <OnlineCourse />,
-            },
+            // {
+            //     path: "/onlinecourse",
+            //     element: <OnlineCourse />,
+            // },
             {
                 path: "/schollarship",
                 element: <Schollarship />,

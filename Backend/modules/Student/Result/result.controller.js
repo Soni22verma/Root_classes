@@ -16,12 +16,12 @@ export const submitTest = async (req, res) => {
       });
     }
 
-    // Check if already attempted
+    // ✅ CHANGE: Check if already attempted (completed)
     const alreadyAttempted = await Result.findOne({ studentId, testId });
     if (alreadyAttempted) {
       return res.status(400).json({
         success: false,
-        message: "You already attempted this test",
+        message: "You have already completed this test. You cannot retake it.",
       });
     }
 
@@ -36,10 +36,7 @@ export const submitTest = async (req, res) => {
       const questionIdStr = q._id.toString();
       const userAnswer = answers[questionIdStr];
       
-      // Convert both to numbers for comparison
       const isCorrect = Number(userAnswer) === Number(q.correctAnswer);
-      
-    
       
       if (isCorrect) {
         obtainedMarks += q.marks;
@@ -57,7 +54,7 @@ export const submitTest = async (req, res) => {
 
     console.log(`Total Marks: ${totalMarks}, Obtained: ${obtainedMarks}, Percentage: ${percentage}%`);
 
-    // Save result
+    // ✅ CHANGE: Create result with isCompleted = true
     const result = await Result.create({
       studentId,
       testId,
@@ -65,6 +62,7 @@ export const submitTest = async (req, res) => {
       totalMarks,
       percentage,
       isEligible,
+      isCompleted: true,  // ← YAHI CHANGE HAI
       answers: formattedAnswers,
     });
 
@@ -82,3 +80,17 @@ export const submitTest = async (req, res) => {
     });
   }
 };
+
+export const checkTestAttempt = async(req,res,next)=>{
+  try {
+    const{studentId,testId} = req.body;
+    const existing = await Result.findOne({studentId, testId})
+
+    return res.status(200).json({
+      attempted: !!existing,
+    })
+    
+  } catch (error) {
+    next(error)
+  }
+}

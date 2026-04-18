@@ -143,15 +143,15 @@ const AdminSidebar = ({ isMobileOpen, setIsMobileOpen }) => {
         icon: LayoutDashboard,
         exact: true
       },
-      {
-        name: 'Online Classes',
-        icon: Calendar,
-        submenu: [
-          { name: 'Class Schedule', path: '/admin/classshadule', icon: Calendar },
-          { name: 'Topics', path: '/admin/topics', icon: MessageSquare },
-          // { name: 'Recorded Lectures', path: '/admin/classes/recordings', icon: FileText }
-        ]
-      },
+      // {
+      //   name: 'Online Classes',
+      //   icon: Calendar,
+      //   submenu: [
+      //     { name: 'Class Schedule', path: '/admin/classshadule', icon: Calendar },
+      //     { name: 'Topics', path: '/admin/topics', icon: MessageSquare },
+      //     // { name: 'Recorded Lectures', path: '/admin/classes/recordings', icon: FileText }
+      //   ]
+      // },
       // {
       //   name: 'Messages',
       //   path: '/admin/messages',

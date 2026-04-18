@@ -1,8 +1,8 @@
 import AllStudents from "../pages/Admin/StudentManagement/AllStudents";
 import Enrollment from "../pages/Admin/Courses/Enrollment";
 import AdminLayout from "../../AdminLayout";
-import ClassShadule from "../pages/Admin/OnlineClasses/ClassShadule"
-import Topics from "../pages/Admin/OnlineClasses/Topics";
+// import ClassShadule from "../pages/Admin/OnlineClasses/ClassShadule"
+// import Topics from "../pages/Admin/OnlineClasses/Topics";
 import AllBlogs from "../pages/Admin/BlogManagement/AllBlogs";
 import ManageSlider from "../pages/Admin/ManageSlider";
 import Testimonials from "../pages/Admin/Testimonials";
@@ -28,14 +28,14 @@ const Adminroutes = [
         path: "enrollment",
         element: <Enrollment />,
       },
-      {
-        path: "classshadule",
-        element: <ClassShadule />
-      },
-      {
-        path: "topics",
-        element: <Topics />
-      },
+      // {
+      //   path: "classshadule",
+      //   element: <ClassShadule />
+      // },
+      // {
+      //   path: "topics",
+      //   element: <Topics />
+      // },
       {
         path: "blog",
         element: <AllBlogs />

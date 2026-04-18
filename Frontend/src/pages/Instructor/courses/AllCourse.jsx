@@ -44,7 +44,6 @@ const InstructorDashboard = () => {
         coursesData = response.data;
       }
       
-      // Ensure price is properly formatted
       coursesData = coursesData.map(course => ({
         ...course,
         price: course.price !== undefined && course.price !== null ? course.price : 0
@@ -77,7 +76,6 @@ const InstructorDashboard = () => {
 
   const handleManageContent = async (courseId) => {
     try {
-      console.log(courseId, "this is my course id");
       navigate(`/instructor/allcourses/${courseId}`);
     } catch (error) {
       console.log(error, "this is error from handleManageContent");
@@ -98,7 +96,6 @@ const InstructorDashboard = () => {
     if (!formData.description.trim()) newErrors.description = 'Description is required';
     if (!formData.category) newErrors.category = 'Please select a category';
     
-    // Price validation
     if (formData.price === '' || formData.price === null) {
       newErrors.price = 'Price is required';
     } else if (isNaN(formData.price) || Number(formData.price) < 0) {
@@ -133,9 +130,7 @@ const InstructorDashboard = () => {
           price: submissionData.price
         };
         
-        console.log("Updating course with data:", updateData);
         const response = await axios.post(api.course.editCourse, updateData);
-        console.log("Update response:", response);
         
         if (response.data?.success) {
           toast.success('Course updated successfully!');
@@ -143,9 +138,7 @@ const InstructorDashboard = () => {
           toast.error(response.data?.message || 'Failed to update course');
         }
       } else {
-        console.log("Creating course with data:", submissionData);
         const res = await axios.post(api.course.createCourse, submissionData);
-        console.log("Create response:", res);
         
         if (res.data?.success) {
           toast.success('Course created successfully!');
@@ -155,7 +148,7 @@ const InstructorDashboard = () => {
       }
       
       setIsModalOpen(false);
-      await fetchCourses(); // Refresh the course list
+      await fetchCourses();
       resetForm();
     } catch (error) {
       console.error('Error saving course:', error);
@@ -188,14 +181,13 @@ const InstructorDashboard = () => {
     setIsModalOpen(true);
   };
 
-  // Delete handler
   const handleDelete = async (courseId) => {
     if (window.confirm('Are you sure you want to delete this course? This action cannot be undone.')) {
       try {
         setLoading(true);
         await axios.post(api.course.deleteCourse, { courseId: courseId }); 
         toast.success('Course deleted successfully!');
-        await fetchCourses(); // Refresh the course list
+        await fetchCourses();
       } catch (error) {
         console.error('Error deleting course:', error);
         toast.error(error.response?.data?.message || error.message || 'Error deleting course');
@@ -220,7 +212,6 @@ const InstructorDashboard = () => {
     }
   };
 
-  // Format price for display
   const formatPrice = (price) => {
     if (price === undefined || price === null || price === '') return 'Free';
     const numericPrice = typeof price === 'string' ? parseFloat(price) : price;
@@ -230,62 +221,119 @@ const InstructorDashboard = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100">
       {/* Main Content */}
-      <div className="flex-1 overflow-auto">
-        <div className="p-8">
-          {/* Course Manager Header */}
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold text-gray-900">Course Manager</h2>
-            <p className="text-gray-600 mt-1">Manage your courses efficiently</p>
+      <div className="p-3 sm:p-4 md:p-6 lg:p-8">
+        {/* Header Section */}
+        <div className="mb-4 sm:mb-6 md:mb-8">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">Course Manager</h2>
+          <p className="text-sm sm:text-base text-gray-600 mt-1">Manage your courses efficiently</p>
+        </div>
+
+        {/* Create Course Button */}
+        {student?.role === "instructor" && (
+          <div className="mb-4 sm:mb-6">
+            <button
+              onClick={openCreateModal}
+              className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2.5 sm:py-2 rounded-lg font-semibold transition-colors shadow-sm text-sm sm:text-base"
+            >
+              + Create Course
+            </button>
           </div>
+        )}
 
-          {/* Create Course Button */}
-          {student?.role === "instructor" && (
-            <div className="mb-6">
-              <button
-                onClick={openCreateModal}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors shadow-sm"
-              >
-                + Create Course
-              </button>
+        {/* Loading State */}
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-blue-600"></div>
+          </div>
+        ) : courses.length === 0 ? (
+          <div className="bg-white rounded-lg shadow-sm p-8 sm:p-12 text-center border border-gray-200">
+            <p className="text-gray-500 text-sm sm:text-base">No courses yet. Click "Create Course" to get started.</p>
+          </div>
+        ) : (
+          <>
+            {/* Mobile Card View - For screens below 768px */}
+            <div className="block md:hidden space-y-3 sm:space-y-4">
+              {courses.map((course, index) => (
+                <div key={course._id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4">
+                  <div className="flex justify-between items-start mb-2 sm:mb-3">
+                    <h3 className="text-sm sm:text-base font-semibold text-gray-900 flex-1">{course.title}</h3>
+                    <span className="text-xs text-gray-400 ml-2">#{index + 1}</span>
+                  </div>
+                  
+                  <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3 line-clamp-2">{course.description}</p>
+                  
+                  <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-3 sm:mb-4">
+                    <span className="inline-flex px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                      {getCategoryName(course.category)}
+                    </span>
+                    <span className={`inline-flex px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium ${getLevelColor(course.level)}`}>
+                      {course.level || 'beginner'}
+                    </span>
+                    <span className="inline-flex px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      {formatPrice(course.price)}
+                    </span>
+                  </div>
+                  
+                  <div className="flex gap-2 pt-2 sm:pt-3 border-t border-gray-100">
+                    <button
+                      onClick={() => handleManageContent(course._id)}
+                      className="flex-1 text-green-600 hover:text-green-900 transition-colors text-xs sm:text-sm py-1.5 sm:py-2 flex items-center justify-center gap-1 rounded-md hover:bg-green-50"
+                    >
+                      <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                      </svg>
+                      Manage
+                    </button>
+                    <button
+                      onClick={() => openEditModal(course)}
+                      className="flex-1 text-blue-600 hover:text-blue-900 transition-colors text-xs sm:text-sm py-1.5 sm:py-2 flex items-center justify-center gap-1 rounded-md hover:bg-blue-50"
+                    >
+                      <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(course._id)}
+                      className="flex-1 text-red-600 hover:text-red-900 transition-colors text-xs sm:text-sm py-1.5 sm:py-2 flex items-center justify-center gap-1 rounded-md hover:bg-red-50"
+                    >
+                      <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
-          )}
 
-          {/* Courses Table */}
-          {loading ? (
-            <div className="flex justify-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            </div>
-          ) : courses.length === 0 ? (
-            <div className="bg-white rounded-lg shadow-sm p-12 text-center border border-gray-200">
-              <p className="text-gray-500">No courses yet. Click "Create Course" to get started.</p>
-            </div>
-          ) : (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            {/* Desktop Table View - For screens 768px and above */}
+            <div className="hidden md:block bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">
                         S.No
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Course Title
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-64">
                         Description
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
                         Category
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">
                         Level
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
                         Price
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
                         Actions
                       </th>
                     </tr>
@@ -293,60 +341,60 @@ const InstructorDashboard = () => {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {courses.map((course, index) => (
                       <tr key={course._id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                           {index + 1}
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm font-medium text-gray-900">
+                        <td className="px-4 py-3">
+                          <div className="text-sm font-medium text-gray-900 max-w-xs truncate" title={course.title}>
                             {course.title}
                           </div>
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-4 py-3">
                           <div className="text-sm text-gray-500 max-w-md truncate" title={course.description}>
                             {course.description}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
                             {getCategoryName(course.category)}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${getLevelColor(course.level)}`}>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${getLevelColor(course.level)}`}>
                             {course.level || 'beginner'}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                             {formatPrice(course.price)}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex gap-3">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm">
+                          <div className="flex gap-2">
                             <button
                               onClick={() => handleManageContent(course._id)}
-                              className="text-green-600 hover:text-green-900 transition-colors"
+                              className="p-1.5 text-green-600 hover:text-green-900 hover:bg-green-50 rounded transition-colors"
                               title="Manage Modules & Topics"
                             >
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                               </svg>
                             </button>
                             <button
                               onClick={() => openEditModal(course)}
-                              className="text-blue-600 hover:text-blue-900 transition-colors"
+                              className="p-1.5 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded transition-colors"
                               title="Edit Course"
                             >
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                               </svg>
                             </button>
                             <button
                               onClick={() => handleDelete(course._id)}
-                              className="text-red-600 hover:text-red-900 transition-colors"
+                              className="p-1.5 text-red-600 hover:text-red-900 hover:bg-red-50 rounded transition-colors"
                               title="Delete Course"
                             >
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                               </svg>
                             </button>
@@ -358,26 +406,24 @@ const InstructorDashboard = () => {
                 </table>
               </div>
             </div>
-          )}
-        </div>
+          </>
+        )}
       </div>
 
-      {/* Modal Form */}
+      {/* Modal Form - Responsive */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen px-4">
-            {/* Backdrop */}
+          <div className="flex items-center justify-center min-h-screen px-3 sm:px-4 py-6">
             <div className="fixed inset-0 bg-black/60" onClick={() => setIsModalOpen(false)}></div>
 
-            {/* Modal Content */}
-            <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-auto">
               <form onSubmit={handleSubmit}>
-                <div className="p-6">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-6">
+                <div className="p-4 sm:p-6">
+                  <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6">
                     {editingCourse ? 'Edit Course' : 'Create New Course'}
                   </h3>
 
-                  <div className="space-y-5">
+                  <div className="space-y-4 sm:space-y-5">
                     {/* Course Title */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -389,12 +435,9 @@ const InstructorDashboard = () => {
                         value={formData.title}
                         onChange={handleInputChange}
                         placeholder="Enter course title"
-                        className={`w-full px-3 py-2 border ${errors.title ? 'border-red-500' : 'border-gray-300'
-                          } rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                        className={`w-full px-3 py-2 text-sm sm:text-base border ${errors.title ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                       />
-                      {errors.title && (
-                        <p className="mt-1 text-xs text-red-500">{errors.title}</p>
-                      )}
+                      {errors.title && <p className="mt-1 text-xs text-red-500">{errors.title}</p>}
                     </div>
 
                     {/* Description */}
@@ -408,12 +451,9 @@ const InstructorDashboard = () => {
                         value={formData.description}
                         onChange={handleInputChange}
                         placeholder="Enter course description"
-                        className={`w-full px-3 py-2 border ${errors.description ? 'border-red-500' : 'border-gray-300'
-                          } rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                        className={`w-full px-3 py-2 text-sm sm:text-base border ${errors.description ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                       />
-                      {errors.description && (
-                        <p className="mt-1 text-xs text-red-500">{errors.description}</p>
-                      )}
+                      {errors.description && <p className="mt-1 text-xs text-red-500">{errors.description}</p>}
                     </div>
 
                     {/* Category */}
@@ -425,8 +465,7 @@ const InstructorDashboard = () => {
                         name="category"
                         value={formData.category}
                         onChange={handleInputChange}
-                        className={`w-full px-3 py-2 border ${errors.category ? 'border-red-500' : 'border-gray-300'
-                          } rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                        className={`w-full px-3 py-2 text-sm sm:text-base border ${errors.category ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                       >
                         <option value="">Select a category</option>
                         {categories.map((category) => (
@@ -435,21 +474,17 @@ const InstructorDashboard = () => {
                           </option>
                         ))}
                       </select>
-                      {errors.category && (
-                        <p className="mt-1 text-xs text-red-500">{errors.category}</p>
-                      )}
+                      {errors.category && <p className="mt-1 text-xs text-red-500">{errors.category}</p>}
                     </div>
 
                     {/* Level */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Level
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Level</label>
                       <select
                         name="level"
                         value={formData.level}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       >
                         <option value="beginner">Beginner</option>
                         <option value="intermediate">Intermediate</option>
@@ -457,15 +492,13 @@ const InstructorDashboard = () => {
                       </select>
                     </div>
 
-                    {/* Price Field */}
+                    {/* Price */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Price (₹) <span className="text-red-500">*</span>
                       </label>
                       <div className="relative">
-                        <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">
-                          ₹
-                        </span>
+                        <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 text-sm sm:text-base">₹</span>
                         <input
                           type="number"
                           name="price"
@@ -474,33 +507,28 @@ const InstructorDashboard = () => {
                           placeholder="0.00"
                           min="0"
                           step="0.01"
-                          className={`w-full pl-8 pr-3 py-2 border ${errors.price ? 'border-red-500' : 'border-gray-300'
-                            } rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                          className={`w-full pl-7 sm:pl-8 pr-3 py-2 text-sm sm:text-base border ${errors.price ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                         />
                       </div>
-                      {errors.price && (
-                        <p className="mt-1 text-xs text-red-500">{errors.price}</p>
-                      )}
-                      <p className="mt-1 text-xs text-gray-500">
-                        Enter 0 for free courses
-                      </p>
+                      {errors.price && <p className="mt-1 text-xs text-red-500">{errors.price}</p>}
+                      <p className="mt-1 text-xs text-gray-500">Enter 0 for free courses</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Form Actions */}
-                <div className="bg-gray-50 px-6 py-4 flex justify-end gap-3 rounded-b-lg">
+                <div className="bg-gray-50 px-4 sm:px-6 py-3 sm:py-4 flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 rounded-b-lg">
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
+                    className="px-4 py-2 text-sm sm:text-base text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={formLoading}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 py-2 text-sm sm:text-base bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {formLoading ? 'Saving...' : (editingCourse ? 'Update Course' : 'Create Course')}
                   </button>
