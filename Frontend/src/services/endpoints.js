@@ -52,9 +52,9 @@ const api = {
        enrollCourse:Base_Url+"/enrollment/enroll-course",
      },
      payment:{
-       createPayment:Base_Url+"/payment/create-payment",
-       verifyPayment:Base_Url+"/payment/verify-payment",
-       getPurchesCourse:Base_Url+"/payment/get-my-course"
+       createPayment:Base_Url+"/api/payment/create-payment",
+       verifyPayment:Base_Url+"/api/payment/verify-payment",
+       getPurchesCourse:Base_Url+"/api/payment/get-my-course"
      }
 }
 

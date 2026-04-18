@@ -3,8 +3,8 @@ import { createPayment, GetMyCourse, verifyPayment } from './payment.controller.
 
 const paymentRouter = Router()
 
-paymentRouter.post('/create-payment',createPayment)
-paymentRouter.post('/verify-payment',verifyPayment)
-paymentRouter.post("/get-my-course",GetMyCourse)
+paymentRouter.post('/api/create-payment',createPayment)
+paymentRouter.post('/api/verify-payment',verifyPayment)
+paymentRouter.post("/api/get-my-course",GetMyCourse)
 
 export default paymentRouter
