@@ -111,18 +111,36 @@ const StudentTestPanel = () => {
       console.log('Attempt check response:', res);
       
       if (res.data && res.data.success) {
-        return {
-          attempted: true,
-          result: res.data.data || res.data.result
-        };
+        // Check if the response indicates test is already attempted
+        if (res.data.data && (res.data.data.attempted === true || res.data.data.alreadyAttempted === true)) {
+          return {
+            attempted: true,
+            result: res.data.data
+          };
+        }
+        // Check if message indicates already attempted
+        if (res.data.message && (res.data.message.includes('already') || res.data.message.includes('completed'))) {
+          return {
+            attempted: true,
+            result: res.data.data
+          };
+        }
+        return { attempted: false, result: null };
       }
       return { attempted: false, result: null };
     } catch (error) {
       console.log('Error checking attempt:', error);
-      if (error.response && error.response.data && error.response.data.message) {
-        const message = error.response.data.message;
+      // If the API returns an error with message about already completed
+      if (error.response && error.response.data) {
+        const responseData = error.response.data;
+        const message = responseData.message || '';
+        
         if (message.includes('already') || message.includes('completed') || message.includes('attempted')) {
-          return { attempted: true, result: error.response.data.data || null };
+          console.log('Test already attempted according to error message');
+          return { 
+            attempted: true, 
+            result: responseData.data || null 
+          };
         }
       }
       return { attempted: false, result: null };
@@ -136,28 +154,42 @@ const StudentTestPanel = () => {
       console.log('API Response:', res);
       
       if (res.data && res.data.success && res.data.data) {
+        // First, get completed tests from results API
         const completed = await fetchCompletedTests();
         const completedTestIds = new Set(completed.map(t => t.testId));
         
+        // Check attempt status for each test
         const testsWithAttemptStatus = await Promise.all(
           res.data.data.map(async (test) => {
-            const attemptStatus = await checkAttemptTest(test._id);
+            // Check if test is in completed tests list
+            let isCompleted = completedTestIds.has(test._id);
+            let completedResult = completed.find(t => t.testId === test._id);
+            
+            // If not in completed list, check attempt status via API
+            if (!isCompleted) {
+              const attemptStatus = await checkAttemptTest(test._id);
+              isCompleted = attemptStatus.attempted;
+              completedResult = completedResult || attemptStatus.result;
+              console.log(`Test ${test.title} (${test._id}) - Attempted: ${attemptStatus.attempted}`);
+            }
+            
             return {
               id: test._id,
               title: test.title || "Untitled Test",
               duration: test.duration || 30,
-              totalQuestions: test.totalQuestions || 0, // Fixed: Now properly displays total questions from API
+              totalQuestions: test.totalQuestions || 0,
               totalMarks: test.totalMarks || 0,
               description: test.description || `Test your knowledge in ${test.title}`,
               difficulty: test.difficulty || "Medium",
               category: test.category || "General",
-              isCompleted: completedTestIds.has(test._id) || attemptStatus.attempted,
-              completedResult: completed.find(t => t.testId === test._id) || attemptStatus.result,
+              isCompleted: isCompleted, // This will disable the card/button
+              completedResult: completedResult,
               originalData: test
             };
           })
         );
         
+        console.log('Tests with completion status:', testsWithAttemptStatus);
         setAvailableTests(testsWithAttemptStatus);
       } else {
         console.error('Unexpected API response format:', res.data);
@@ -171,51 +203,40 @@ const StudentTestPanel = () => {
     }
   };
 
-  const SubmitTest = async (testId, studentAnswers) => {
+  const SubmitTest = async (testId, answers) => {
     try {
       setSubmitting(true);
-      
-      const formattedAnswers = {};
-      Object.keys(studentAnswers).forEach(questionId => {
-        formattedAnswers[questionId] = studentAnswers[questionId];
-      });
-      
+
       const requestData = {
-        studentId: studentId,
-        testId: testId,
-        answers: formattedAnswers
+        studentId,
+        testId,
+        answers 
       };
-      
-      console.log('Submitting test with data:', JSON.stringify(requestData, null, 2));
+
+      console.log('Submitting test - Full request:', JSON.stringify(requestData, null, 2));
+      console.log("Answers being submitted:", answers);
+      console.log("Number of answers being submitted:", Object.keys(answers).length);
       
       const res = await axios.post(api.result.submitTest, requestData);
-      
-      console.log('Submit response:', res.data);
-      
-      if (res.data && res.data.success) {
+
+      console.log("Submit Response:", res.data);
+
+      if (res.data?.success) {
         setScoreDetails(res.data.data);
-        await GetAllPublishedTest();
-        return {
-          success: true,
-          data: res.data.data
-        };
-      }
-      return { success: false };
-    } catch (error) {
-      console.error('Error submitting test:', error);
-      if (error.response) {
-        console.error('Server response:', error.response.data);
-        const errorMessage = error.response.data.message || 'Failed to submit test';
-        alert(errorMessage);
         
-        if (errorMessage.includes('already') || errorMessage.includes('completed')) {
-          await GetAllPublishedTest();
-          handleBackToTests();
-        }
-      } else {
-        alert('Network error. Please check your connection.');
+        // Refresh both test lists after successful submission
+        await GetAllPublishedTest();
+        await fetchCompletedTests();
+        
+        return { success: true, data: res.data.data };
       }
-      return { success: false };
+
+      return { success: false, error: res.data?.message || "Submission failed" };
+
+    } catch (error) {
+      console.error("Submit Error Details:", error.response?.data || error.message);
+      alert(error.response?.data?.message || "Failed to submit test. Please try again.");
+      return { success: false, error: error.message };
     } finally {
       setSubmitting(false);
     }
@@ -242,20 +263,16 @@ const StudentTestPanel = () => {
         }
 
         const transformedQuestions = questionsData.map((q, idx) => ({
-          id: q._id,
-          questionId: q._id,
+          _id: q._id,  
+          id: q._id,   
+          questionId: q._id,  
           text: q.question || q.questionText || q.text || "Question not available",
           options: q.options || ["Option 1", "Option 2", "Option 3", "Option 4"],
           marks: q.marks || 1,
           correctAnswer: q.correctAnswer !== undefined ? parseInt(q.correctAnswer) : 0
         }));
         
-        console.log('Transformed questions with correct answers:', transformedQuestions.map(q => ({
-          id: q.questionId,
-          correctAnswer: q.correctAnswer,
-          options: q.options
-        })));
-        
+        console.log('Transformed questions:', transformedQuestions);
         return transformedQuestions;
       }
     } catch (error) {
@@ -266,6 +283,7 @@ const StudentTestPanel = () => {
   };
 
   const handleStartTest = async (test) => {
+    // First check if test is already marked as completed
     if (test.isCompleted) {
       alert('❌ You have already completed this test. You cannot retake it.');
       return;
@@ -303,22 +321,20 @@ const StudentTestPanel = () => {
     }
     
     setCheckingAttempt(true);
+    
+    // Double check with API if test is already attempted
     const attemptStatus = await checkAttemptTest(test.id);
-    setCheckingAttempt(false);
     
     if (attemptStatus.attempted) {
-      alert('❌ You have already attempted this test. You cannot retake it.');
-      await GetAllPublishedTest();
+      alert('❌ You have already completed this test. You cannot retake it.');
+      await GetAllPublishedTest(); // Refresh the list to update UI
+      setCheckingAttempt(false);
       return;
     }
     
-    const completedCheck = completedTests.some(ct => ct.testId === test.id);
-    if (completedCheck) {
-      alert('❌ This test has already been completed. You cannot retake it.');
-      await GetAllPublishedTest();
-      return;
-    }
+    setCheckingAttempt(false);
     
+    // If we reach here, student hasn't taken the test yet
     setSelectedTest(test);
     setLoading(true);
     
@@ -365,50 +381,57 @@ const StudentTestPanel = () => {
   }, [timerActive, timeRemaining, testCompleted]);
 
   const calculateAndSubmitScore = async () => {
-    if (submitting || testCompleted) {
-      console.log('Test already submitted or submission in progress');
-      return;
-    }
-    
+    if (submitting || testCompleted) return;
+
     const formattedAnswers = {};
-    let correctCount = 0;
-    
+
+    console.log("Current answers state:", answers);
+    console.log("Questions array:", questions);
+
     questions.forEach(question => {
-      const userAnswer = answers[question.id];
-      if (userAnswer !== undefined) {
-        formattedAnswers[question.questionId] = userAnswer;
-      }
+      const questionId = question._id || question.id || question.questionId;
       
-      if (userAnswer === question.correctAnswer) {
-        correctCount++;
+      const userAnswer = answers[questionId];
+      
+      if (userAnswer !== undefined && userAnswer !== null) {
+        formattedAnswers[questionId] = Number(userAnswer);
+      } else {
+        console.log(`No answer for question: ${questionId}`);
       }
     });
-    
-    console.log('Submitting answers:', formattedAnswers);
-    
-    const percentage = (correctCount / questions.length) * 100;
-    setScore(percentage);
-    
+
+    console.log("Formatted Answers to submit:", formattedAnswers);
+    console.log("Number of answers:", Object.keys(formattedAnswers).length);
+
+    if (Object.keys(formattedAnswers).length === 0) {
+      console.warn("No answers to submit!");
+      alert("Please answer at least one question before submitting.");
+      return;
+    }
+
     const result = await SubmitTest(selectedTest.id, formattedAnswers);
-    
+
     if (result.success) {
       setTestCompleted(true);
       setTimerActive(false);
+
       if (result.data) {
         setScoreDetails(result.data);
-        setScore(result.data.percentage || percentage);
+        setScore(result.data.percentage);
       }
-    } else {
-      setTestCompleted(true);
-      setTimerActive(false);
     }
   };
 
   const handleAnswerSelect = (questionId, answerIndex) => {
-    setAnswers(prev => ({
-      ...prev,
-      [questionId]: answerIndex
-    }));
+    console.log(`Setting answer for question ${questionId} to ${answerIndex}`);
+    setAnswers(prev => {
+      const newAnswers = {
+        ...prev,
+        [questionId]: answerIndex
+      };
+      console.log("New answers state:", newAnswers);
+      return newAnswers;
+    });
   };
 
   const handleNextQuestion = () => {
@@ -465,11 +488,20 @@ const StudentTestPanel = () => {
     return questions.length > 0 ? (answeredCount / questions.length) * 100 : 0;
   };
 
+  // Initial load when studentId is available
   useEffect(() => {
     if (studentId) {
       GetAllPublishedTest();
     }
   }, [studentId]);
+
+  // Refresh test list when test is completed
+  useEffect(() => {
+    if (testCompleted && studentId) {
+      GetAllPublishedTest();
+      fetchCompletedTests();
+    }
+  }, [testCompleted]);
 
   if (loading && !testStarted) {
     return (
@@ -560,7 +592,9 @@ const StudentTestPanel = () => {
             {availableTests.map((test) => (
               <div 
                 key={test.id} 
-                className={`group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden transform hover:-translate-y-1 ${test.isCompleted ? 'opacity-75' : ''}`}
+                className={`group bg-white rounded-2xl shadow-lg transition-all duration-300 overflow-hidden ${
+                  test.isCompleted ? 'opacity-75 cursor-not-allowed' : 'hover:shadow-2xl transform hover:-translate-y-1'
+                }`}
               >
                 <div className="relative">
                   <div className="absolute top-0 right-0 m-4 flex gap-2">
@@ -577,7 +611,7 @@ const StudentTestPanel = () => {
                 </div>
                 
                 <div className="p-6">
-                  <h3 className="text-xl font-bold text-gray-800 mb-2 group-hover:text-blue-600 transition-colors">
+                  <h3 className="text-xl font-bold text-gray-800 mb-2">
                     {test.title}
                   </h3>
                   
@@ -634,9 +668,9 @@ const StudentTestPanel = () => {
                   ) : (
                     <button
                       onClick={() => handleStartTest(test)}
-                      className={`w-full py-3 px-4 rounded-xl font-semibold transition-all duration-200 transform hover:scale-[1.02] shadow-md hover:shadow-lg ${
+                      className={`w-full py-3 px-4 rounded-xl font-semibold transition-all duration-200 ${
                         isLoggedIn 
-                          ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700 cursor-pointer'
+                          ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:shadow-lg transform hover:scale-[1.02] cursor-pointer'
                           : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                       }`}
                       disabled={!isLoggedIn}
@@ -979,12 +1013,7 @@ const StudentTestPanel = () => {
             >
               Take Another Test
             </button>
-            <button
-              onClick={() => window.location.reload()}
-              className="px-4 py-2.5 sm:py-3 border-2 border-blue-500 text-blue-500 rounded-xl font-semibold hover:bg-blue-50 transition-all"
-            >
-              View Detailed Report
-            </button>
+            
           </div>
         </div>
       </div>
