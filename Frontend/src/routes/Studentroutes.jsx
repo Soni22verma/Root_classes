@@ -11,6 +11,9 @@ import Layout from "../Layout"
 import Courses from "../pages/Student/Course/Courses";
 import CourseDetails from "../pages/Student/Course/CourseDetails"
 import PurchesCourses from "../components/Student/PurchesCourses";
+import TermsAndConditions from "../pages/TermsAndConditions";
+import PrivacyPolicy from "../pages/PrivacyPolicy";
+
 
 const StudentRoutes = [
 
@@ -66,7 +69,16 @@ const StudentRoutes = [
             {
                 path:"/purchescourse",
                 element:<PurchesCourses/>
+            },
+            {
+                path: "/termsandconditions",
+                element: <TermsAndConditions />
+            },
+            {
+                path: "/privacypolicy",
+                element: <PrivacyPolicy />
             }
+
         ]
     }
 

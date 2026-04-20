@@ -7,9 +7,10 @@ const Footer = () => {
   const quickLinks = [
     { name: "Classroom Courses", href: "/course" },
     { name: "Online Courses", href: "/onlinecourse" },
-    { name: "Contact Us", href: "/schollarship" },
-    { name: "Terms & Conditions", href: "/career" },
-    { name: "Privacy Policy", href: "/contact" }
+    { name: "Contact Us", href: "/contact" },
+    { name: "Terms & Conditions", href: "/termsandconditions" },
+    { name: "Privacy Policy", href: "/privacypolicy" }
+
   ];
 
   const socialLinks = [
@@ -74,23 +75,23 @@ const Footer = () => {
     <footer className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-gray-500">
       {/* Main Footer Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        
+
         {/* Top Section with Logo and Tagline */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
           {/* Brand Section */}
           <div className="lg:col-span-1">
             <div className="mb-6">
-             <div className="flex-shrink-0">
-            <Link to="/" className="flex items-center space-x-2">
-              <img src="/logo.svg" alt="Logo" className="h-10 w-auto" />
-              
-            </Link>
-          </div>
+              <div className="flex-shrink-0">
+                <Link to="/" className="flex items-center space-x-2">
+                  <img src="/logo.svg" alt="Logo" className="h-10 w-auto" />
+
+                </Link>
+              </div>
               <p className="text-gray-300 text-sm leading-relaxed">
                 Empowering learners worldwide. Discover courses, tutorials, and resources to enhance your skills.
               </p>
             </div>
-            
+
             {/* Social Links */}
             <div className="flex gap-3">
               {socialLinks.map((social) => (
@@ -151,7 +152,7 @@ const Footer = () => {
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex items-start gap-3 group">
                 <div className="w-10 h-10 rounded-lg bg-gray-700 flex items-center justify-center flex-shrink-0 group-hover:bg-blue-600 transition-all duration-300">
                   <svg className="w-5 h-5 text-gray-300 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -164,7 +165,7 @@ const Footer = () => {
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex items-start gap-3 group">
                 <div className="w-10 h-10 rounded-lg bg-gray-700 flex items-center justify-center flex-shrink-0 group-hover:bg-blue-600 transition-all duration-300">
                   <svg className="w-5 h-5 text-gray-300 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -183,9 +184,9 @@ const Footer = () => {
           </div>
         </div>
 
-       
 
-      
+
+
       </div>
 
       {/* Decorative Bottom Gradient */}

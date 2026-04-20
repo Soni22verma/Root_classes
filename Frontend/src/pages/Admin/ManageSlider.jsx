@@ -11,12 +11,9 @@ const ManageSlider = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [selectedSlider, setSelectedSlider] = useState(null);
   const [formData, setFormData] = useState({
-    title: '',
-    subtitle: '',
-    buttonText: '',
-    classText: '',
     image: null
   });
+
   const [imagePreview, setImagePreview] = useState('');
 
   const fetchSliders = async () => {
@@ -38,10 +35,7 @@ const ManageSlider = () => {
     fetchSliders();
   }, []);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
+
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -57,12 +51,9 @@ const ManageSlider = () => {
 
   const resetForm = () => {
     setFormData({
-      title: '',
-      subtitle: '',
-      buttonText: '',
-      classText: '',
       image: null
     });
+
     setImagePreview('');
     setIsEditing(false);
     setSelectedSlider(null);
@@ -77,34 +68,22 @@ const ManageSlider = () => {
     setIsEditing(true);
     setSelectedSlider(slider);
     setFormData({
-      title: slider.title || '',
-      subtitle: slider.subtitle || '',
-      buttonText: slider.buttonText || '',
-      classText: slider.classText || '',
-      image: null 
+      image: null
     });
-    setImagePreview(slider.image); 
+
+    setImagePreview(slider.image);
     setShowModal(true);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!formData.title || !formData.subtitle) {
-      toast.error('Title and subtitle are required');
-      return;
-    }
-
     setLoading(true);
-    
     try {
+
       const formDataToSend = new FormData();
-      formDataToSend.append('title', formData.title);
-      formDataToSend.append('subtitle', formData.subtitle);
-      formDataToSend.append('buttonText', formData.buttonText);
-      formDataToSend.append('classText', formData.classText);
       formDataToSend.append("sliderId", selectedSlider?._id);
-      
+
+
       if (formData.image) {
         formDataToSend.append('image', formData.image);
       }
@@ -134,7 +113,8 @@ const ManageSlider = () => {
   };
 
   const handleDelete = async (slider) => {
-    if (window.confirm(`Are you sure you want to delete "${slider.title}"?`)) {
+    if (window.confirm(`Are you sure you want to delete this slider?`)) {
+
       setLoading(true);
       try {
         const response = await axios.post(api.slider.deleteSlider, {
@@ -162,7 +142,7 @@ const ManageSlider = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <Toaster position="top-right" />
-      
+
       {/* Header - Responsive */}
       <div className="bg-white shadow-sm sticky top-0 z-10">
         <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
@@ -228,32 +208,15 @@ const ManageSlider = () => {
                         )}
                       </div>
                     </div>
-                    
+
                     {/* Content */}
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-sm sm:text-base font-semibold text-gray-900 break-words">
-                        {slider.title}
-                      </h3>
-                      <p className="text-xs sm:text-sm text-gray-600 mt-1 line-clamp-2">
-                        {slider.subtitle}
-                      </p>
-                      <div className="flex flex-wrap gap-1.5 mt-2">
-                        {slider.classText && (
-                          <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                            {slider.classText}
-                          </span>
-                        )}
-                        {slider.buttonText && (
-                          <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            {slider.buttonText}
-                          </span>
-                        )}
-                      </div>
                       <p className="text-xs text-gray-400 mt-2">
                         {new Date(slider.createdAt).toLocaleDateString()}
                       </p>
                     </div>
-                    
+
+
                     {/* Actions */}
                     <div className="flex flex-col gap-1">
                       <button
@@ -288,17 +251,9 @@ const ManageSlider = () => {
                     Image
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Title
+                    Slider Preview
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Subtitle
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Class Text
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Button Text
-                  </th>
+
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Created At
                   </th>
@@ -353,30 +308,14 @@ const ManageSlider = () => {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <div className="text-sm font-medium text-gray-900 max-w-xs truncate">{slider.title}</div>
+                        <div className="text-sm font-medium text-gray-900">Slider Image</div>
                       </td>
-                      <td className="px-4 py-3">
-                        <div className="text-sm text-gray-600 max-w-md truncate" title={slider.subtitle}>
-                          {slider.subtitle}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        {slider.classText ? (
-                          <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                            {slider.classText}
-                          </span>
-                        ) : (
-                          <span className="text-gray-400 text-sm">-</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <span className="text-sm text-gray-600">{slider.buttonText || '-'}</span>
-                       </td>
+
                       <td className="px-4 py-3 whitespace-nowrap">
                         <div className="text-sm text-gray-500">
                           {new Date(slider.createdAt).toLocaleDateString()}
                         </div>
-                       </td>
+                      </td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         <div className="flex gap-2">
                           <button
@@ -394,7 +333,7 @@ const ManageSlider = () => {
                             <Trash2 size={18} />
                           </button>
                         </div>
-                       </td>
+                      </td>
                     </tr>
                   ))
                 )}
@@ -421,70 +360,7 @@ const ManageSlider = () => {
             </div>
 
             <form onSubmit={handleSubmit} className="p-4 sm:p-6">
-              {/* Title */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">
-                  Title <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="title"
-                  value={formData.title}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter slider title"
-                  required
-                />
-              </div>
 
-              {/* Subtitle */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">
-                  Subtitle <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  name="subtitle"
-                  value={formData.subtitle}
-                  onChange={handleInputChange}
-                  rows="3"
-                  className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter slider subtitle"
-                  required
-                />
-              </div>
-
-              {/* Class Text */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">
-                  Class Text
-                </label>
-                <input
-                  type="text"
-                  name="classText"
-                  value={formData.classText}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="e.g., Featured, New, Popular, Limited Time"
-                />
-                <p className="mt-1 text-xs text-gray-500">
-                  This will be displayed as a badge on the slider
-                </p>
-              </div>
-
-              {/* Button Text */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">
-                  Button Text
-                </label>
-                <input
-                  type="text"
-                  name="buttonText"
-                  value={formData.buttonText}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="e.g., Learn More, Get Started"
-                />
-              </div>
 
               {/* Image Upload */}
               <div className="mb-6">
@@ -542,7 +418,6 @@ const ManageSlider = () => {
                               onChange={handleImageChange}
                             />
                           </label>
-                          <p className="pl-1">or drag and drop</p>
                         </div>
                         <p className="text-xs text-gray-500">PNG, JPG, GIF up to 5MB</p>
                       </>
