@@ -1,385 +1,378 @@
-// Contact.jsx
 import React, { useState, useEffect } from 'react';
 import useStudentStore from '../../Store/studentstore';
 
+/* ── decorative education SVG ────────────────────────────────────────────── */
+const PencilIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-full h-full opacity-20">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 7.125L18 8.625" />
+  </svg>
+);
+
+const inputCls = (err) =>
+  `w-full px-4 py-3 bg-white border rounded-xl text-sm outline-none transition-all duration-200 ${
+    err
+      ? 'border-red-400 focus:ring-2 focus:ring-red-200'
+      : 'border-gray-200 focus:border-[#0078FF] focus:ring-2 focus:ring-blue-100'
+  }`;
+const labelCls = 'block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2';
+
+/* ── component ───────────────────────────────────────────────────────────── */
 const Contact = () => {
   const { student } = useStudentStore();
-  console.log("Logged in student:", student);
-  
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    subject: '',
-    message: ''
-  });
-  
-  const [errors, setErrors] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState(null); // 'success' or 'error'
 
-  // Auto-fill form with student data when component mounts or student changes
+  const [formData, setFormData] = useState({ name: '', email: '', subject: '', message: '' });
+  const [errors,       setErrors]       = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState(null);
+
   useEffect(() => {
-    if (student) {
-      setFormData(prev => ({
-        ...prev,
-        name: student.fullName || '',
-        email: student.email || ''
-      }));
-    } else {
-      // Try to get from localStorage if store is empty
-      const storedStudent = localStorage.getItem('student');
-      if (storedStudent) {
-        try {
-          const parsed = JSON.parse(storedStudent);
-          setFormData(prev => ({
-            ...prev,
-            name: parsed.fullName || '',
-            email: parsed.email || ''
-          }));
-        } catch (error) {
-          console.error("Error parsing localStorage:", error);
-        }
-      }
-    }
+    const fill = (s) => s && setFormData(p => ({ ...p, name: s.fullName || s.name || '', email: s.email || '' }));
+    if (student) { fill(student); return; }
+    try { fill(JSON.parse(localStorage.getItem('student') || '{}')); } catch {}
   }, [student]);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    // Clear error for this field when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
-    }
+    setFormData(p => ({ ...p, [e.target.name]: e.target.value }));
+    if (errors[e.target.name]) setErrors(p => ({ ...p, [e.target.name]: '' }));
   };
 
-  const validateForm = () => {
-    const newErrors = {};
-    
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
-    } else if (formData.name.trim().length < 2) {
-      newErrors.name = 'Name must be at least 2 characters';
-    }
-    
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
-    }
-    
-    if (!formData.subject.trim()) {
-      newErrors.subject = 'Subject is required';
-    }
-    
-    if (!formData.message.trim()) {
-      newErrors.message = 'Message is required';
-    } else if (formData.message.trim().length < 10) {
-      newErrors.message = 'Message must be at least 10 characters';
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  const validate = () => {
+    const e = {};
+    if (!formData.name.trim() || formData.name.trim().length < 2) e.name = 'Please enter your full name';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))       e.email = 'Please enter a valid email';
+    if (!formData.subject.trim())                                   e.subject = 'Subject is required';
+    if (!formData.message.trim() || formData.message.trim().length < 10) e.message = 'Message must be at least 10 characters';
+    setErrors(e);
+    return !Object.keys(e).length;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
-    
+    if (!validate()) return;
     setIsSubmitting(true);
     setSubmitStatus(null);
-    
     try {
-      // Here you would make your API call to submit the contact form
-      // For example:
-      // const response = await axios.post('/api/contact', formData);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      console.log("Form submitted:", formData);
+      await new Promise(r => setTimeout(r, 1500));
       setSubmitStatus('success');
-      
-      // Reset only subject and message, keep name and email
-      setFormData(prev => ({
-        ...prev,
-        subject: '',
-        message: ''
-      }));
-      
-      // Clear success message after 5 seconds
-      setTimeout(() => {
-        setSubmitStatus(null);
-      }, 5000);
-      
-    } catch (error) {
-      console.error("Error submitting form:", error);
+      setFormData(p => ({ ...p, subject: '', message: '' }));
+      setTimeout(() => setSubmitStatus(null), 5000);
+    } catch {
       setSubmitStatus('error');
-      
-      // Clear error message after 5 seconds
-      setTimeout(() => {
-        setSubmitStatus(null);
-      }, 5000);
+      setTimeout(() => setSubmitStatus(null), 5000);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header Section */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-4">
-            Get In Touch
-          </h1>
-          <p className="text-gray-600 max-w-2xl mx-auto">
-            Have a question, project idea, or just want to say hello? We'd love to hear from you. 
-            Fill out the form below and we'll get back to you as soon as possible.
-          </p>
+    <div className="min-h-screen bg-white">
+
+      {/* ── Hero ─────────────────────────────────────────────────────────── */}
+      <div className="bg-blueprint relative overflow-hidden">
+        {/* Red glow */}
+        <div className="absolute bottom-0 left-1/4 w-72 h-72 bg-[#FB0500]/10 rounded-full blur-3xl pointer-events-none" />
+        {/* Decorative pencil */}
+        <div className="absolute right-8 top-4 w-20 h-20 text-[#0078FF] pointer-events-none hidden lg:block">
+          <PencilIcon />
+        </div>
+        {/* Decorative book lines */}
+        <div className="absolute left-8 bottom-4 pointer-events-none hidden lg:block">
+          {[0,1,2,3].map(i => (
+            <div key={i} className="w-16 h-px bg-[#0078FF]/20 mb-2" style={{ width: `${40 + i*12}px` }} />
+          ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Contact Information Cards */}
-          <div className="lg:col-span-1 space-y-6">
-            <div className="bg-white rounded-2xl shadow-sm p-6">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center">
-                  <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-800">Visit Us</h3>
-                  <p className="text-gray-500 text-sm">123 Blog Street, Creative City, IN 560001</p>
-                </div>
-              </div>
-            </div>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="max-w-2xl">
+            <p className="text-xs font-bold text-[#0078FF] uppercase tracking-widest mb-3">Contact Us</p>
+            <h1 className="text-4xl md:text-5xl font-black text-white leading-tight">
+              Let's start a<br />
+              <span className="text-[#FB0500]">conversation</span>
+            </h1>
+            <p className="text-gray-400 mt-4 text-sm leading-relaxed max-w-lg">
+              Have a question about our courses, fee structure, or admissions? We're here to help. Reach out and our team will respond within 24 hours.
+            </p>
 
-            <div className="bg-white rounded-2xl shadow-sm p-6">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center">
-                  <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-800">Email Us</h3>
-                  <p className="text-gray-500 text-sm">hello@blogsphere.com</p>
-                  <p className="text-gray-500 text-sm">support@blogsphere.com</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl shadow-sm p-6">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center">
-                  <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-800">Call Us</h3>
-                  <p className="text-gray-500 text-sm">+91 98765 43210</p>
-                  <p className="text-gray-500 text-sm">+91 98765 43211</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Social Links */}
-            <div className="bg-white rounded-2xl shadow-sm p-6">
-              <h3 className="font-semibold text-gray-800 mb-4">Connect With Us</h3>
-              <div className="flex gap-4">
-                <a href="#" className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center hover:bg-indigo-100 hover:text-indigo-600 transition-all">
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.879v-6.99h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.99C18.343 21.128 22 16.991 22 12z" />
-                  </svg>
-                </a>
-                <a href="#" className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center hover:bg-indigo-100 hover:text-indigo-600 transition-all">
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.937 4.937 0 004.604 3.417 9.868 9.868 0 01-6.102 2.104c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 0021.474-11.66c0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" />
-                  </svg>
-                </a>
-                <a href="#" className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center hover:bg-indigo-100 hover:text-indigo-600 transition-all">
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zM5.838 12a6.162 6.162 0 1112.324 0 6.162 6.162 0 01-12.324 0zM12 16a4 4 0 110-8 4 4 0 010 8zm4.965-10.405a1.44 1.44 0 112.881.001 1.44 1.44 0 01-2.881-.001z" />
-                  </svg>
-                </a>
-                <a href="#" className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center hover:bg-indigo-100 hover:text-indigo-600 transition-all">
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
-                  </svg>
-                </a>
-              </div>
-            </div>
-
-            {/* User Info Card - Show logged in user */}
-            {student && (
-              <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl shadow-sm p-6 border border-indigo-100">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center">
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-800">Logged in as</h3>
-                    <p className="text-sm text-gray-600">{student.fullName}</p>
-                    <p className="text-xs text-gray-500">{student.email}</p>
-                  </div>
-                </div>
-                <p className="text-xs text-indigo-600 mt-2">
-                  ✓ Your contact information is pre-filled
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Contact Form */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-2xl shadow-sm p-6 md:p-8">
-              <h2 className="text-2xl font-bold text-gray-800 mb-6">Send Us a Message</h2>
-              
-              {submitStatus === 'success' && (
-                <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3">
-                  <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <p className="text-green-700">Thank you for reaching out! We'll get back to you soon.</p>
-                </div>
-              )}
-              
-              {submitStatus === 'error' && (
-                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3">
-                  <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <p className="text-red-700">Something went wrong. Please try again later.</p>
-                </div>
-              )}
-              
-              <form onSubmit={handleSubmit} className="space-y-5">
-                <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                    Full Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition ${
-                      errors.name ? 'border-red-500 bg-red-50' : 'border-gray-300'
-                    }`}
-                    placeholder="John Doe"
-                    readOnly={!!student} // Make read-only if student is logged in
-                  />
-                  {errors.name && (
-                    <p className="mt-1 text-sm text-red-500">{errors.name}</p>
-                  )}
-                  {student && (
-                    <p className="mt-1 text-xs text-gray-500">This field is auto-filled from your profile</p>
-                  )}
-                </div>
-                
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                    Email Address <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition ${
-                      errors.email ? 'border-red-500 bg-red-50' : 'border-gray-300'
-                    }`}
-                    placeholder="hello@example.com"
-                    readOnly={!!student} // Make read-only if student is logged in
-                  />
-                  {errors.email && (
-                    <p className="mt-1 text-sm text-red-500">{errors.email}</p>
-                  )}
-                  {student && (
-                    <p className="mt-1 text-xs text-gray-500">This field is auto-filled from your profile</p>
-                  )}
-                </div>
-                
-                <div>
-                  <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-1">
-                    Subject <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="subject"
-                    name="subject"
-                    value={formData.subject}
-                    onChange={handleChange}
-                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition ${
-                      errors.subject ? 'border-red-500 bg-red-50' : 'border-gray-300'
-                    }`}
-                    placeholder="How can we help you?"
-                  />
-                  {errors.subject && (
-                    <p className="mt-1 text-sm text-red-500">{errors.subject}</p>
-                  )}
-                </div>
-                
-                <div>
-                  <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
-                    Message <span className="text-red-500">*</span>
-                  </label>
-                  <textarea
-                    id="message"
-                    name="message"
-                    rows="5"
-                    value={formData.message}
-                    onChange={handleChange}
-                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition resize-none ${
-                      errors.message ? 'border-red-500 bg-red-50' : 'border-gray-300'
-                    }`}
-                    placeholder="Tell us more about your inquiry..."
-                  />
-                  {errors.message && (
-                    <p className="mt-1 text-sm text-red-500">{errors.message}</p>
-                  )}
-                </div>
-                
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium py-3 px-4 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all transform hover:scale-[1.02] disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
-                >
-                  {isSubmitting ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Sending...
-                    </span>
-                  ) : (
-                    'Send Message'
-                  )}
-                </button>
-              </form>
+            {/* Quick badges */}
+            <div className="flex flex-wrap gap-3 mt-7">
+              {['⚡ Responds within 24h', '📍 Ludhiana, Punjab', '🎓 10,000+ Students Guided'].map(t => (
+                <span key={t} className="text-xs font-medium px-3 py-1.5 rounded-full bg-white/10 text-gray-300 border border-white/10">{t}</span>
+              ))}
             </div>
           </div>
         </div>
       </div>
+
+      {/* ── Quick Connect strip ───────────────────────────────────────────── */}
+      <div className="bg-white border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[
+              { icon: '📞', label: 'Call Us', value: '+91 98775-15330', hint: 'Mon–Sat, 9am–6pm', bg: 'hover:border-red-200 hover:bg-red-50', accent: 'text-[#FB0500]', href: 'tel:+919877515330' },
+              { icon: '✉️', label: 'Email Us', value: 'rootsclasses1313@gmail.com', hint: 'We reply within 24h', bg: 'hover:border-blue-200 hover:bg-blue-50', accent: 'text-[#0078FF]', href: 'mailto:rootsclasses1313@gmail.com' },
+              { icon: '💬', label: 'WhatsApp', value: 'Chat with us', hint: 'Quick responses', bg: 'hover:border-green-200 hover:bg-green-50', accent: 'text-green-600', href: 'https://wa.me/919877515330' },
+            ].map(item => (
+              <a key={item.label} href={item.href} target="_blank" rel="noopener noreferrer"
+                className={`flex items-center gap-4 p-4 rounded-2xl border border-gray-100 transition-all group cursor-pointer ${item.bg}`}>
+                <span className="text-2xl flex-shrink-0">{item.icon}</span>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">{item.label}</p>
+                  <p className={`text-sm font-semibold truncate ${item.accent} group-hover:underline`}>{item.value}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{item.hint}</p>
+                </div>
+                <svg className="w-4 h-4 text-gray-300 ml-auto flex-shrink-0 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </a>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Main Grid ────────────────────────────────────────────────────── */}
+      <div className="bg-dot-grid py-14">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            {/* ── Left column ── */}
+            <div className="lg:col-span-4 space-y-4">
+
+              {/* Address card — dark */}
+              <div className="bg-[#0a0a0a] rounded-2xl p-6 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-[#0078FF]/10 rounded-full blur-2xl pointer-events-none" />
+                <div className="w-10 h-10 bg-[#FB0500]/15 rounded-xl flex items-center justify-center mb-4">
+                  <svg className="w-5 h-5 text-[#FB0500]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
+                <p className="text-xs font-bold text-[#FB0500] uppercase tracking-widest mb-1">Our Location</p>
+                <h3 className="font-bold text-white mb-2">Ludhiana Centre</h3>
+                <p className="text-sm text-gray-400 leading-relaxed">
+                  Gill Rd, opp. ITI College,<br />Shilapuri, Ludhiana,<br />Punjab — 141003
+                </p>
+                <a href="https://maps.google.com/?q=Roots+Classes+Ludhiana" target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 mt-4 text-xs font-semibold text-[#0078FF] hover:underline">
+                  Open in Maps →
+                </a>
+              </div>
+
+              {/* Office Hours */}
+              <div className="bg-white rounded-2xl p-6 border border-gray-100">
+                <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center mb-4">
+                  <svg className="w-5 h-5 text-[#0078FF]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <p className="text-xs font-bold text-[#0078FF] uppercase tracking-widest mb-3">Office Hours</p>
+                <div className="space-y-2">
+                  {[
+                    { day: 'Monday – Friday', time: '9:00 AM – 6:00 PM', active: true },
+                    { day: 'Saturday',        time: '9:00 AM – 4:00 PM', active: true },
+                    { day: 'Sunday',          time: 'Closed',            active: false },
+                  ].map(r => (
+                    <div key={r.day} className="flex items-center justify-between">
+                      <span className="text-xs text-gray-500">{r.day}</span>
+                      <span className={`text-xs font-semibold ${r.active ? 'text-gray-900' : 'text-gray-400'}`}>{r.time}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Social */}
+              <div className="bg-white rounded-2xl p-6 border border-gray-100">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Follow Us</p>
+                <div className="grid grid-cols-4 gap-3">
+                  {[
+                    { name: 'Facebook',  href: 'https://www.facebook.com/rootsclasses1313/', color: 'hover:bg-blue-600',  icon: <path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/> },
+                    { name: 'Instagram', href: 'https://www.instagram.com/roots_classes', color: 'hover:bg-pink-600',  icon: <><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></> },
+                    { name: 'LinkedIn',  href: 'https://www.linkedin.com/company/roots-classes/', color: 'hover:bg-blue-700', icon: <><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></> },
+                    { name: 'YouTube',   href: 'https://www.youtube.com/@nikolaphysics', color: 'hover:bg-red-600',   icon: <><path d="M22.54 6.42a2.78 2.78 0 00-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 00-1.94 2A29 29 0 001 12a29 29 0 00.46 5.33A2.78 2.78 0 003.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 001.94-2 29 29 0 00.46-5.25 29 29 0 00-.46-5.33z"/><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/></> },
+                  ].map(s => (
+                    <a key={s.name} href={s.href} target="_blank" rel="noopener noreferrer"
+                      className={`w-full aspect-square rounded-xl bg-gray-100 flex items-center justify-center text-gray-500 transition-all hover:text-white hover:shadow-sm ${s.color}`}>
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">{s.icon}</svg>
+                    </a>
+                  ))}
+                </div>
+              </div>
+
+              {/* Logged-in student card */}
+              {student && (
+                <div className="bg-white rounded-2xl p-5 border border-blue-100">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-[#FB0500] rounded-full flex items-center justify-center flex-shrink-0">
+                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 truncate">{student.fullName}</p>
+                      <p className="text-xs text-gray-400 truncate">{student.email}</p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-[#0078FF] mt-3 font-medium">✓ Form pre-filled from your profile</p>
+                </div>
+              )}
+            </div>
+
+            {/* ── Right column — Form ── */}
+            <div className="lg:col-span-8">
+              <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+
+                {/* Form header */}
+                <div className="bg-dot-dark px-8 py-6 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-40 h-40 bg-[#0078FF]/10 rounded-full blur-3xl pointer-events-none" />
+                  {/* Notebook line decoration */}
+                  <div className="absolute bottom-3 left-8 flex gap-3 opacity-30">
+                    {[60,80,50,70].map((w,i) => (
+                      <div key={i} className="h-px bg-[#0078FF]" style={{ width: `${w}px` }} />
+                    ))}
+                  </div>
+                  <div className="relative">
+                    <p className="text-xs font-bold text-[#0078FF] uppercase tracking-widest mb-1">Drop a Message</p>
+                    <h2 className="text-xl font-bold text-white">Send us a message</h2>
+                    <p className="text-gray-400 text-xs mt-1">We typically respond within one business day.</p>
+                  </div>
+                </div>
+
+                {/* Form body — notebook bg */}
+                <div className="bg-notebook p-8">
+
+                  {/* Status banners */}
+                  {submitStatus === 'success' && (
+                    <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3">
+                      <span className="text-green-500 text-lg">✓</span>
+                      <p className="text-sm text-green-700 font-medium">Message sent! We'll get back to you soon.</p>
+                    </div>
+                  )}
+                  {submitStatus === 'error' && (
+                    <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3">
+                      <span className="text-red-500 text-lg">✕</span>
+                      <p className="text-sm text-red-700 font-medium">Something went wrong. Please try again.</p>
+                    </div>
+                  )}
+
+                  <form onSubmit={handleSubmit} className="space-y-5">
+                    {/* Name + Email */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                      <div>
+                        <label className={labelCls}>Full Name <span className="text-[#FB0500]">*</span></label>
+                        <input type="text" name="name" value={formData.name} onChange={handleChange}
+                          readOnly={!!student} placeholder="Your full name"
+                          className={inputCls(errors.name) + (student ? ' bg-gray-50 text-gray-500 cursor-not-allowed' : '')} />
+                        {errors.name && <p className="mt-1.5 text-xs text-red-500">{errors.name}</p>}
+                      </div>
+                      <div>
+                        <label className={labelCls}>Email Address <span className="text-[#FB0500]">*</span></label>
+                        <input type="email" name="email" value={formData.email} onChange={handleChange}
+                          readOnly={!!student} placeholder="your@email.com"
+                          className={inputCls(errors.email) + (student ? ' bg-gray-50 text-gray-500 cursor-not-allowed' : '')} />
+                        {errors.email && <p className="mt-1.5 text-xs text-red-500">{errors.email}</p>}
+                      </div>
+                    </div>
+
+                    {/* Subject */}
+                    <div>
+                      <label className={labelCls}>Subject <span className="text-[#FB0500]">*</span></label>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+                        {['Admission Query', 'Fee Structure', 'Course Info', 'Other'].map(s => (
+                          <button key={s} type="button"
+                            onClick={() => setFormData(p => ({ ...p, subject: s }))}
+                            className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all ${
+                              formData.subject === s
+                                ? 'bg-[#0078FF] text-white border-[#0078FF]'
+                                : 'bg-white text-gray-600 border-gray-200 hover:border-[#0078FF] hover:text-[#0078FF]'
+                            }`}
+                          >{s}</button>
+                        ))}
+                      </div>
+                      <input type="text" name="subject" value={formData.subject} onChange={handleChange}
+                        placeholder="Or type your own subject…"
+                        className={inputCls(errors.subject)} />
+                      {errors.subject && <p className="mt-1.5 text-xs text-red-500">{errors.subject}</p>}
+                    </div>
+
+                    {/* Message */}
+                    <div>
+                      <label className={labelCls}>Your Message <span className="text-[#FB0500]">*</span></label>
+                      <textarea name="message" rows={5} value={formData.message} onChange={handleChange}
+                        placeholder="Tell us more about your inquiry — the more detail, the better we can help…"
+                        className={inputCls(errors.message) + ' resize-none'} />
+                      <div className="flex items-center justify-between mt-1.5">
+                        {errors.message
+                          ? <p className="text-xs text-red-500">{errors.message}</p>
+                          : <span />}
+                        <span className="text-xs text-gray-300">{formData.message.length} chars</span>
+                      </div>
+                    </div>
+
+                    {/* Submit */}
+                    <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                      <button type="submit" disabled={isSubmitting}
+                        className="flex-1 py-3 bg-[#FB0500] text-white font-bold rounded-xl text-sm hover:opacity-90 transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                        {isSubmitting ? (
+                          <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Sending…</>
+                        ) : (
+                          <>Send Message <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg></>
+                        )}
+                      </button>
+                      <a href="https://wa.me/919877515330" target="_blank" rel="noopener noreferrer"
+                        className="flex-shrink-0 py-3 px-5 bg-green-500 text-white font-bold rounded-xl text-sm hover:bg-green-600 transition flex items-center justify-center gap-2">
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                          <path d="M12.004 0C5.374 0 0 5.373 0 12c0 2.116.554 4.106 1.523 5.835L.057 23.857l6.198-1.43A11.94 11.94 0 0012.004 24C18.629 24 24 18.627 24 12S18.629 0 12.004 0zm0 21.818a9.823 9.823 0 01-5.002-1.368l-.36-.214-3.677.964.982-3.587-.235-.369A9.82 9.82 0 012.182 12c0-5.424 4.414-9.836 9.822-9.836S21.818 6.576 21.818 12c0 5.424-4.41 9.818-9.814 9.818z"/>
+                        </svg>
+                        WhatsApp
+                      </a>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      {/* ── Map + Visit Section ───────────────────────────────────────────── */}
+      <div className="bg-white py-14 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            {/* Map embed */}
+            <div className="lg:col-span-8 rounded-2xl overflow-hidden border border-gray-100 shadow-sm h-72">
+              <iframe
+                title="Roots Classes Location"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3418.0!2d75.85!3d30.9!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2sRoots+Classes+Ludhiana!5e0!3m2!1sen!2sin!4v1"
+                width="100%" height="100%" style={{ border: 0 }} allowFullScreen loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+            </div>
+
+            {/* Visit us card */}
+            <div className="lg:col-span-4 flex flex-col gap-4">
+              <div className="bg-dot-dark rounded-2xl p-7 flex-1 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-[#0078FF]/10 rounded-full blur-2xl pointer-events-none" />
+                <p className="text-xs font-bold text-[#0078FF] uppercase tracking-widest mb-3 relative">Visit Us</p>
+                <h3 className="text-lg font-bold text-white mb-3 relative">Come see us<br />in person</h3>
+                <p className="text-sm text-gray-400 leading-relaxed relative">
+                  Gill Rd, opp. ITI College,<br />Shilapuri, Ludhiana,<br />Punjab — 141003
+                </p>
+                <a href="https://maps.google.com/?q=Gill+Road+ITI+College+Shilapuri+Ludhiana" target="_blank" rel="noopener noreferrer"
+                  className="relative inline-flex items-center gap-2 mt-5 px-4 py-2 bg-[#FB0500] text-white text-xs font-bold rounded-xl hover:opacity-90 transition">
+                  Get Directions →
+                </a>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
     </div>
-  );   
+  );
 };
 
 export default Contact;

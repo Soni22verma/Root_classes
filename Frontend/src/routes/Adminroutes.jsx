@@ -11,6 +11,7 @@ import AllCourses from "../pages/Admin/Courses/AllCourses";
 import CreateTest from "../pages/Admin/CreateTest";
 import SuccessStoriesManagement from "../pages/Admin/SuccessStoriesManagement";
 import FacultyManagement from "../pages/Admin/FacultyManagement";
+import Settings from "../pages/Admin/Settings";
 
 
 const Adminroutes = [
@@ -71,6 +72,10 @@ const Adminroutes = [
       {
         path: "faculty",
         element: <FacultyManagement />
+      },
+      {
+        path: "settings",
+        element: <Settings />
       }
 
 

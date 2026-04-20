@@ -4,28 +4,19 @@ import api from '../../../services/instructorendpoint';
 import { toast } from 'react-toastify';
 import useStudentStore from '../../../Store/studentstore';
 import { useNavigate } from 'react-router-dom';
+import { BookOpen, Plus, MoreVertical, Edit2, Trash2, GraduationCap, Layers, Tag, ExternalLink } from 'lucide-react';
 
 const InstructorDashboard = () => {
-  const [activeTab, setActiveTab] = useState('courses');
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [courses, setCourses] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [formLoading, setFormLoading] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState(null);
+  const [formLoading, setFormLoading] = useState(false);
   const navigate = useNavigate();
-
   const { student } = useStudentStore();
-  
-  // Form data
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    category: '',
-    level: 'beginner',
-    price: '' 
-  });
 
+  const [formData, setFormData] = useState({ title: '', description: '', category: '', level: 'beginner', price: '' });
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
@@ -37,21 +28,9 @@ const InstructorDashboard = () => {
     try {
       setLoading(true);
       const response = await axios.post(api.course.getCourse);
-      let coursesData = [];
-      if (response.data && response.data.data && Array.isArray(response.data.data)) {
-        coursesData = response.data.data;
-      } else if (Array.isArray(response.data)) {
-        coursesData = response.data;
-      }
-      
-      coursesData = coursesData.map(course => ({
-        ...course,
-        price: course.price !== undefined && course.price !== null ? course.price : 0
-      }));
-      
-      setCourses(coursesData);
+      let data = response.data.data || response.data || [];
+      setCourses(data.map(c => ({ ...c, price: c.price || 0 })));
     } catch (error) {
-      console.error('Error fetching courses:', error);
       toast.error('Failed to fetch courses');
     } finally {
       setLoading(false);
@@ -61,483 +40,185 @@ const InstructorDashboard = () => {
   const fetchCategories = async () => {
     try {
       const response = await axios.post(api.course.getCategory);
-      let categoriesData = [];
-      if (response.data && response.data.data && Array.isArray(response.data.data)) {
-        categoriesData = response.data.data;
-      } else if (Array.isArray(response.data)) {
-        categoriesData = response.data;
-      }
-      setCategories(categoriesData);
+      setCategories(response.data.data || response.data || []);
     } catch (error) {
-      console.error('Error fetching categories:', error);
       setCategories([]);
     }
   };
 
-  const handleManageContent = async (courseId) => {
-    try {
-      navigate(`/instructor/allcourses/${courseId}`);
-    } catch (error) {
-      console.log(error, "this is error from handleManageContent");
-    }
-  };
-
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
-  };
-
-  const validateForm = () => {
-    const newErrors = {};
-    if (!formData.title.trim()) newErrors.title = 'Course title is required';
-    if (!formData.description.trim()) newErrors.description = 'Description is required';
-    if (!formData.category) newErrors.category = 'Please select a category';
-    
-    if (formData.price === '' || formData.price === null) {
-      newErrors.price = 'Price is required';
-    } else if (isNaN(formData.price) || Number(formData.price) < 0) {
-      newErrors.price = 'Please enter a valid price (0 or greater)';
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    setErrors(prev => ({ ...prev, [e.target.name]: '' }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
-    
     setFormLoading(true);
     try {
-      const submissionData = {
-        title: formData.title,
-        description: formData.description,
-        category: formData.category,
-        level: formData.level,
-        price: Number(formData.price) 
-      };
-
+      const payload = { ...formData, price: Number(formData.price) };
       if (editingCourse) {
-        const updateData = {
-          courseId: editingCourse._id,
-          title: submissionData.title,
-          description: submissionData.description,
-          category: submissionData.category,
-          level: submissionData.level,
-          price: submissionData.price
-        };
-        
-        const response = await axios.post(api.course.editCourse, updateData);
-        
-        if (response.data?.success) {
-          toast.success('Course updated successfully!');
-        } else {
-          toast.error(response.data?.message || 'Failed to update course');
-        }
+        await axios.post(api.course.editCourse, { courseId: editingCourse._id, ...payload });
+        toast.success('Updated Successfully');
       } else {
-        const res = await axios.post(api.course.createCourse, submissionData);
-        
-        if (res.data?.success) {
-          toast.success('Course created successfully!');
-        } else {
-          toast.error(res.data?.message || 'Failed to create course');
-        }
+        await axios.post(api.course.createCourse, payload);
+        toast.success('Created Successfully');
       }
-      
       setIsModalOpen(false);
-      await fetchCourses();
-      resetForm();
+      fetchCourses();
     } catch (error) {
-      console.error('Error saving course:', error);
-      toast.error(error.response?.data?.message || error.message || 'Error saving course');
+      toast.error('Operation failed');
     } finally {
       setFormLoading(false);
     }
   };
 
-  const resetForm = () => {
-    setFormData({ title: '', description: '', category: '', level: 'beginner', price: '' });
-    setErrors({});
-    setEditingCourse(null);
-  };
-
-  const openCreateModal = () => {
-    resetForm();
-    setIsModalOpen(true);
-  };
-
-  const openEditModal = (course) => {
-    setEditingCourse(course);
-    setFormData({
-      title: course.title || '',
-      description: course.description || '',
-      category: course.category?._id || course.category || '',
-      level: course.level || 'beginner',
-      price: course.price !== undefined && course.price !== null ? course.price : ''
-    });
-    setIsModalOpen(true);
-  };
-
-  const handleDelete = async (courseId) => {
-    if (window.confirm('Are you sure you want to delete this course? This action cannot be undone.')) {
-      try {
-        setLoading(true);
-        await axios.post(api.course.deleteCourse, { courseId: courseId }); 
-        toast.success('Course deleted successfully!');
-        await fetchCourses();
-      } catch (error) {
-        console.error('Error deleting course:', error);
-        toast.error(error.response?.data?.message || error.message || 'Error deleting course');
-      } finally {
-        setLoading(false);
-      }
+  const handleDelete = async (id) => {
+    if (window.confirm('Delete this course?')) {
+      await axios.post(api.course.deleteCourse, { courseId: id });
+      toast.success('Deleted');
+      fetchCourses();
     }
-  };
-
-  const getCategoryName = (categoryId) => {
-    if (!categoryId) return 'Uncategorized';
-    const category = categories.find(cat => cat._id === categoryId);
-    return category ? category.name : 'Uncategorized';
-  };
-
-  const getLevelColor = (level) => {
-    switch (level) {
-      case 'beginner': return 'bg-green-100 text-green-800';
-      case 'intermediate': return 'bg-yellow-100 text-yellow-800';
-      case 'advanced': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const formatPrice = (price) => {
-    if (price === undefined || price === null || price === '') return 'Free';
-    const numericPrice = typeof price === 'string' ? parseFloat(price) : price;
-    if (isNaN(numericPrice)) return 'Free';
-    if (numericPrice === 0) return 'Free';
-    return `₹${numericPrice.toFixed(2)}`;
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Main Content */}
-      <div className="p-3 sm:p-4 md:p-6 lg:p-8">
-        {/* Header Section */}
-        <div className="mb-4 sm:mb-6 md:mb-8">
-          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">Course Manager</h2>
-          <p className="text-sm sm:text-base text-gray-600 mt-1">Manage your courses efficiently</p>
+    <div className="min-h-screen bg-[#f8faff] bg-line-grid font-poppins">
+      <div className="p-6">
+        
+        {/* Header Section - Compact Pro */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+               <div className="w-1.5 h-1.5 rounded-full bg-[#FB0500]" />
+               <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em]">Portal / Instructor</p>
+            </div>
+            <h2 className="text-xl font-black text-gray-900 tracking-tight leading-none">Course Manager</h2>
+            <p className="text-[11px] font-bold text-gray-400 mt-1 uppercase tracking-tight">Active Curriculum Sectors</p>
+          </div>
+
+          <button
+            onClick={() => { setEditingCourse(null); setFormData({ title: '', description: '', category: '', level: 'beginner', price: '' }); setIsModalOpen(true); }}
+            className="inline-flex items-center gap-2 bg-[#0078FF] text-white px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-[#0061cc] transition-all shadow-lg shadow-blue-500/10"
+          >
+            <Plus size={16} /> New Course
+          </button>
         </div>
 
-        {/* Create Course Button */}
-        {student?.role === "instructor" && (
-          <div className="mb-4 sm:mb-6">
-            <button
-              onClick={openCreateModal}
-              className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2.5 sm:py-2 rounded-lg font-semibold transition-colors shadow-sm text-sm sm:text-base"
-            >
-              + Create Course
-            </button>
-          </div>
-        )}
-
-        {/* Loading State */}
+        {/* Content Area */}
         {loading ? (
-          <div className="flex justify-center py-12">
-            <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-blue-600"></div>
-          </div>
-        ) : courses.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-sm p-8 sm:p-12 text-center border border-gray-200">
-            <p className="text-gray-500 text-sm sm:text-base">No courses yet. Click "Create Course" to get started.</p>
-          </div>
+          <div className="flex justify-center py-24"><div className="w-10 h-10 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin" /></div>
         ) : (
-          <>
-            {/* Mobile Card View - For screens below 768px */}
-            <div className="block md:hidden space-y-3 sm:space-y-4">
-              {courses.map((course, index) => (
-                <div key={course._id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4">
-                  <div className="flex justify-between items-start mb-2 sm:mb-3">
-                    <h3 className="text-sm sm:text-base font-semibold text-gray-900 flex-1">{course.title}</h3>
-                    <span className="text-xs text-gray-400 ml-2">#{index + 1}</span>
-                  </div>
-                  
-                  <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3 line-clamp-2">{course.description}</p>
-                  
-                  <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-3 sm:mb-4">
-                    <span className="inline-flex px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                      {getCategoryName(course.category)}
-                    </span>
-                    <span className={`inline-flex px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium ${getLevelColor(course.level)}`}>
-                      {course.level || 'beginner'}
-                    </span>
-                    <span className="inline-flex px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      {formatPrice(course.price)}
-                    </span>
-                  </div>
-                  
-                  <div className="flex gap-2 pt-2 sm:pt-3 border-t border-gray-100">
-                    <button
-                      onClick={() => handleManageContent(course._id)}
-                      className="flex-1 text-green-600 hover:text-green-900 transition-colors text-xs sm:text-sm py-1.5 sm:py-2 flex items-center justify-center gap-1 rounded-md hover:bg-green-50"
-                    >
-                      <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                      </svg>
-                      Manage
-                    </button>
-                    <button
-                      onClick={() => openEditModal(course)}
-                      className="flex-1 text-blue-600 hover:text-blue-900 transition-colors text-xs sm:text-sm py-1.5 sm:py-2 flex items-center justify-center gap-1 rounded-md hover:bg-blue-50"
-                    >
-                      <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(course._id)}
-                      className="flex-1 text-red-600 hover:text-red-900 transition-colors text-xs sm:text-sm py-1.5 sm:py-2 flex items-center justify-center gap-1 rounded-md hover:bg-red-50"
-                    >
-                      <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Desktop Table View - For screens 768px and above */}
-            <div className="hidden md:block bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">
-                        S.No
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Course Title
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-64">
-                        Description
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
-                        Category
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">
-                        Level
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
-                        Price
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
-                        Actions
-                      </th>
+          <div className="bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-2xl shadow-blue-900/5">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-50/50 border-b border-gray-100">
+                    <th className="px-6 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest">S.No</th>
+                    <th className="px-6 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest">Course Identity</th>
+                    <th className="px-6 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest">Curriculum</th>
+                    <th className="px-6 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest">Status</th>
+                    <th className="px-6 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest">Pricing</th>
+                    <th className="px-6 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {courses.map((course, idx) => (
+                    <tr key={course._id} className="hover:bg-gray-50/30 transition-colors group">
+                      <td className="px-6 py-3 text-[10px] font-bold text-gray-300">{(idx + 1).toString().padStart(2, '0')}</td>
+                      <td className="px-6 py-3">
+                        <div className="flex flex-col">
+                          <p className="text-[13px] font-black text-gray-900 leading-tight group-hover:text-[#0078FF] transition-colors">{course.title}</p>
+                          <p className="text-[10px] font-bold text-gray-400 line-clamp-1 max-w-xs uppercase tracking-tight opacity-60">{course.description}</p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-3">
+                        <div className="flex flex-wrap gap-1">
+                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gray-50 border border-gray-100 text-[9px] font-black text-gray-400 uppercase">
+                              <Layers size={10} /> {categories.find(c => c._id === course.category)?.name || 'General'}
+                           </span>
+                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 border border-blue-100 text-[9px] font-black text-[#0078FF] uppercase">
+                              <GraduationCap size={10} /> {course.level || 'Beginner'}
+                           </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-3">
+                         <div className="flex items-center gap-1.5">
+                            <div className="w-1 h-1 rounded-full bg-green-500" />
+                            <span className="text-[9px] font-black text-gray-900 uppercase tracking-widest">Active</span>
+                         </div>
+                      </td>
+                      <td className="px-6 py-3">
+                        <span className="text-[11px] font-black text-gray-900 uppercase">₹{course.price || 'Free'}</span>
+                      </td>
+                      <td className="px-6 py-3 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                           <button onClick={() => navigate(`/instructor/allcourses/${course._id}`)} className="p-1.5 text-gray-300 hover:text-[#0078FF] hover:bg-blue-50 rounded-lg transition-all" title="Manage Content"><ExternalLink size={14} /></button>
+                           <button onClick={() => { setEditingCourse(course); setFormData({ title: course.title, description: course.description, category: course.category?._id || course.category, level: course.level, price: course.price }); setIsModalOpen(true); }} className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all"><Edit2 size={14} /></button>
+                           <button onClick={() => handleDelete(course._id)} className="p-1.5 text-gray-400 hover:text-[#FB0500] hover:bg-red-50 rounded-lg transition-all"><Trash2 size={14} /></button>
+                        </div>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {courses.map((course, index) => (
-                      <tr key={course._id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                          {index + 1}
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="text-sm font-medium text-gray-900 max-w-xs truncate" title={course.title}>
-                            {course.title}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="text-sm text-gray-500 max-w-md truncate" title={course.description}>
-                            {course.description}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                            {getCategoryName(course.category)}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${getLevelColor(course.level)}`}>
-                            {course.level || 'beginner'}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            {formatPrice(course.price)}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm">
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleManageContent(course._id)}
-                              className="p-1.5 text-green-600 hover:text-green-900 hover:bg-green-50 rounded transition-colors"
-                              title="Manage Modules & Topics"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                              </svg>
-                            </button>
-                            <button
-                              onClick={() => openEditModal(course)}
-                              className="p-1.5 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded transition-colors"
-                              title="Edit Course"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                              </svg>
-                            </button>
-                            <button
-                              onClick={() => handleDelete(course._id)}
-                              className="p-1.5 text-red-600 hover:text-red-900 hover:bg-red-50 rounded transition-colors"
-                              title="Delete Course"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          </>
+          </div>
         )}
       </div>
 
-      {/* Modal Form - Responsive */}
+      {/* Modern Side Modal for Forms */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen px-3 sm:px-4 py-6">
-            <div className="fixed inset-0 bg-black/60" onClick={() => setIsModalOpen(false)}></div>
-
-            <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-auto">
-              <form onSubmit={handleSubmit}>
-                <div className="p-4 sm:p-6">
-                  <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6">
-                    {editingCourse ? 'Edit Course' : 'Create New Course'}
-                  </h3>
-
-                  <div className="space-y-4 sm:space-y-5">
-                    {/* Course Title */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Course Title <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        name="title"
-                        value={formData.title}
-                        onChange={handleInputChange}
-                        placeholder="Enter course title"
-                        className={`w-full px-3 py-2 text-sm sm:text-base border ${errors.title ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                      />
-                      {errors.title && <p className="mt-1 text-xs text-red-500">{errors.title}</p>}
-                    </div>
-
-                    {/* Description */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Description <span className="text-red-500">*</span>
-                      </label>
-                      <textarea
-                        name="description"
-                        rows="3"
-                        value={formData.description}
-                        onChange={handleInputChange}
-                        placeholder="Enter course description"
-                        className={`w-full px-3 py-2 text-sm sm:text-base border ${errors.description ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                      />
-                      {errors.description && <p className="mt-1 text-xs text-red-500">{errors.description}</p>}
-                    </div>
-
-                    {/* Category */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Category <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        name="category"
-                        value={formData.category}
-                        onChange={handleInputChange}
-                        className={`w-full px-3 py-2 text-sm sm:text-base border ${errors.category ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                      >
-                        <option value="">Select a category</option>
-                        {categories.map((category) => (
-                          <option key={category._id} value={category._id}>
-                            {category.name}
-                          </option>
-                        ))}
-                      </select>
-                      {errors.category && <p className="mt-1 text-xs text-red-500">{errors.category}</p>}
-                    </div>
-
-                    {/* Level */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Level</label>
-                      <select
-                        name="level"
-                        value={formData.level}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      >
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 backdrop-blur-sm bg-gray-900/10">
+          <div className="w-full max-w-md bg-white rounded-[32px] border border-gray-100 shadow-2xl animate-slideUp overflow-hidden">
+            <div className="p-8 border-b border-gray-50 bg-gray-50/50">
+               <h3 className="text-lg font-black text-gray-900 tracking-tight">{editingCourse ? 'Edit Curriculum' : 'Initialize Course'}</h3>
+               <p className="text-xs font-bold text-gray-400 mt-1 uppercase tracking-widest">Instructor Portal</p>
+            </div>
+            <form onSubmit={handleSubmit} className="p-8 space-y-6">
+               <div className="space-y-1">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Course Title</label>
+                  <input type="text" name="title" required value={formData.title} onChange={handleInputChange} className="w-full bg-gray-50 border border-gray-100 rounded-2xl py-3 px-5 text-sm font-bold focus:outline-none focus:border-[#0078FF] transition-all" />
+               </div>
+               <div className="space-y-1">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Description</label>
+                  <textarea name="description" rows="3" required value={formData.description} onChange={handleInputChange} className="w-full bg-gray-50 border border-gray-100 rounded-2xl py-3 px-5 text-sm font-bold focus:outline-none focus:border-[#0078FF] transition-all resize-none" />
+               </div>
+               <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Category</label>
+                     <select name="category" required value={formData.category} onChange={handleInputChange} className="w-full bg-gray-50 border border-gray-100 rounded-2xl py-3 px-5 text-sm font-bold focus:outline-none focus:border-[#0078FF] transition-all outline-none">
+                        <option value="">Select</option>
+                        {categories.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+                     </select>
+                  </div>
+                  <div className="space-y-1">
+                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Level</label>
+                     <select name="level" required value={formData.level} onChange={handleInputChange} className="w-full bg-gray-50 border border-gray-100 rounded-2xl py-3 px-5 text-sm font-bold focus:outline-none focus:border-[#0078FF] transition-all outline-none">
                         <option value="beginner">Beginner</option>
                         <option value="intermediate">Intermediate</option>
                         <option value="advanced">Advanced</option>
-                      </select>
-                    </div>
-
-                    {/* Price */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Price (₹) <span className="text-red-500">*</span>
-                      </label>
-                      <div className="relative">
-                        <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 text-sm sm:text-base">₹</span>
-                        <input
-                          type="number"
-                          name="price"
-                          value={formData.price}
-                          onChange={handleInputChange}
-                          placeholder="0.00"
-                          min="0"
-                          step="0.01"
-                          className={`w-full pl-7 sm:pl-8 pr-3 py-2 text-sm sm:text-base border ${errors.price ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                        />
-                      </div>
-                      {errors.price && <p className="mt-1 text-xs text-red-500">{errors.price}</p>}
-                      <p className="mt-1 text-xs text-gray-500">Enter 0 for free courses</p>
-                    </div>
+                     </select>
                   </div>
-                </div>
-
-                {/* Form Actions */}
-                <div className="bg-gray-50 px-4 sm:px-6 py-3 sm:py-4 flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 rounded-b-lg">
-                  <button
-                    type="button"
-                    onClick={() => setIsModalOpen(false)}
-                    className="px-4 py-2 text-sm sm:text-base text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
-                  >
-                    Cancel
+               </div>
+               <div className="space-y-1">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Price (INR)</label>
+                  <input type="number" name="price" required value={formData.price} onChange={handleInputChange} className="w-full bg-gray-50 border border-gray-100 rounded-2xl py-3 px-5 text-sm font-bold focus:outline-none focus:border-[#0078FF] transition-all" placeholder="0 for Free" />
+               </div>
+               
+               <div className="flex gap-4 pt-4">
+                  <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 text-xs font-black text-gray-400 uppercase tracking-widest hover:text-gray-900 transition-colors">Cancel</button>
+                  <button type="submit" disabled={formLoading} className="flex-[2] bg-[#0a1628] text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-[#FB0500] transition-all shadow-lg shadow-gray-200">
+                     {formLoading ? 'Saving...' : 'Confirm Action'}
                   </button>
-                  <button
-                    type="submit"
-                    disabled={formLoading}
-                    className="px-4 py-2 text-sm sm:text-base bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {formLoading ? 'Saving...' : (editingCourse ? 'Update Course' : 'Create Course')}
-                  </button>
-                </div>
-              </form>
-            </div>
+               </div>
+            </form>
           </div>
         </div>
       )}
+
+      <style>{`
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-slideUp { animation: slideUp 0.4s ease-out forwards; }
+      `}</style>
     </div>
   );
 };

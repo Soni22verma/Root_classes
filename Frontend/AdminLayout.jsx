@@ -37,12 +37,12 @@ const AdminLayout = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
+    <div className="min-h-screen bg-white">
       <Sidebar isMobileOpen={isMobileOpen} setIsMobileOpen={setIsMobileOpen} />
       
-      <div className="lg:ml-72">
-        <main className="p-6">
-          <Outlet /> {/* Yahan par nested routes render honge */}
+      <div className="lg:ml-64 transition-all duration-300">
+        <main className="p-0">
+          <Outlet />
         </main>
       </div>
     </div>

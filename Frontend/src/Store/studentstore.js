@@ -26,6 +26,7 @@ const useStudentStore = create((set) => ({
 
     localStorage.setItem("token", data.token);
     localStorage.setItem("student", JSON.stringify(data.user));
+    localStorage.setItem("user", JSON.stringify(data.user)); // Sync legacy key
   },
 
  logout: () => {
