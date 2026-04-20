@@ -1,4 +1,6 @@
 import { Test } from "./createtest.model.js";
+import { emitNotification } from "../../../config/socket.js";
+
 
 export const createTest = async (req, res) => {
   try {
@@ -210,11 +212,19 @@ export const publishTest = async (req, res) => {
       { new: true }
     );
 
+    // ✅ Emit Notification to Students
+    emitNotification("students_room", "new_test_available", {
+      title: test.title,
+      duration: test.duration,
+      totalMarks: test.totalMarks
+    });
+
     res.json({
       success: true,
       message: "Test published",
       data: test
     });
+
 
   } catch (error) {
     res.status(500).json({ message: error.message });

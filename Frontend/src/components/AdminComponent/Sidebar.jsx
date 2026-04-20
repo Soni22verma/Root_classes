@@ -27,8 +27,10 @@ import { PiChalkboard, PiStudentBold } from "react-icons/pi";
 import { SiTestcafe } from "react-icons/si";
 import { toast } from 'react-toastify';
 import useStudentStore from '../../Store/studentstore';
+import NotificationDropdown from '../Notification/NotificationDropdown';
 
 const AdminSidebar = ({ isMobileOpen, setIsMobileOpen }) => {
+
   const { logout, student, token } = useStudentStore();
   const location = useLocation();
   const navigate = useNavigate();
@@ -197,6 +199,14 @@ const AdminSidebar = ({ isMobileOpen, setIsMobileOpen }) => {
           { name: 'All Blogs', path: '/admin/blog', icon: FileText },
         ]
       },
+      {
+        name: 'Content Management',
+        icon: Video,
+        submenu: [
+          { name: 'Success Stories', path: '/admin/success-stories', icon: Video },
+        ]
+      },
+
        {
         name: 'Create Test',
         path: '/admin/createtest',
@@ -366,15 +376,20 @@ const AdminSidebar = ({ isMobileOpen, setIsMobileOpen }) => {
               )}
             </Link>
             
-            <button
-              onClick={toggleCollapse}
-              className={`p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors duration-200 flex-shrink-0 ${
-                isCollapsed ? 'absolute right-2 top-6' : ''
-              }`}
-              aria-label="Toggle sidebar"
-            >
-              <Menu size={18} className="text-gray-600" />
-            </button>
+            <div className="flex items-center space-x-2">
+              {!isCollapsed && <NotificationDropdown isDark={false} align="left" />}
+              <button
+
+                onClick={toggleCollapse}
+                className={`p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors duration-200 flex-shrink-0 ${
+                  isCollapsed ? 'absolute right-2 top-6' : ''
+                }`}
+                aria-label="Toggle sidebar"
+              >
+                <Menu size={18} className="text-gray-600" />
+              </button>
+            </div>
+
           </div>
         </div>
 

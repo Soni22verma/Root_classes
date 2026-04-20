@@ -1,18 +1,20 @@
 import React, { useState } from 'react';
+import axios from 'axios';
+import api from '../../services/endpoints';
+import { toast } from 'react-toastify';
 
 const ExpertConsultationForm = () => {
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     mobileNo: '',
-    otp: '',
     stream: '',
     class: '',
     emailId: ''
   });
 
-  const [otpSent, setOtpSent] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
@@ -21,29 +23,45 @@ const ExpertConsultationForm = () => {
     });
   };
 
-  const handleSendOTP = () => {
-    if (formData.mobileNo.length === 10) {
-      setLoading(true);
-      // Simulate OTP sending
-      setTimeout(() => {
-        setOtpSent(true);
-        setLoading(false);
-        alert(`OTP sent to ${formData.mobileNo}`);
-      }, 1000);
-    } else {
-      alert('Please enter a valid 10-digit mobile number');
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Simple validation for mobile
+    if (formData.mobileNo.length !== 10) {
+      toast.error('Please enter a valid 10-digit mobile number');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const res = await axios.post(api.callback.request, {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        mobileNumber: formData.mobileNo,
+        email: formData.emailId,
+        stream: formData.stream,
+        studentClass: formData.class
+      });
+
+      if (res.data.success) {
+        toast.success(res.data.message);
+        setFormData({
+          firstName: '',
+          lastName: '',
+          mobileNo: '',
+          stream: '',
+          class: '',
+          emailId: ''
+        });
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to submit request');
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!otpSent) {
-      alert('Please verify OTP first');
-      return;
-    }
-    console.log('Form submitted:', formData);
-    alert('Form submitted successfully! Our expert will contact you soon.');
-  };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -176,59 +194,22 @@ const ExpertConsultationForm = () => {
                     </div>
                   </div>
 
-                  {/* Mobile Number with OTP */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Mobile No <span className="text-red-500">*</span>
                     </label>
-                    <div className="flex gap-3">
-                      <div className="flex-1">
-                        <input
-                          type="tel"
-                          name="mobileNo"
-                          value={formData.mobileNo}
-                          onChange={handleChange}
-                          maxLength="10"
-                          required
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 outline-none"
-                          placeholder="Enter 10-digit mobile number"
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={handleSendOTP}
-                        disabled={loading || formData.mobileNo.length !== 10}
-                        className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
-                          formData.mobileNo.length === 10 && !loading
-                            ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:shadow-sm transform hover:scale-105'
-                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                        }`}
-                      >
-                        {loading ? 'Sending...' : otpSent ? 'OTP Sent ✓' : 'Send OTP'}
-                      </button>
-                    </div>
+                    <input
+                      type="tel"
+                      name="mobileNo"
+                      value={formData.mobileNo}
+                      onChange={handleChange}
+                      maxLength="10"
+                      required
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 outline-none"
+                      placeholder="Enter 10-digit mobile number"
+                    />
                   </div>
 
-                  {/* OTP Field - Shows only after OTP sent */}
-                  {otpSent && (
-                    <div className="animate-fadeIn">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Enter OTP <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        name="otp"
-                        value={formData.otp}
-                        onChange={handleChange}
-                        required
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 outline-none"
-                        placeholder="Enter 6-digit OTP"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        Didn't receive OTP? <button type="button" onClick={handleSendOTP} className="text-blue-600 hover:underline">Resend</button>
-                      </p>
-                    </div>
-                  )}
 
                   {/* Stream Selection */}
                   <div>
@@ -305,10 +286,12 @@ const ExpertConsultationForm = () => {
                   {/* Submit Button */}
                   <button
                     type="submit"
-                    className="w-full py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-xl hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300"
+                    disabled={submitting}
+                    className={`w-full py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-xl hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300 ${submitting ? 'opacity-70 cursor-not-allowed' : ''}`}
                   >
-                    Submit Now →
+                    {submitting ? 'Submitting...' : 'Submit Now →'}
                   </button>
+
 
                   {/* Trust Badge */}
                   <div className="flex items-center justify-center gap-4 pt-4">

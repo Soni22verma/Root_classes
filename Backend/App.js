@@ -19,8 +19,12 @@ import enrollmentRouter from "./modules/Admin/enrollment/enrollment.routes.js";
 import scholarshipRouter from "./modules/Student/Scholrship/scholarship.routes.js";
 import paymentRouter from "./modules/Student/enrollStudent/payment.routes.js";
 import enrollRouter from "./modules/Student/enrollStudent/enrollStudent.routes.js";
+import successStoryRouter from "./modules/Admin/SuccessStory/successStory.routes.js";
+import callbackRouter from "./modules/Admin/Callback/callback.routes.js";
 
 dotenv.config();
+
+
 
 const app = express();
 
@@ -50,7 +54,11 @@ app.use("/test",testRouter)
 app.use("/result",resultRouter)
 app.use("/payment",paymentRouter)
 app.use("/scholarship" ,scholarshipRouter)
+app.use("/success-story", successStoryRouter);
+app.use("/callback", callbackRouter);
 // Test route
+
+
 
 
 app.get("/", (req, res) => {

@@ -8,9 +8,11 @@ import ManageSlider from "../pages/Admin/ManageSlider";
 import Testimonials from "../pages/Admin/Testimonials";
 import CourseCategory from "../pages/Admin/Courses/CourseCategory";
 import AllCourses from "../pages/Admin/Courses/AllCourses";
-import CreateTest from "../pages/Admin/CreateTest"
+import CreateTest from "../pages/Admin/CreateTest";
+import SuccessStoriesManagement from "../pages/Admin/SuccessStoriesManagement";
 
 const Adminroutes = [
+
   {
     path: "/admin",
     element: <AdminLayout />,
@@ -59,7 +61,12 @@ const Adminroutes = [
       {
         path: "createtest",
         element: <CreateTest />
+      },
+      {
+        path: "success-stories",
+        element: <SuccessStoriesManagement />
       }
+
     ],
   },
 ];
