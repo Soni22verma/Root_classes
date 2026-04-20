@@ -21,6 +21,38 @@ export const createTest = async (req, res) => {
   }
 };
 
+
+export const updateTest = async (req, res) => {
+  try {
+    const { testId, title, duration, passingPercentage, isPublished } = req.body;
+
+    const test = await Test.findById(testId);
+
+    if (!test) {
+      return res.status(404).json({ message: "Test not found" });
+    }
+
+    if (title) test.title = title;
+    if (duration) test.duration = duration;
+    if (passingPercentage) test.passingPercentage = passingPercentage;
+
+    if (typeof isPublished === "boolean") {
+      test.isPublished = isPublished;
+    }
+
+    await test.save();
+
+    res.json({
+      success: true,
+      message: "Test updated successfully",
+      data: test
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 export const DeleteTest = async(req,res,next)=>{
   try {
     const {testId} = req.body;
@@ -192,11 +224,19 @@ export const publishTest = async (req, res) => {
 export const getPublishedTests = async (req, res) => {
   try {
     const tests = await Test.find({ isPublished: true })
-      .select("title duration totalMarks");
+      .select("title duration totalMarks questions");
+
+    const formattedTests = tests.map(test => ({
+      _id: test._id,
+      title: test.title,
+      duration: test.duration,
+      totalMarks: test.totalMarks,
+      totalQuestions: test.questions.length  
+    }));
 
     res.json({
       success: true,
-      data: tests
+      data: formattedTests
     });
 
   } catch (error) {

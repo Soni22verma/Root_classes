@@ -1,8 +1,9 @@
 import express, { Router } from 'express'
-import { addQuestion, createTest, deleteQuestion, DeleteTest, getPublishedTests, getQuestionsByTest, getTestQuestionsForStudent, publishTest, updateQuestion } from './createtest.controller.js'
+import { addQuestion, createTest, deleteQuestion, DeleteTest, getPublishedTests, getQuestionsByTest, getTestQuestionsForStudent, publishTest, updateQuestion, updateTest } from './createtest.controller.js'
 
 const testRouter = Router()
 testRouter.post("/create_test",createTest)
+testRouter.post("/edit_test",updateTest)
 testRouter.post("/delete_test",DeleteTest)
 
 testRouter.post("/add_question",addQuestion)

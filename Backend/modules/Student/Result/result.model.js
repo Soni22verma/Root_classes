@@ -37,7 +37,7 @@ const resultSchema = new mongoose.Schema(
     answers: [
       {
         questionId: mongoose.Schema.Types.ObjectId,
-        selectedAnswer: String,
+        selectedAnswer: Number,
         isCorrect: Boolean,
       },
     ],
@@ -54,7 +54,6 @@ const resultSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// 🔥 IMPORTANT (1 student = 1 test only)
 resultSchema.index({ studentId: 1, testId: 1 }, { unique: true });
 
 export const Result = mongoose.model("Result", resultSchema);

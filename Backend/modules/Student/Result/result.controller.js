@@ -24,7 +24,7 @@ export const submitTest = async (req, res) => {
         message: "You have already completed this test. You cannot retake it.",
       });
     }
-
+cd
     let obtainedMarks = 0;
     let totalMarks = 0;
     const formattedAnswers = [];
@@ -54,7 +54,6 @@ export const submitTest = async (req, res) => {
 
     console.log(`Total Marks: ${totalMarks}, Obtained: ${obtainedMarks}, Percentage: ${percentage}%`);
 
-    // ✅ CHANGE: Create result with isCompleted = true
     const result = await Result.create({
       studentId,
       testId,
@@ -62,7 +61,7 @@ export const submitTest = async (req, res) => {
       totalMarks,
       percentage,
       isEligible,
-      isCompleted: true,  // ← YAHI CHANGE HAI
+      isCompleted: true,  
       answers: formattedAnswers,
     });
 
