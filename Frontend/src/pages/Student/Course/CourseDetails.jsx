@@ -4,6 +4,33 @@ import axios from 'axios';
 import useStudentStore from '../../../Store/studentstore';
 import api from '../../../services/endpoints';
 
+// YouTube URL to Embed URL converter utility
+const getYouTubeEmbedUrl = (url) => {
+  if (!url) return null;
+
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/|youtube\.com\/shorts\/)([^&\n?#]+)/,
+    /youtube\.com\/watch\?.*[?&]v=([^&]+)/
+  ];
+
+  let videoId = null;
+
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match && match[1]) {
+      videoId = match[1];
+      break;
+    }
+  }
+
+  if (videoId) {
+    videoId = videoId.split('?')[0].split('&')[0];
+    return `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&showinfo=0`;
+  }
+
+  return url;
+};
+
 const loadRazorpayScript = () => {
   return new Promise((resolve) => {
     const script = document.createElement("script");
@@ -35,6 +62,7 @@ const CourseDetails = () => {
   const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('razorpay');
+  const [embedUrl, setEmbedUrl] = useState(null);
 
   useEffect(() => {
     if (location.state?.course) {
@@ -56,18 +84,18 @@ const CourseDetails = () => {
 
   const checkEnrollmentStatus = async () => {
     if (!studentId || !course?._id) return;
-    
+
     try {
       console.log("Checking enrollment for student:", studentId, "course:", course._id);
       const res = await axios.get(`${api.student.getStudentProfile}/${studentId}`);
-      
+
       if (res.data?.success && res.data?.data) {
         const studentData = res.data.data;
         const enrolled = studentData.enrolledCourses && studentData.enrolledCourses.includes(course._id);
-        
+
         console.log("Enrollment status:", enrolled);
         setIsEnrolled(enrolled);
-        
+
         if (setStudent && enrolled !== (student?.enrolledCourses?.includes(course._id) || false)) {
           setStudent(studentData);
         }
@@ -79,7 +107,7 @@ const CourseDetails = () => {
 
   const hasPaidContent = () => {
     if (!course?.modules) return false;
-    
+
     for (const module of course.modules) {
       for (const chapter of module.chapters || []) {
         for (const topic of chapter.topics || []) {
@@ -94,7 +122,7 @@ const CourseDetails = () => {
 
   const hasPreviewContent = () => {
     if (!course?.modules) return false;
-    
+
     for (const module of course.modules) {
       for (const chapter of module.chapters || []) {
         for (const topic of chapter.topics || []) {
@@ -107,14 +135,12 @@ const CourseDetails = () => {
     return false;
   };
 
-  // FIXED: Free course detection - पेड कंटेंट नहीं है और price 0 है
   const isCompletelyFree = () => {
-    // अगर course price 0 है या undefined है और कोई paid content नहीं है
     const isPriceZero = !course?.price || course?.price === 0;
     const hasNoPaidContent = !hasPaidContent();
-    
+
     const result = isPriceZero && hasNoPaidContent;
-    
+
     console.log("🔍 isCompletelyFree check:", {
       courseTitle: course?.title,
       price: course?.price,
@@ -123,7 +149,7 @@ const CourseDetails = () => {
       hasNoPaidContent,
       result
     });
-    
+
     return result;
   };
 
@@ -177,13 +203,13 @@ const CourseDetails = () => {
         razorpay_signature: paymentData.razorpay_signature,
         enrollmentId: enrollmentId
       };
-      
+
       const response = await axios.post(api.payment.verifyPayment, verificationData);
-      
+
       if (response.data.success) {
         console.log("Payment verified, enrollment status:", response.data.data?.status);
       }
-      
+
       return response.data;
     } catch (error) {
       console.error("Error verifying payment:", error);
@@ -193,7 +219,7 @@ const CourseDetails = () => {
 
   const refreshStudentData = async () => {
     if (!studentId) return null;
-    
+
     try {
       const res = await axios.get(`${api.student.getStudentProfile}/${studentId}`);
       if (res.data?.success && res.data?.data) {
@@ -225,7 +251,7 @@ const CourseDetails = () => {
 
     try {
       const { order, enrollmentId } = await createRazorpayPayment();
-      
+
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         amount: order.amount,
@@ -244,13 +270,13 @@ const CourseDetails = () => {
             if (paymentVerification.success) {
               await refreshStudentData();
               setIsEnrolled(true);
-              
+
               setShowEnrollmentMessage({
                 show: true,
                 message: "Payment successful! You are now enrolled in the course! 🎉",
                 type: 'success'
               });
-              
+
               setTimeout(() => {
                 setShowEnrollmentMessage({ show: false, message: '', type: '' });
               }, 3000);
@@ -343,7 +369,7 @@ const CourseDetails = () => {
       setShowPaymentModal(true);
       return;
     }
-    
+
     handleViewCourse();
   };
 
@@ -353,21 +379,21 @@ const CourseDetails = () => {
     }
   };
 
-  // FIXED: Video play handler - फ्री कोर्स के लिए सही access check
-  const handlePlayVideo = (videoUrl, topicTitle, isPreviewFree) => {
-    console.log("🎬 handlePlayVideo called:", { videoUrl, topicTitle, isPreviewFree });
-    
+  // FIXED: Video play handler - now supports YouTube and uploaded videos
+  const handlePlayVideo = (videoUrl, topicTitle, isPreviewFree, videoType) => {
+    console.log("🎬 handlePlayVideo called:", { videoUrl, topicTitle, isPreviewFree, videoType });
+
     // CRITICAL FIX: फ्री कोर्स के लिए हमेशा access दो
     const isFreeCourse = isCompletelyFree();
     const hasAccess = isEnrolled || isPreviewFree || isFreeCourse;
-    
+
     console.log("🔐 Access check:", {
       isEnrolled,
       isPreviewFree,
       isFreeCourse,
       hasAccess
     });
-    
+
     if (!videoUrl) {
       console.error("❌ No video URL!");
       setShowEnrollmentMessage({
@@ -378,7 +404,7 @@ const CourseDetails = () => {
       setTimeout(() => setShowEnrollmentMessage({ show: false, message: '', type: '' }), 3000);
       return;
     }
-    
+
     if (!hasAccess) {
       setShowEnrollmentMessage({
         show: true,
@@ -388,16 +414,26 @@ const CourseDetails = () => {
       setTimeout(() => setShowEnrollmentMessage({ show: false, message: '', type: '' }), 3000);
       return;
     }
-    
-    console.log("✅ Playing video:", videoUrl);
-    setCurrentVideo({ url: videoUrl, title: topicTitle });
+
+    // Check if it's a YouTube video
+    let finalUrl = videoUrl;
+    let finalType = videoType || 'upload';
+
+    if (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')) {
+      finalType = 'youtube';
+      finalUrl = getYouTubeEmbedUrl(videoUrl);
+      console.log("🎥 YouTube video converted to embed URL:", finalUrl);
+    }
+
+    console.log("✅ Playing video:", finalUrl, "Type:", finalType);
+    setCurrentVideo({ url: finalUrl, title: topicTitle, type: finalType });
     setShowVideoPlayer(true);
   };
 
   const handleViewNotes = (notesUrl, topicTitle, isPreviewFree) => {
     const isFreeCourse = isCompletelyFree();
     const hasAccess = isEnrolled || isPreviewFree || isFreeCourse;
-    
+
     if (!hasAccess) {
       setShowEnrollmentMessage({
         show: true,
@@ -407,7 +443,7 @@ const CourseDetails = () => {
       setTimeout(() => setShowEnrollmentMessage({ show: false, message: '', type: '' }), 3000);
       return;
     }
-    
+
     window.open(notesUrl, '_blank');
   };
 
@@ -498,7 +534,7 @@ const CourseDetails = () => {
           <div className="text-6xl mb-4">📚</div>
           <h2 className="text-2xl font-bold text-gray-800 mb-2">Course not found</h2>
           <p className="text-gray-600 mb-6">{error || "The course you're looking for doesn't exist."}</p>
-          <button 
+          <button
             onClick={() => navigate('/course')}
             className="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-md"
           >
@@ -521,10 +557,9 @@ const CourseDetails = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* Toast Message */}
       {showEnrollmentMessage.show && (
-        <div className={`fixed top-20 right-4 z-50 animate-slide-in ${
-          showEnrollmentMessage.type === 'success' ? 'bg-green-500' : 
+        <div className={`fixed top-20 right-4 z-50 animate-slide-in ${showEnrollmentMessage.type === 'success' ? 'bg-green-500' :
           showEnrollmentMessage.type === 'error' ? 'bg-red-500' : 'bg-blue-500'
-        } text-white px-6 py-3 rounded-lg shadow-lg backdrop-blur-sm`}>
+          } text-white px-6 py-3 rounded-lg shadow-lg backdrop-blur-sm`}>
           <div className="flex items-center gap-2">
             {showEnrollmentMessage.type === 'success' && <span>✅</span>}
             {showEnrollmentMessage.type === 'error' && <span>❌</span>}
@@ -577,9 +612,9 @@ const CourseDetails = () => {
                   />
                   <div className="flex items-center justify-between flex-1">
                     <span className="font-medium">Razorpay</span>
-                    <img 
-                      src="https://razorpay.com/assets/razorpay-glyph.svg" 
-                      alt="Razorpay" 
+                    <img
+                      src="https://razorpay.com/assets/razorpay-glyph.svg"
+                      alt="Razorpay"
                       className="h-6"
                       onError={(e) => e.target.style.display = 'none'}
                     />
@@ -625,11 +660,11 @@ const CourseDetails = () => {
       {/* Main Content Wrapper - Two Column Layout */}
       <div className="max-w-7xl mx-auto px-4 py-6">
         <div className="flex flex-col lg:flex-row gap-8">
-          
+
           {/* LEFT COLUMN - Scrollable Content */}
           <div className="flex-1 min-w-0 overflow-y-auto">
             {/* Back Button */}
-            <button 
+            <button
               onClick={() => navigate('/course')}
               className="flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-6 transition-colors group"
             >
@@ -673,8 +708,17 @@ const CourseDetails = () => {
                 )}
               </div>
               <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">{course.title}</h1>
-              <p className="text-gray-600 text-lg mb-4">{course.description || 'No description available'}</p>
-              
+              {course.description ? (
+                <div
+                  className="text-gray-600 text-lg mb-4"
+                  dangerouslySetInnerHTML={{ __html: course.description }}
+                />
+              ) : (
+                <p className="text-gray-600 text-lg mb-4">
+                  No description available
+                </p>
+              )}
+
               <div className="flex flex-wrap gap-3">
                 <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 shadow-sm">
                   <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -702,21 +746,19 @@ const CourseDetails = () => {
               <div className="flex gap-8">
                 <button
                   onClick={() => setActiveTab('overview')}
-                  className={`py-4 px-1 font-medium transition-all duration-200 border-b-2 ${
-                    activeTab === 'overview'
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-600 hover:text-gray-800'
-                  }`}
+                  className={`py-4 px-1 font-medium transition-all duration-200 border-b-2 ${activeTab === 'overview'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-600 hover:text-gray-800'
+                    }`}
                 >
                   Overview
                 </button>
                 <button
                   onClick={() => setActiveTab('curriculum')}
-                  className={`py-4 px-1 font-medium transition-all duration-200 border-b-2 ${
-                    activeTab === 'curriculum'
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-600 hover:text-gray-800'
-                  }`}
+                  className={`py-4 px-1 font-medium transition-all duration-200 border-b-2 ${activeTab === 'curriculum'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-600 hover:text-gray-800'
+                    }`}
                 >
                   Curriculum
                 </button>
@@ -878,7 +920,7 @@ const CourseDetails = () => {
                                         // FIXED: फ्री कोर्स के लिए हमेशा true
                                         const isFreeCourse = isCompletelyFree();
                                         const hasAccess = isEnrolled || isPreviewFree || isFreeCourse;
-                                        
+
                                         return (
                                           <div key={topic._id || topicIndex} className="ml-6 border border-gray-200 rounded-xl bg-white overflow-hidden hover:shadow-md transition-shadow">
                                             <div className="p-4 flex items-center justify-between flex-wrap gap-3">
@@ -923,16 +965,15 @@ const CourseDetails = () => {
                                                   </div>
                                                 </div>
                                               </div>
-                                              
+
                                               <div className="flex gap-2">
                                                 {topic.videoUrl && (
                                                   <button
-                                                    onClick={() => handlePlayVideo(topic.videoUrl, topic.title, isPreviewFree)}
-                                                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-1 ${
-                                                      hasAccess
-                                                        ? 'bg-red-500 hover:bg-red-600 text-white shadow-sm'
-                                                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                                    }`}
+                                                    onClick={() => handlePlayVideo(topic.videoUrl, topic.title, isPreviewFree, topic.videoType)}
+                                                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-1 ${hasAccess
+                                                      ? 'bg-red-500 hover:bg-red-600 text-white shadow-sm'
+                                                      : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                      }`}
                                                     disabled={!hasAccess}
                                                   >
                                                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -944,11 +985,10 @@ const CourseDetails = () => {
                                                 {topic.notesUrl && (
                                                   <button
                                                     onClick={() => handleViewNotes(topic.notesUrl, topic.title, isPreviewFree)}
-                                                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-1 ${
-                                                      hasAccess
-                                                        ? 'bg-blue-500 hover:bg-blue-600 text-white shadow-sm'
-                                                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                                    }`}
+                                                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-1 ${hasAccess
+                                                      ? 'bg-blue-500 hover:bg-blue-600 text-white shadow-sm'
+                                                      : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                      }`}
                                                     disabled={!hasAccess}
                                                   >
                                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -975,7 +1015,15 @@ const CourseDetails = () => {
                                                   {topic.description && (
                                                     <div>
                                                       <span className="font-semibold text-gray-700">Description:</span>
-                                                      <p className="text-gray-600 mt-1">{topic.description}</p>
+
+                                                      {topic.description ? (
+                                                        <div
+                                                          className="text-gray-600 mt-1"
+                                                          dangerouslySetInnerHTML={{ __html: topic.description }}
+                                                        />
+                                                      ) : (
+                                                        <p className="text-gray-600 mt-1">No description</p>
+                                                      )}
                                                     </div>
                                                   )}
                                                   {topic.resources && topic.resources.length > 0 && (
@@ -1051,7 +1099,7 @@ const CourseDetails = () => {
                       </div>
                       <p className="text-gray-500 text-sm mt-1">{enrollmentInfo.message}</p>
                     </div>
-                    
+
                     <button
                       onClick={handleEnrollClick}
                       disabled={enrollmentLoading || paymentProcessing}
@@ -1069,7 +1117,7 @@ const CourseDetails = () => {
                         enrollmentInfo.action
                       )}
                     </button>
-                    
+
                     {!isFree && (
                       <div className="mt-4 space-y-2 text-xs text-gray-500">
                         <div className="flex justify-between">
@@ -1111,7 +1159,7 @@ const CourseDetails = () => {
         </div>
       </div>
 
-      {/* Video Player Modal */}
+      {/* Video Player Modal - Updated to support both YouTube and uploaded videos */}
       {showVideoPlayer && currentVideo && (
         <div className="fixed inset-0 bg-black bg-opacity-95 flex items-center justify-center z-50 p-4" onClick={() => {
           setShowVideoPlayer(false);
@@ -1119,7 +1167,7 @@ const CourseDetails = () => {
         }}>
           <div className="bg-white rounded-2xl w-full max-w-5xl overflow-hidden shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center p-4 bg-gradient-to-r from-gray-800 to-gray-900">
-              <h3 className="font-semibold text-white">{currentVideo.title}</h3>
+              <h3 className="font-semibold text-white truncate">{currentVideo.title}</h3>
               <button
                 onClick={() => {
                   setShowVideoPlayer(false);
@@ -1130,26 +1178,38 @@ const CourseDetails = () => {
                 ×
               </button>
             </div>
-            <div className="p-4 bg-black">
+            <div className="bg-black">
               {currentVideo.url ? (
-                <video
-                  key={currentVideo.url}
-                  controls
-                  autoPlay
-                  className="w-full rounded-lg"
-                  style={{ maxHeight: '75vh' }}
-                  onError={(e) => {
-                    console.error("Video playback error:", e);
-                    setShowEnrollmentMessage({
-                      show: true,
-                      message: "Failed to load video. Please check the video URL or try again later.",
-                      type: 'error'
-                    });
-                  }}
-                >
-                  <source src={currentVideo.url} type="video/mp4" />
-                  Your browser does not support the video tag.
-                </video>
+                currentVideo.type === 'youtube' ? (
+                  <iframe
+                    className="w-full"
+                    style={{ aspectRatio: '16/9', maxHeight: '75vh' }}
+                    src={currentVideo.url}
+                    title={currentVideo.title}
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                  ></iframe>
+                ) : (
+                  <video
+                    key={currentVideo.url}
+                    controls
+                    autoPlay
+                    className="w-full"
+                    style={{ maxHeight: '75vh' }}
+                    onError={(e) => {
+                      console.error("Video playback error:", e);
+                      setShowEnrollmentMessage({
+                        show: true,
+                        message: "Failed to load video. Please check the video URL or try again later.",
+                        type: 'error'
+                      });
+                    }}
+                  >
+                    <source src={currentVideo.url} type="video/mp4" />
+                    Your browser does not support the video tag.
+                  </video>
+                )
               ) : (
                 <div className="text-white text-center p-8">
                   <p>No video URL available</p>

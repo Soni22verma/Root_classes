@@ -175,28 +175,35 @@ const ScholarshipForm = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    try {
+  try {
+    const payload = {
+      ...formData,
+      studentId: student?._id
+    };
 
-      const payload = {
-        ...formData,
-        studentId: student?._id  
-      };
+    const res = await axios.post(api.scholarship.apply, payload);
 
-      console.log("Form submitted:", payload);
+    toast.success(res?.data?.message || "Applied Successfully");
 
-      const res = await axios.post(api.scholarship.apply, payload);
+  } catch (error) {
+    const message = error?.response?.data?.message;
 
-      console.log(res, "this is response from scholarship apply");
+    console.log(message, "backend message");
 
-    } catch (error) {
-      console.log(error?.response, "error from scholarship apply");
-      toast.error("You are not eligible for scholarship. You need 70% or more marks. Your highest score is 5%.")
+    if (message?.toLowerCase().includes("already applied")) {
+      toast.error("⚠️ You have already applied for scholarship");
+    } 
+    else if (message?.toLowerCase().includes("not eligible")) {
+      toast.error("❌ You are not eligible for scholarship");
+    } 
+    else {
+      toast.error(message || "Something went wrong");
     }
-  };
+  }
+};
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
