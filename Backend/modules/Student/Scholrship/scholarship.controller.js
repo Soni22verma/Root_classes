@@ -8,7 +8,6 @@ export const handleApplyScholarship = async (req, res) => {
 
         console.log(req.body, " this is request body");
 
-        // Check if student exists
         const student = await User.findById(studentId);
         console.log(student, " this is is my student");
 
@@ -29,11 +28,9 @@ export const handleApplyScholarship = async (req, res) => {
             });
         }
 
-        // Check if student has scored 70% or more in any test
         const isEligible = studentResults.some(result => result.percentage >= 70);
         
         if (!isEligible) {
-            // Find highest percentage for better message
             const highestPercentage = Math.max(...studentResults.map(r => r.percentage));
             return res.status(403).json({
                 success: false,
@@ -51,7 +48,6 @@ export const handleApplyScholarship = async (req, res) => {
             });
         }
 
-        // Check if student has already applied
         const existingApplication = await Scholarship.findOne({ studentId });
         console.log(existingApplication, "existing application");
 
@@ -62,7 +58,6 @@ export const handleApplyScholarship = async (req, res) => {
             });
         }
 
-        // Validate required fields
         if (!program || !studentClass || !lookingForCategory || !email || !phone) {
             return res.status(400).json({
                 success: false,
@@ -70,7 +65,6 @@ export const handleApplyScholarship = async (req, res) => {
             });
         }
 
-        // Create new scholarship application
         const newApplication = await Scholarship.create({
             studentId,
             program,
@@ -80,14 +74,12 @@ export const handleApplyScholarship = async (req, res) => {
             phone
         });
 
-        // Update user schema with scholarship ID and get updated student
         const updatedStudent = await User.findByIdAndUpdate(
             studentId,
             { scholarshipApplied: newApplication._id },
             { new: true }
         );
 
-        // Get the test where student scored 70%+ for reference
         const qualifyingTest = studentResults.find(result => result.percentage >= 70);
 
         return res.status(201).json({

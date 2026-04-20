@@ -111,7 +111,6 @@ const AdminTestCreator = () => {
     setIsEditTestModalOpen(true);
   };
 
-  // Update Test Function
   const updateTest = async () => {
     if (!editTestForm.title.trim()) {
       alert('Please enter test title');

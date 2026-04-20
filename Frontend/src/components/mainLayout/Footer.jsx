@@ -21,19 +21,10 @@ const Footer = () => {
           <path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z" />
         </svg>
       ),
-      href: "#",
+      href: "https://www.facebook.com/rootsclasses1313/",
       color: "hover:bg-blue-600"
     },
-    {
-      name: "Twitter",
-      icon: (
-        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z" />
-        </svg>
-      ),
-      href: "#",
-      color: "hover:bg-blue-400"
-    },
+   
     {
       name: "Instagram",
       icon: (
@@ -43,7 +34,7 @@ const Footer = () => {
           <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
         </svg>
       ),
-      href: "#",
+      href: "https://www.instagram.com/roots_classes?igsh=cndtdml4MW0wNmFz",
       color: "hover:bg-pink-600"
     },
     {
@@ -55,7 +46,7 @@ const Footer = () => {
           <circle cx="4" cy="4" r="2" />
         </svg>
       ),
-      href: "#",
+      href: "https://www.linkedin.com/company/roots-classes/",
       color: "hover:bg-blue-700"
     },
     {
@@ -66,17 +57,15 @@ const Footer = () => {
           <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02" />
         </svg>
       ),
-      href: "#",
+      href: "https://www.youtube.com/@nikolaphysics",
       color: "hover:bg-red-600"
     }
   ];
 
   return (
     <footer className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-gray-500">
-      {/* Main Footer Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
-        {/* Top Section with Logo and Tagline */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
           {/* Brand Section */}
           <div className="lg:col-span-1">

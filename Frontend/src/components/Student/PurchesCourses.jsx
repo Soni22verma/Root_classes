@@ -5,68 +5,35 @@ import useStudentStore from '../../Store/studentstore';
 
 // YouTube URL to Embed URL converter utility
 const getYouTubeEmbedUrl = (url) => {
-  if (!url) return null;
-  
-  const patterns = [
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/|youtube\.com\/shorts\/)([^&\n?#]+)/,
-    /youtube\.com\/watch\?.*[?&]v=([^&]+)/
-  ];
-  
-  let videoId = null;
-  
-  for (const pattern of patterns) {
-    const match = url.match(pattern);
-    if (match && match[1]) {
-      videoId = match[1];
-      break;
+    if (!url) return null;
+
+    const patterns = [
+        /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/|youtube\.com\/shorts\/)([^&\n?#]+)/,
+        /youtube\.com\/watch\?.*[?&]v=([^&]+)/
+    ];
+
+    let videoId = null;
+
+    for (const pattern of patterns) {
+        const match = url.match(pattern);
+        if (match && match[1]) {
+            videoId = match[1];
+            break;
+        }
     }
-  }
-  
-  if (videoId) {
-    videoId = videoId.split('?')[0].split('&')[0];
-    return `https://www.youtube.com/embed/${videoId}?autoplay=0&rel=0&modestbranding=1&showinfo=0`;
-  }
-  
-  return url;
-};
 
-// Dummy image generator using Unsplash random images
-const getDummyImage = (title, index) => {
-  const categories = [
-    'technology',
-    'programming', 
-    'computer',
-    'coding',
-    'development',
-    'software',
-    'web-design',
-    'data-science',
-    'artificial-intelligence',
-    'machine-learning'
-  ];
-  
-  const category = categories[index % categories.length];
-  return `https://source.unsplash.com/featured/400x240?${category}&sig=${index}`;
-};
+    if (videoId) {
+        videoId = videoId.split('?')[0].split('&')[0];
+        return `https://www.youtube.com/embed/${videoId}?autoplay=0&rel=0&modestbranding=1&showinfo=0`;
+    }
 
-// Dummy image for sidebar course header
-const getSidebarDummyImage = (title, index) => {
-  const categories = [
-    'education',
-    'learning',
-    'study',
-    'knowledge',
-    'academy'
-  ];
-  
-  const category = categories[index % categories.length];
-  return `https://source.unsplash.com/featured/800x400?${category}&sig=${index}`;
+    return url;
 };
 
 const PurchasedCourse = () => {
     const { student } = useStudentStore();
     const studentId = student?.id || student?._id;
-    
+
     const [courses, setCourses] = useState([]);
     const [selectedCourse, setSelectedCourse] = useState(null);
     const [expandedModuleId, setExpandedModuleId] = useState(null);
@@ -86,7 +53,6 @@ const PurchasedCourse = () => {
     }, [selectedTopic]);
 
     const handlePurchasedCourses = async () => {
-        
         if (!studentId) {
             console.log("Student ID not available yet");
             setError("Student information not loaded");
@@ -96,17 +62,25 @@ const PurchasedCourse = () => {
         try {
             setLoading(true);
             console.log("Fetching purchased courses for studentId:", studentId);
-            
+
             const res = await axios.post(api.payment.getPurchesCourse, {
                 studentId: studentId
             });
-            
+
             console.log("API Response:", res);
-            
+
             if (res.data && res.data.success && res.data.data) {
-                setCourses(res.data.data);
+                // Ensure each course has modules array (even if empty)
+                const coursesWithModules = res.data.data.map(courseItem => ({
+                    ...courseItem,
+                    course: {
+                        ...courseItem.course,
+                        modules: courseItem.course?.modules || []
+                    }
+                }));
+                setCourses(coursesWithModules);
             }
-            
+
         } catch (error) {
             console.error("Error fetching purchased courses:", error);
             setError(error.response?.data?.message || error.message || "Failed to fetch courses");
@@ -127,9 +101,13 @@ const PurchasedCourse = () => {
         if (!selectedCourse?.course?.modules) return 0;
         let count = 0;
         selectedCourse.course.modules.forEach(module => {
-            module.chapters?.forEach(chapter => {
-                count += chapter.topics?.length || 0;
-            });
+            if (module?.chapters) {
+                module.chapters.forEach(chapter => {
+                    if (chapter?.topics) {
+                        count += chapter.topics.length;
+                    }
+                });
+            }
         });
         return count;
     }, [selectedCourse]);
@@ -159,16 +137,20 @@ const PurchasedCourse = () => {
         if (!selectedCourse?.course?.modules) return [];
         const topics = [];
         selectedCourse.course.modules.forEach(module => {
-            module.chapters?.forEach(chapter => {
-                chapter.topics?.forEach(topic => {
-                    topics.push({
-                        ...topic,
-                        moduleId: module.id,
-                        moduleTitle: module.title,
-                        chapterTitle: chapter.title
-                    });
+            if (module?.chapters) {
+                module.chapters.forEach(chapter => {
+                    if (chapter?.topics) {
+                        chapter.topics.forEach(topic => {
+                            topics.push({
+                                ...topic,
+                                moduleId: module._id || module.id,
+                                moduleTitle: module.title,
+                                chapterTitle: chapter.title
+                            });
+                        });
+                    }
                 });
-            });
+            }
         });
         return topics;
     };
@@ -193,9 +175,20 @@ const PurchasedCourse = () => {
     };
 
     const handleCourseSelect = (courseItem) => {
-        setSelectedCourse(courseItem);
+        // Ensure the course has modules array
+        const courseWithModules = {
+            ...courseItem,
+            course: {
+                ...courseItem.course,
+                modules: courseItem.course?.modules || []
+            }
+        };
+        setSelectedCourse(courseWithModules);
         setSelectedTopic(null);
-        setExpandedModuleId(courseItem.course.modules[0]?.id || null);
+        // Only set expanded module if there are modules
+        if (courseWithModules.course.modules && courseWithModules.course.modules.length > 0) {
+            setExpandedModuleId(courseWithModules.course.modules[0]._id || courseWithModules.course.modules[0].id || null);
+        }
         setVideoCompleted({});
     };
 
@@ -216,7 +209,7 @@ const PurchasedCourse = () => {
                 <div className="text-center">
                     <div className="bg-red-100 text-red-700 p-4 rounded-lg">
                         <p>Error: {error}</p>
-                        <button 
+                        <button
                             onClick={handlePurchasedCourses}
                             className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
                         >
@@ -261,14 +254,14 @@ const PurchasedCourse = () => {
                         </p>
                         <div className="w-20 h-1 bg-blue-600 mx-auto mt-4 rounded-full"></div>
                     </div>
-                    
+
                     {/* Course Cards Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {courses.map((courseItem, index) => {
-                            const totalCourseTopics = courseItem.course.modules?.reduce((acc, module) => 
-                                acc + (module.chapters?.reduce((acc2, chapter) => 
+                            const totalCourseTopics = (courseItem.course.modules || []).reduce((acc, module) =>
+                                acc + ((module.chapters || []).reduce((acc2, chapter) =>
                                     acc2 + (chapter.topics?.length || 0), 0) || 0), 0);
-                            
+
                             return (
                                 <div
                                     key={courseItem.course._id}
@@ -299,14 +292,14 @@ const PurchasedCourse = () => {
                                                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
                                             </>
                                         )}
-                                        
+
                                         {/* Level Badge */}
                                         <div className="absolute top-4 left-4">
                                             <span className="bg-black/70 backdrop-blur-md text-white text-xs px-3 py-1.5 rounded-full font-medium">
                                                 {courseItem.course.level || "Beginner"}
                                             </span>
                                         </div>
-                                        
+
                                         {/* Price Badge (if any) */}
                                         {courseItem.price && (
                                             <div className="absolute top-4 right-4">
@@ -316,7 +309,7 @@ const PurchasedCourse = () => {
                                             </div>
                                         )}
                                     </div>
-                                    
+
                                     {/* Course Content */}
                                     <div className="p-6">
                                         {/* Category */}
@@ -327,24 +320,24 @@ const PurchasedCourse = () => {
                                                 </span>
                                             </div>
                                         )}
-                                        
+
                                         {/* Title */}
                                         <h3 className="text-xl font-bold text-gray-800 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
                                             {courseItem.course.title}
                                         </h3>
-                                        
+
                                         {/* Description */}
                                         <p className="text-gray-600 text-sm mb-4 line-clamp-2">
                                             {courseItem.course.description || "No description available"}
                                         </p>
-                                        
+
                                         {/* Course Stats */}
                                         <div className="flex items-center justify-between text-sm text-gray-500 mb-4 pb-4 border-b border-gray-100">
                                             <div className="flex items-center gap-1.5">
                                                 <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                                                 </svg>
-                                                <span className="font-medium">{courseItem.course.modules?.length || 0} Modules</span>
+                                                <span className="font-medium">{courseItem.course?.modules?.length || 0} Modules</span>
                                             </div>
                                             <div className="flex items-center gap-1.5">
                                                 <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -353,7 +346,7 @@ const PurchasedCourse = () => {
                                                 <span className="font-medium">{totalCourseTopics} Topics</span>
                                             </div>
                                         </div>
-                                        
+
                                         {/* Instructor Info */}
                                         {courseItem.course.instructor && (
                                             <div className="flex items-center gap-2 mb-4">
@@ -365,7 +358,7 @@ const PurchasedCourse = () => {
                                                 <span className="text-xs text-gray-500">By {courseItem.course.instructor}</span>
                                             </div>
                                         )}
-                                        
+
                                         {/* View Course Button */}
                                         <button className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-300 transform group-hover:shadow-lg">
                                             <span className="flex items-center justify-center gap-2">
@@ -384,6 +377,9 @@ const PurchasedCourse = () => {
             </div>
         );
     }
+
+    // Safely check if modules exist before rendering sidebar
+    const hasModules = selectedCourse?.course?.modules && selectedCourse.course.modules.length > 0;
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -404,7 +400,7 @@ const PurchasedCourse = () => {
                     </button>
                 </div>
             </div>
-            
+
             <div className="flex flex-col lg:flex-row">
                 {/* Sidebar - Left with reduced width */}
                 <aside className="w-full lg:w-72 bg-white border-r border-gray-200 shadow-sm overflow-y-auto h-screen sticky top-0">
@@ -432,7 +428,7 @@ const PurchasedCourse = () => {
                                     )}
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
                                 </div>
-                                
+
                                 <div className="p-3 text-white">
                                     <h2 className="text-sm font-bold leading-tight">{selectedCourse.course.title}</h2>
                                     <div className="flex items-center gap-2 mt-1 text-xs text-blue-100">
@@ -442,7 +438,7 @@ const PurchasedCourse = () => {
                                     <p className="text-xs text-blue-100 mt-1 opacity-90">
                                         {selectedCourse.course.modules?.length || 0} modules • {totalTopics} topics
                                     </p>
-                                    
+
                                     {/* Progress Bar */}
                                     <div className="mt-2">
                                         <div className="flex justify-between text-xs text-blue-100 mb-1">
@@ -450,7 +446,7 @@ const PurchasedCourse = () => {
                                             <span>{Math.round(progressPercentage)}%</span>
                                         </div>
                                         <div className="h-1.5 bg-white/30 rounded-full overflow-hidden">
-                                            <div 
+                                            <div
                                                 className="h-full bg-green-400 rounded-full transition-all duration-300"
                                                 style={{ width: `${progressPercentage}%` }}
                                             />
@@ -464,97 +460,106 @@ const PurchasedCourse = () => {
                             <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Course Content</h3>
                         </div>
 
-                        <div className="space-y-2">
-                            {selectedCourse.course.modules?.map((module, moduleIdx) => {
-                                const moduleTopicsCount = module.chapters?.reduce((acc, chapter) => acc + (chapter.topics?.length || 0), 0) || 0;
-                                const moduleCompletedCount = module.chapters?.reduce((acc, chapter) => 
-                                    acc + (chapter.topics?.filter(topic => videoCompleted[topic._id]).length || 0), 0) || 0;
-                                const moduleProgress = moduleTopicsCount > 0 ? (moduleCompletedCount / moduleTopicsCount) * 100 : 0;
-                                
-                                return (
-                                    <div key={module._id || module.id} className="border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                                        <button
-                                            onClick={() => handleModuleClick(module._id || module.id)}
-                                            className="w-full text-left px-3 py-2 bg-gray-50 hover:bg-gray-100 transition-colors"
-                                        >
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex-1">
-                                                    <div className="flex items-center gap-1">
-                                                        <span className="text-xs font-semibold text-gray-700">
-                                                            M{moduleIdx + 1}:
-                                                        </span>
-                                                        <span className="text-xs font-medium text-gray-800 truncate">{module.title}</span>
+                        {!hasModules ? (
+                            <div className="text-center py-8 text-gray-500">
+                                <p className="text-sm">No modules available for this course yet.</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-2">
+                                {selectedCourse.course.modules.map((module, moduleIdx) => {
+                                    const moduleTopicsCount = (module?.chapters || []).reduce((acc, chapter) => acc + (chapter?.topics?.length || 0), 0);
+                                    const moduleCompletedCount = (module?.chapters || []).reduce((acc, chapter) =>
+                                        acc + (chapter?.topics?.filter(topic => videoCompleted[topic._id]).length || 0), 0);
+                                    const moduleProgress = moduleTopicsCount > 0 ? (moduleCompletedCount / moduleTopicsCount) * 100 : 0;
+
+                                    return (
+                                        <div key={module._id || module.id} className="border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                                            <button
+                                                onClick={() => handleModuleClick(module._id || module.id)}
+                                                className="w-full text-left px-3 py-2 bg-gray-50 hover:bg-gray-100 transition-colors"
+                                            >
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center gap-1">
+                                                            <span className="text-xs font-semibold text-gray-700">
+                                                                M{moduleIdx + 1}:
+                                                            </span>
+                                                            <span className="text-xs font-medium text-gray-800 truncate">{module.title}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2 mt-1">
+                                                            <span className="text-xs text-gray-500">{moduleTopicsCount} topics</span>
+                                                            <div className="flex-1 max-w-20">
+                                                                <div className="h-1 bg-gray-200 rounded-full overflow-hidden">
+                                                                    <div
+                                                                        className="h-full bg-blue-500 rounded-full transition-all"
+                                                                        style={{ width: `${moduleProgress}%` }}
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                            <span className="text-xs text-gray-500">{Math.round(moduleProgress)}%</span>
+                                                        </div>
                                                     </div>
-                                                    <div className="flex items-center gap-2 mt-1">
-                                                        <span className="text-xs text-gray-500">{moduleTopicsCount} topics</span>
-                                                        <div className="flex-1 max-w-20">
-                                                            <div className="h-1 bg-gray-200 rounded-full overflow-hidden">
-                                                                <div 
-                                                                    className="h-full bg-blue-500 rounded-full transition-all"
-                                                                    style={{ width: `${moduleProgress}%` }}
-                                                                />
+                                                    <svg
+                                                        className={`w-4 h-4 text-gray-400 transition-transform duration-200 flex-shrink-0 ${expandedModuleId === (module._id || module.id) ? 'rotate-180' : ''
+                                                            }`}
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        viewBox="0 0 24 24"
+                                                    >
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                    </svg>
+                                                </div>
+                                            </button>
+
+                                            {expandedModuleId === (module._id || module.id) && (
+                                                <div className="bg-white border-t border-gray-100">
+                                                    {(module.chapters || []).map((chapter, chapterIdx) => (
+                                                        <div key={chapter._id || chapter.id} className="border-b border-gray-50 last:border-b-0">
+                                                            <div className="px-3 py-1.5 bg-gray-50/50">
+                                                                <h4 className="text-xs font-semibold text-gray-500">
+                                                                    Ch {chapterIdx + 1}: {chapter.title}
+                                                                </h4>
+                                                            </div>
+                                                            <div className="py-0.5">
+                                                                {(chapter.topics || []).map((topic, topicIdx) => (
+                                                                    <button
+                                                                        key={topic._id}
+                                                                        onClick={() => handleTopicClick(topic)}
+                                                                        className={`w-full text-left px-3 py-2 text-xs transition-all ${selectedTopic?._id === topic._id
+                                                                                ? 'bg-blue-50 text-blue-700 border-l-2 border-blue-600'
+                                                                                : 'hover:bg-gray-50 text-gray-700 hover:pl-4'
+                                                                            }`}
+                                                                    >
+                                                                        <div className="flex items-center justify-between gap-2">
+                                                                            <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                                                                <span className="text-xs text-gray-400 flex-shrink-0">
+                                                                                    {String(topicIdx + 1).padStart(2, '0')}
+                                                                                </span>
+                                                                                <span className="truncate text-xs">{topic.title}</span>
+                                                                            </div>
+                                                                            {videoCompleted[topic._id] && (
+                                                                                <svg className="w-3 h-3 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                                                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                                                </svg>
+                                                                            )}
+                                                                        </div>
+                                                                    </button>
+                                                                ))}
                                                             </div>
                                                         </div>
-                                                        <span className="text-xs text-gray-500">{Math.round(moduleProgress)}%</span>
-                                                    </div>
+                                                    ))}
+                                                    {(!module.chapters || module.chapters.length === 0) && (
+                                                        <div className="p-3 text-center text-gray-500 text-xs">
+                                                            No chapters available
+                                                        </div>
+                                                    )}
                                                 </div>
-                                                <svg
-                                                    className={`w-4 h-4 text-gray-400 transition-transform duration-200 flex-shrink-0 ${
-                                                        expandedModuleId === (module._id || module.id) ? 'rotate-180' : ''
-                                                    }`}
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    viewBox="0 0 24 24"
-                                                >
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                                </svg>
-                                            </div>
-                                        </button>
-                                        
-                                        {expandedModuleId === (module._id || module.id) && (
-                                            <div className="bg-white border-t border-gray-100">
-                                                {module.chapters?.map((chapter, chapterIdx) => (
-                                                    <div key={chapter._id || chapter.id} className="border-b border-gray-50 last:border-b-0">
-                                                        <div className="px-3 py-1.5 bg-gray-50/50">
-                                                            <h4 className="text-xs font-semibold text-gray-500">
-                                                                Ch {chapterIdx + 1}: {chapter.title}
-                                                            </h4>
-                                                        </div>
-                                                        <div className="py-0.5">
-                                                            {chapter.topics?.map((topic, topicIdx) => (
-                                                                <button
-                                                                    key={topic._id}
-                                                                    onClick={() => handleTopicClick(topic)}
-                                                                    className={`w-full text-left px-3 py-2 text-xs transition-all ${
-                                                                        selectedTopic?._id === topic._id
-                                                                            ? 'bg-blue-50 text-blue-700 border-l-2 border-blue-600'
-                                                                            : 'hover:bg-gray-50 text-gray-700 hover:pl-4'
-                                                                    }`}
-                                                                >
-                                                                    <div className="flex items-center justify-between gap-2">
-                                                                        <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                                                                            <span className="text-xs text-gray-400 flex-shrink-0">
-                                                                                {String(topicIdx + 1).padStart(2, '0')}
-                                                                            </span>
-                                                                            <span className="truncate text-xs">{topic.title}</span>
-                                                                        </div>
-                                                                        {videoCompleted[topic._id] && (
-                                                                            <svg className="w-3 h-3 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                                                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                                                            </svg>
-                                                                        )}
-                                                                    </div>
-                                                                </button>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                        </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </div>
                 </aside>
 
@@ -594,7 +599,7 @@ const PurchasedCourse = () => {
                                         </div>
                                     )}
                                 </div>
-                                
+
                                 {/* Video Completion Button - Compact */}
                                 <div className="p-3 bg-gray-50 border-t border-gray-100">
                                     {!videoCompleted[selectedTopic._id] ? (
@@ -628,7 +633,16 @@ const PurchasedCourse = () => {
                                         <span className="truncate text-xs">{selectedTopic.title}</span>
                                     </div>
                                     <h1 className="text-lg md:text-xl font-bold text-gray-800">{selectedTopic.title}</h1>
-                                    <p className="text-sm text-gray-600 mt-1 leading-relaxed">{selectedTopic.description || "No description available."}</p>
+                                    {selectedTopic.description ? (
+                                        <div
+                                            className="text-sm text-gray-600 mt-1 leading-relaxed"
+                                            dangerouslySetInnerHTML={{ __html: selectedTopic.description }}
+                                        />
+                                    ) : (
+                                        <p className="text-sm text-gray-600 mt-1 leading-relaxed">
+                                            No description available.
+                                        </p>
+                                    )}
                                 </div>
 
                                 {/* Notes Section - Compact */}
@@ -666,11 +680,10 @@ const PurchasedCourse = () => {
                                         <button
                                             onClick={handlePrevTopic}
                                             disabled={!prevTopic}
-                                            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded transition ${
-                                                prevTopic 
-                                                    ? 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300 shadow-sm' 
+                                            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded transition ${prevTopic
+                                                    ? 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300 shadow-sm'
                                                     : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                            }`}
+                                                }`}
                                         >
                                             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -683,11 +696,10 @@ const PurchasedCourse = () => {
                                         <button
                                             onClick={handleNextTopic}
                                             disabled={!nextTopic}
-                                            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded transition ${
-                                                nextTopic 
-                                                    ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm' 
+                                            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded transition ${nextTopic
+                                                    ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm'
                                                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                            }`}
+                                                }`}
                                         >
                                             Next
                                             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -712,7 +724,7 @@ const PurchasedCourse = () => {
                                 </p>
                             </div>
                         </div>
-                    )}  
+                    )}
                 </main>
             </div>
         </div>

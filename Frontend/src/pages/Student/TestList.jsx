@@ -158,19 +158,30 @@ const StudentTestPanel = () => {
         const completed = await fetchCompletedTests();
         const completedTestIds = new Set(completed.map(t => t.testId));
         
+        // Create a map for quick lookup of completed results
+        const completedResultsMap = new Map();
+        completed.forEach(result => {
+          completedResultsMap.set(result.testId, result);
+        });
+        
         // Check attempt status for each test
         const testsWithAttemptStatus = await Promise.all(
           res.data.data.map(async (test) => {
             // Check if test is in completed tests list
             let isCompleted = completedTestIds.has(test._id);
-            let completedResult = completed.find(t => t.testId === test._id);
+            let completedResult = completedResultsMap.get(test._id);
             
             // If not in completed list, check attempt status via API
             if (!isCompleted) {
-              const attemptStatus = await checkAttemptTest(test._id);
-              isCompleted = attemptStatus.attempted;
-              completedResult = completedResult || attemptStatus.result;
-              console.log(`Test ${test.title} (${test._id}) - Attempted: ${attemptStatus.attempted}`);
+              try {
+                const attemptStatus = await checkAttemptTest(test._id);
+                isCompleted = attemptStatus.attempted;
+                completedResult = completedResult || attemptStatus.result;
+                console.log(`Test ${test.title} (${test._id}) - Attempted: ${attemptStatus.attempted}`);
+              } catch (error) {
+                console.error(`Error checking attempt for test ${test._id}:`, error);
+                // Continue with isCompleted = false if API fails
+              }
             }
             
             return {
@@ -182,7 +193,7 @@ const StudentTestPanel = () => {
               description: test.description || `Test your knowledge in ${test.title}`,
               difficulty: test.difficulty || "Medium",
               category: test.category || "General",
-              isCompleted: isCompleted, // This will disable the card/button
+              isCompleted: isCompleted, // This disables the test for completed ones
               completedResult: completedResult,
               originalData: test
             };
@@ -1013,7 +1024,6 @@ const StudentTestPanel = () => {
             >
               Take Another Test
             </button>
-            
           </div>
         </div>
       </div>
