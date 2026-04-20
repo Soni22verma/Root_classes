@@ -42,15 +42,12 @@ const CourseDetails = () => {
       setLoading(false);
       return;
     }
-    // If no course in state, fetch from API
     const fetchCourse = async () => {
-      // Implement course fetching logic here if needed
       setLoading(false);
     };
     fetchCourse();
   }, [location.state]);
 
-  // Check enrollment on component mount and when student/course changes
   useEffect(() => {
     if (studentId && course?._id) {
       checkEnrollmentStatus();
@@ -69,16 +66,11 @@ const CourseDetails = () => {
         const enrolled = studentData.enrolledCourses && studentData.enrolledCourses.includes(course._id);
         
         console.log("Enrollment status:", enrolled);
-        console.log("Student's enrolled courses:", studentData.enrolledCourses);
-        
         setIsEnrolled(enrolled);
         
-        // Update the store if needed
         if (setStudent && enrolled !== (student?.enrolledCourses?.includes(course._id) || false)) {
           setStudent(studentData);
         }
-      } else {
-        console.log("Failed to get student data:", res.data);
       }
     } catch (error) {
       console.error("Error checking enrollment status:", error);
@@ -115,8 +107,24 @@ const CourseDetails = () => {
     return false;
   };
 
+  // FIXED: Free course detection - पेड कंटेंट नहीं है और price 0 है
   const isCompletelyFree = () => {
-    return (!course?.price || course?.price === 0) && !hasPaidContent();
+    // अगर course price 0 है या undefined है और कोई paid content नहीं है
+    const isPriceZero = !course?.price || course?.price === 0;
+    const hasNoPaidContent = !hasPaidContent();
+    
+    const result = isPriceZero && hasNoPaidContent;
+    
+    console.log("🔍 isCompletelyFree check:", {
+      courseTitle: course?.title,
+      price: course?.price,
+      isPriceZero,
+      hasPaidContent: hasPaidContent(),
+      hasNoPaidContent,
+      result
+    });
+    
+    return result;
   };
 
   const isPaidCourse = () => {
@@ -170,11 +178,7 @@ const CourseDetails = () => {
         enrollmentId: enrollmentId
       };
       
-      console.log("Sending verification data:", verificationData);
-      
       const response = await axios.post(api.payment.verifyPayment, verificationData);
-      
-      console.log("Verification response:", response.data);
       
       if (response.data.success) {
         console.log("Payment verified, enrollment status:", response.data.data?.status);
@@ -183,7 +187,6 @@ const CourseDetails = () => {
       return response.data;
     } catch (error) {
       console.error("Error verifying payment:", error);
-      console.error("Error response:", error.response?.data);
       throw error;
     }
   };
@@ -195,12 +198,9 @@ const CourseDetails = () => {
       const res = await axios.get(`${api.student.getStudentProfile}/${studentId}`);
       if (res.data?.success && res.data?.data) {
         const updatedStudent = res.data.data;
-        
-        // Update the store
         if (setStudent) {
           setStudent(updatedStudent);
         }
-        
         return updatedStudent;
       }
     } catch (error) {
@@ -242,10 +242,7 @@ const CourseDetails = () => {
             }, enrollmentId);
 
             if (paymentVerification.success) {
-              // Refresh student data to get updated enrolled courses
               await refreshStudentData();
-              
-              // Update local enrollment state
               setIsEnrolled(true);
               
               setShowEnrollmentMessage({
@@ -356,9 +353,31 @@ const CourseDetails = () => {
     }
   };
 
+  // FIXED: Video play handler - फ्री कोर्स के लिए सही access check
   const handlePlayVideo = (videoUrl, topicTitle, isPreviewFree) => {
-    // Check if user has access
-    const hasAccess = isEnrolled || isPreviewFree || isCompletelyFree();
+    console.log("🎬 handlePlayVideo called:", { videoUrl, topicTitle, isPreviewFree });
+    
+    // CRITICAL FIX: फ्री कोर्स के लिए हमेशा access दो
+    const isFreeCourse = isCompletelyFree();
+    const hasAccess = isEnrolled || isPreviewFree || isFreeCourse;
+    
+    console.log("🔐 Access check:", {
+      isEnrolled,
+      isPreviewFree,
+      isFreeCourse,
+      hasAccess
+    });
+    
+    if (!videoUrl) {
+      console.error("❌ No video URL!");
+      setShowEnrollmentMessage({
+        show: true,
+        message: "Video URL is missing for this topic!",
+        type: 'error'
+      });
+      setTimeout(() => setShowEnrollmentMessage({ show: false, message: '', type: '' }), 3000);
+      return;
+    }
     
     if (!hasAccess) {
       setShowEnrollmentMessage({
@@ -370,13 +389,14 @@ const CourseDetails = () => {
       return;
     }
     
+    console.log("✅ Playing video:", videoUrl);
     setCurrentVideo({ url: videoUrl, title: topicTitle });
     setShowVideoPlayer(true);
   };
 
   const handleViewNotes = (notesUrl, topicTitle, isPreviewFree) => {
-    // Check if user has access
-    const hasAccess = isEnrolled || isPreviewFree || isCompletelyFree();
+    const isFreeCourse = isCompletelyFree();
+    const hasAccess = isEnrolled || isPreviewFree || isFreeCourse;
     
     if (!hasAccess) {
       setShowEnrollmentMessage({
@@ -855,7 +875,9 @@ const CourseDetails = () => {
                                     <div className="px-6 pb-4 space-y-2">
                                       {chapter.topics?.map((topic, topicIndex) => {
                                         const isPreviewFree = topic.isPreviewFree === true;
-                                        const hasAccess = isEnrolled || isPreviewFree || isCompletelyFree();
+                                        // FIXED: फ्री कोर्स के लिए हमेशा true
+                                        const isFreeCourse = isCompletelyFree();
+                                        const hasAccess = isEnrolled || isPreviewFree || isFreeCourse;
                                         
                                         return (
                                           <div key={topic._id || topicIndex} className="ml-6 border border-gray-200 rounded-xl bg-white overflow-hidden hover:shadow-md transition-shadow">
@@ -892,10 +914,10 @@ const CourseDetails = () => {
                                                     {!isEnrolled && isPreviewFree && (
                                                       <span className="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full">Free Preview</span>
                                                     )}
-                                                    {!isEnrolled && !isPreviewFree && !isCompletelyFree() && (
+                                                    {!isEnrolled && !isPreviewFree && !isFreeCourse && (
                                                       <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">Premium Content</span>
                                                     )}
-                                                    {isCompletelyFree() && !isEnrolled && (
+                                                    {isFreeCourse && !isEnrolled && (
                                                       <span className="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full">Free Access</span>
                                                     )}
                                                   </div>
@@ -1109,15 +1131,30 @@ const CourseDetails = () => {
               </button>
             </div>
             <div className="p-4 bg-black">
-              <video
-                controls
-                autoPlay
-                className="w-full rounded-lg"
-                style={{ maxHeight: '75vh' }}
-                src={currentVideo.url}
-              >
-                Your browser does not support the video tag.
-              </video>
+              {currentVideo.url ? (
+                <video
+                  key={currentVideo.url}
+                  controls
+                  autoPlay
+                  className="w-full rounded-lg"
+                  style={{ maxHeight: '75vh' }}
+                  onError={(e) => {
+                    console.error("Video playback error:", e);
+                    setShowEnrollmentMessage({
+                      show: true,
+                      message: "Failed to load video. Please check the video URL or try again later.",
+                      type: 'error'
+                    });
+                  }}
+                >
+                  <source src={currentVideo.url} type="video/mp4" />
+                  Your browser does not support the video tag.
+                </video>
+              ) : (
+                <div className="text-white text-center p-8">
+                  <p>No video URL available</p>
+                </div>
+              )}
             </div>
           </div>
         </div>

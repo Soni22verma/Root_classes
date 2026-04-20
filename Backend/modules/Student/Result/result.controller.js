@@ -16,7 +16,6 @@ export const submitTest = async (req, res) => {
       });
     }
 
-    // ✅ CHANGE: Check if already attempted (completed)
     const alreadyAttempted = await Result.findOne({ studentId, testId });
     if (alreadyAttempted) {
       return res.status(400).json({
@@ -24,19 +23,20 @@ export const submitTest = async (req, res) => {
         message: "You have already completed this test. You cannot retake it.",
       });
     }
-cd
+
     let obtainedMarks = 0;
     let totalMarks = 0;
     const formattedAnswers = [];
 
-    // Calculate scores
     test.questions.forEach((q) => {
       totalMarks += q.marks;
       
       const questionIdStr = q._id.toString();
       const userAnswer = answers[questionIdStr];
       
-      const isCorrect = Number(userAnswer) === Number(q.correctAnswer);
+    const isCorrect =
+  userAnswer !== undefined &&
+  q.options[Number(userAnswer)]?.trim() === q.correctAnswer.trim();
       
       if (isCorrect) {
         obtainedMarks += q.marks;
