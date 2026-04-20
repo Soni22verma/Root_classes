@@ -3,6 +3,8 @@ import jwt from "jsonwebtoken";
 import cloudinary from "../../config/cloudinary.js";
 import  User  from './student.model.js';
 import sendOTP from '../../config/emailServices.js';
+import { emitNotification } from '../../config/socket.js';
+
 
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -68,6 +70,13 @@ export const Registeruser = async (req, res) => {
     // ✅ Generate token
     const token = generateToken(user._id);
 
+    // ✅ Emit Notification to Admin
+    emitNotification("admin_room", "new_student_registered", {
+      fullName: user.fullName,
+      email: user.email,
+      createdAt: user.createdAt
+    });
+
     return res.status(201).json({
       message: "user registered successfully",
       success: true,
@@ -79,6 +88,7 @@ export const Registeruser = async (req, res) => {
         role: user.role
       }
     });
+
 
   } catch (error) {
     console.log(error);

@@ -3,9 +3,11 @@ import { Menu, X, User, LogOut, ChevronDown, LayoutDashboard, UserCircle } from 
 import { Link, useNavigate } from 'react-router-dom';
 import useStudentStore from '../../Store/studentstore';
 import { SiCoursera } from "react-icons/si";
+import NotificationDropdown from '../Notification/NotificationDropdown';
 
 const Navbar = () => {
   const { student, logout, setStudent } = useStudentStore();
+
 
   console.log(student?.role , " this is student")
 
@@ -235,26 +237,29 @@ const Navbar = () => {
             ))}
 
             {isLoggedIn ? (
-              <div className="relative ml-4" ref={dropdownRef}>
-                <button
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="flex items-center space-x-2 bg-gray-100 px-4 py-2 rounded-lg hover:bg-gray-200 transition group"
-                >
-                  <User size={18} className="text-indigo-600" />
-                  <span className="text-gray-700 font-medium max-w-[150px] truncate">
-                    {getDisplayName()}
-                  </span>
-                  <ChevronDown 
-                    size={16} 
-                    className={`text-gray-500 transition-transform duration-200 ${
-                      isDropdownOpen ? 'rotate-180' : ''
-                    }`}
-                  />
-                </button>
+              <div className="flex items-center space-x-4">
+                <NotificationDropdown />
+                <div className="relative" ref={dropdownRef}>
+                  <button
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    className="flex items-center space-x-2 bg-gray-100 px-4 py-2 rounded-lg hover:bg-gray-200 transition group"
+                  >
+                    <User size={18} className="text-indigo-600" />
+                    <span className="text-gray-700 font-medium max-w-[150px] truncate">
+                      {getDisplayName()}
+                    </span>
+                    <ChevronDown 
+                      size={16} 
+                      className={`text-gray-500 transition-transform duration-200 ${
+                        isDropdownOpen ? 'rotate-180' : ''
+                      }`}
+                    />
+                  </button>
 
-                {/* Dropdown Menu */}
-                {isDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 animate-fadeIn">
+                  {/* Dropdown Menu */}
+                  {isDropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 animate-fadeIn">
+
                     {/* User Info Section */}
                     <div className="px-4 py-3 border-b border-gray-200">
                       <div className="flex items-center space-x-3">
@@ -330,7 +335,9 @@ const Navbar = () => {
                   </div>
                 )}
               </div>
-            ) : (
+            </div>
+          ) : (
+
               <>
                 <Link to="/stdlogin">
                   <button className="ml-4 bg-indigo-600 text-white px-5 py-2 rounded-lg hover:bg-indigo-700 transition">

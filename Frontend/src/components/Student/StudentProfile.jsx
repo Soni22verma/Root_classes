@@ -7,6 +7,8 @@ import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 
 const StudentProfile = () => {
+
+
     const { student, setStudent } = useStudentStore();
     const navigate = useNavigate();
     
@@ -259,6 +261,7 @@ const StudentProfile = () => {
                     </div>
                 </div>
             </div>
+
 
             <div className="max-w-6xl mx-auto px-4 py-8">
                 {/* Profile Card */}
