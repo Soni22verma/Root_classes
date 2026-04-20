@@ -56,8 +56,19 @@ const api = {
        createPayment:Base_Url+"/payment/create-payment",
        verifyPayment:Base_Url+"/payment/verify-payment",
        getPurchesCourse:Base_Url+"/payment/get-my-course"
+     },
+     successStory: {
+       add: Base_Url + "/success-story/add",
+       get: Base_Url + "/success-story/get",
+       adminGet: Base_Url + "/success-story/admin/get-all",
+       update: Base_Url + "/success-story/update",
+       delete: Base_Url + "/success-story/delete",
+     },
+     callback: {
+       request: Base_Url + "/callback/request"
      }
 }
+
 
 
 export default api

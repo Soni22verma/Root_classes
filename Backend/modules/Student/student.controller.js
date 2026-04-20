@@ -2,8 +2,9 @@ import bcrypt from 'bcrypt';
 import jwt from "jsonwebtoken";
 import cloudinary from "../../config/cloudinary.js";
 import  User  from './student.model.js';
-import sendOTP from '../../config/emailServices.js';
+import { sendOTP } from '../../config/emailServices.js';
 import { emitNotification } from '../../config/socket.js';
+
 
 
 const generateToken = (id) => {

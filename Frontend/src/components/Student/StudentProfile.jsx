@@ -11,7 +11,7 @@ const StudentProfile = () => {
 
     const { student, setStudent } = useStudentStore();
     const navigate = useNavigate();
-    
+
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(true);
     const [studentData, setStudentData] = useState(null);
@@ -33,7 +33,7 @@ const StudentProfile = () => {
         if (student?._id) return student._id;
         if (student?.user?._id) return student.user._id;
         if (studentData?._id) return studentData._id;
-        
+
         const storedStudent = localStorage.getItem('student');
         if (storedStudent) {
             try {
@@ -48,7 +48,7 @@ const StudentProfile = () => {
 
     const GetStudentData = async () => {
         const studentId = getStudentId();
-        
+
         if (!studentId) {
             toast.error("Student ID not found. Please log in again.");
             setLoading(false);
@@ -59,7 +59,7 @@ const StudentProfile = () => {
             const res = await axios.post(api.student.getStudent, {
                 studentId: studentId,
             });
-            
+
             if (res.data.success && res.data.user) {
                 setStudentData(res.data.user);
                 setFormData({
@@ -72,7 +72,7 @@ const StudentProfile = () => {
                     interestedCourse: res.data.user.interestedCourse || '',
                     address: res.data.user.address || '',
                 });
-                
+
                 // Set enrolled courses directly from user data
                 if (res.data.user.enrolledCourses && Array.isArray(res.data.user.enrolledCourses)) {
                     setEnrolledCourses(res.data.user.enrolledCourses);
@@ -104,25 +104,25 @@ const StudentProfile = () => {
 
     const uploadProfile = async (file) => {
         const studentId = getStudentId();
-        
+
         if (!studentId) {
             toast.error('Student ID not found');
             return;
         }
-        
+
         setUploadingImage(true);
-        
+
         try {
             const formData = new FormData();
             formData.append("image", file);
             formData.append("studentId", studentId);
-            
+
             const response = await axios.post(api.student.editProfile, formData, {
                 headers: {
                     "Content-Type": "multipart/form-data",
                 },
             });
-            
+
             if (response.data.success) {
                 setStudentData(prev => ({
                     ...prev,
@@ -147,19 +147,19 @@ const StudentProfile = () => {
             [name]: value
         }));
     };
-    
+
     const editDetails = async (e) => {
         e.preventDefault();
         setSaving(true);
-        
+
         const studentId = getStudentId();
-        
+
         if (!studentId) {
             toast.error("Student ID not found. Please log in again.");
             setSaving(false);
             return;
         }
-        
+
         try {
             const dataToSend = {
                 studentId: studentId,
@@ -172,13 +172,13 @@ const StudentProfile = () => {
                 dateofBirth: formData.dateofBirth,
                 gender: formData.gender,
             };
-            
+
             const res = await axios.post(api.student.editprofiledetails, dataToSend, {
                 headers: {
                     'Content-Type': 'application/json'
                 }
             });
-            
+
             if (res.data.success) {
                 const updatedStudent = res.data.student || res.data.user;
                 setStudentData(prev => ({
@@ -198,7 +198,7 @@ const StudentProfile = () => {
         }
     };
 
-  
+
 
     useEffect(() => {
         if (student || getStudentId()) {
@@ -225,7 +225,7 @@ const StudentProfile = () => {
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
                 <div className="text-center bg-white rounded-lg shadow-md p-8">
                     <p className="text-gray-600 mb-4">No student data found</p>
-                    <button 
+                    <button
                         onClick={() => navigate('/login')}
                         className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
                     >
@@ -236,9 +236,9 @@ const StudentProfile = () => {
         );
     }
 
- 
 
-   
+
+
 
     const profileImageUrl = studentData.profileImage || studentData.profilePicture || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format';
 
@@ -249,7 +249,7 @@ const StudentProfile = () => {
                 <div className="max-w-6xl mx-auto px-4 py-4">
                     <div className="flex items-center justify-between">
                         <div>
-                            <h1 className="text-2xl font-bold text-gray-800">Root Classes</h1>
+                            <h1 className="text-2xl font-bold text-gray-800">Roots Classes</h1>
                             <p className="text-gray-500 text-sm">Student Dashboard</p>
                         </div>
                         <button
@@ -278,8 +278,8 @@ const StudentProfile = () => {
                                         e.target.src = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format';
                                     }}
                                 />
-                                <label 
-                                    htmlFor="profileImageUpload" 
+                                <label
+                                    htmlFor="profileImageUpload"
                                     className={`absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition cursor-pointer ${uploadingImage ? 'opacity-100' : ''}`}
                                 >
                                     {uploadingImage ? (
@@ -325,7 +325,7 @@ const StudentProfile = () => {
                     </div>
                 </div>
 
-               
+
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Contact Information */}
                     <div className="bg-white rounded-lg shadow-md p-5">
@@ -387,7 +387,7 @@ const StudentProfile = () => {
                     </div>
                 </div>
 
-              
+
             </div>
 
             {/* Edit Profile Modal */}
@@ -485,16 +485,16 @@ const StudentProfile = () => {
                                 </select>
                             </div>
                             <div className="flex gap-3 pt-4">
-                                <button 
+                                <button
                                     type="submit"
                                     disabled={saving}
                                     className="flex-1 bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition disabled:opacity-50"
                                 >
                                     {saving ? 'Saving...' : 'Save Changes'}
                                 </button>
-                                <button 
-                                    type="button" 
-                                    onClick={() => setIsEditing(false)} 
+                                <button
+                                    type="button"
+                                    onClick={() => setIsEditing(false)}
                                     className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-md hover:bg-gray-50 transition"
                                 >
                                     Cancel

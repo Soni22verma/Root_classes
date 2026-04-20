@@ -199,6 +199,14 @@ const AdminSidebar = ({ isMobileOpen, setIsMobileOpen }) => {
           { name: 'All Blogs', path: '/admin/blog', icon: FileText },
         ]
       },
+      {
+        name: 'Content Management',
+        icon: Video,
+        submenu: [
+          { name: 'Success Stories', path: '/admin/success-stories', icon: Video },
+        ]
+      },
+
        {
         name: 'Create Test',
         path: '/admin/createtest',
