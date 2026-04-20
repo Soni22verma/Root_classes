@@ -61,7 +61,20 @@ const api ={
       deleteQuestion:Base_Url+"/test/delete_question",
 
       isPublished:Base_Url+"/test/isPublish"
+     },
+     faculty: {
+         create: Base_Url + "/faculty/create",
+         get: Base_Url + "/faculty/get",
+         update: Base_Url + "/faculty/update",
+         delete: Base_Url + "/faculty/delete"
+     },
+     successStory: {
+         create: Base_Url + "/success-story/create",
+         get: Base_Url + "/success-story/get",
+         update: Base_Url + "/success-story/update",
+         delete: Base_Url + "/success-story/delete"
      }
+
     
 }
 export default api

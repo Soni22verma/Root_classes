@@ -403,7 +403,8 @@ const ManageSlider = () => {
                             strokeLinejoin="round"
                           />
                         </svg>
-                        <div className="flex text-xs sm:text-sm text-gray-600">
+                        <div className="flex justify-center text-xs sm:text-sm text-gray-600">
+
                           <label
                             htmlFor="image-upload"
                             className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500"

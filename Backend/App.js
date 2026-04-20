@@ -21,6 +21,7 @@ import paymentRouter from "./modules/Student/enrollStudent/payment.routes.js";
 import enrollRouter from "./modules/Student/enrollStudent/enrollStudent.routes.js";
 import successStoryRouter from "./modules/Admin/SuccessStory/successStory.routes.js";
 import callbackRouter from "./modules/Admin/Callback/callback.routes.js";
+import facultyRouter from "./modules/Admin/Faculty/faculty.routes.js";
 
 dotenv.config();
 
@@ -56,6 +57,8 @@ app.use("/payment",paymentRouter)
 app.use("/scholarship" ,scholarshipRouter)
 app.use("/success-story", successStoryRouter);
 app.use("/callback", callbackRouter);
+app.use("/faculty", facultyRouter);
+
 // Test route
 
 

@@ -204,8 +204,10 @@ const AdminSidebar = ({ isMobileOpen, setIsMobileOpen }) => {
         icon: Video,
         submenu: [
           { name: 'Success Stories', path: '/admin/success-stories', icon: Video },
+          { name: 'Expert Faculty', path: '/admin/faculty', icon: Users },
         ]
       },
+
 
        {
         name: 'Create Test',

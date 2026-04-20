@@ -10,6 +10,8 @@ import CourseCategory from "../pages/Admin/Courses/CourseCategory";
 import AllCourses from "../pages/Admin/Courses/AllCourses";
 import CreateTest from "../pages/Admin/CreateTest";
 import SuccessStoriesManagement from "../pages/Admin/SuccessStoriesManagement";
+import FacultyManagement from "../pages/Admin/FacultyManagement";
+
 
 const Adminroutes = [
 
@@ -65,7 +67,12 @@ const Adminroutes = [
       {
         path: "success-stories",
         element: <SuccessStoriesManagement />
+      },
+      {
+        path: "faculty",
+        element: <FacultyManagement />
       }
+
 
     ],
   },
