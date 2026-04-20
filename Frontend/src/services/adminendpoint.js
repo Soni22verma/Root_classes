@@ -53,6 +53,7 @@ const api ={
     },
     test:{
       createTest:Base_Url+"/test/create_test",
+      editTest:Base_Url+"/test/edit_test",
       deleteTest:Base_Url+"/test/delete_test",
       addQuestion:Base_Url+"/test/add_question",
       getQuestion:Base_Url+"/test/get_question",

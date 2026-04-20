@@ -14,6 +14,16 @@ const AdminTestCreator = () => {
   const [publishingTestId, setPublishingTestId] = useState(null);
   const [deletingTestId, setDeletingTestId] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
+  // Edit Test Modal State
+  const [isEditTestModalOpen, setIsEditTestModalOpen] = useState(false);
+  const [editingTest, setEditingTest] = useState(null);
+  const [editTestForm, setEditTestForm] = useState({
+    title: '',
+    duration: 60,
+    passingPercentage: 70,
+    isPublished: false
+  });
 
   // New Test Form
   const [newTest, setNewTest] = useState({
@@ -84,6 +94,60 @@ const AdminTestCreator = () => {
     } catch (error) {
       console.error('Error creating test:', error);
       alert('Failed to create test');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Open Edit Test Modal
+  const openEditTestModal = (test) => {
+    setEditingTest(test);
+    setEditTestForm({
+      title: test.title,
+      duration: test.duration,
+      passingPercentage: test.passingPercentage,
+      isPublished: test.isPublished
+    });
+    setIsEditTestModalOpen(true);
+  };
+
+  // Update Test Function
+  const updateTest = async () => {
+    if (!editTestForm.title.trim()) {
+      alert('Please enter test title');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const response = await axios.post(api.test.editTest, {
+        testId: editingTest._id,
+        title: editTestForm.title,
+        duration: editTestForm.duration,
+        passingPercentage: editTestForm.passingPercentage,
+        isPublished: editTestForm.isPublished
+      });
+      
+      console.log('Update test response:', response);
+      
+      if (response.data.success) {
+        await fetchAllTests();
+        setIsEditTestModalOpen(false);
+        setEditingTest(null);
+        setEditTestForm({
+          title: '',
+          duration: 60,
+          passingPercentage: 70,
+          isPublished: false
+        });
+        alert('Test updated successfully!');
+      } else {
+        alert(response.data.message || 'Failed to update test');
+      }
+    } catch (error) {
+      console.error('Error updating test:', error);
+      const errorMessage = error.response?.data?.message || 'Failed to update test';
+      alert(errorMessage);
     } finally {
       setIsSaving(false);
     }
@@ -465,6 +529,18 @@ const AdminTestCreator = () => {
                               {test.questions?.length || 0} Qs
                             </span>
                             
+                            {/* Edit Test Button */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openEditTestModal(test);
+                              }}
+                              className="p-1 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                              title="Edit Test"
+                            >
+                              <Edit size={16} className="sm:w-[18px] sm:h-[18px]" />
+                            </button>
+                            
                             {/* Publish Toggle Buttons */}
                             <div className="flex items-center gap-1 border-l border-gray-200 pl-1 sm:pl-2 ml-0 sm:ml-1">
                               {publishingTestId === test._id ? (
@@ -615,6 +691,115 @@ const AdminTestCreator = () => {
             </div>
           </div>
         </div>
+
+        {/* Edit Test Modal */}
+        {isEditTestModalOpen && editingTest && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4 animate-fade-in">
+            <div className="bg-white rounded-2xl shadow-2xl w-[95%] sm:w-full max-w-md max-h-[90vh] overflow-y-auto">
+              <div className="sticky top-0 bg-white z-10 flex justify-between items-center p-4 sm:p-6 border-b">
+                <h2 className="text-lg sm:text-xl font-semibold text-gray-800">Edit Test</h2>
+                <button 
+                  onClick={() => setIsEditTestModalOpen(false)} 
+                  className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition"
+                >
+                  <X size={20} className="sm:w-6 sm:h-6" />
+                </button>
+              </div>
+
+              <div className="p-4 sm:p-6 space-y-4 sm:space-y-5">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Test Title *</label>
+                  <input
+                    type="text"
+                    value={editTestForm.title}
+                    onChange={(e) => setEditTestForm({ ...editTestForm, title: e.target.value })}
+                    placeholder="Enter test title"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <div className="flex items-center gap-1">
+                        <Percent size={14} />
+                        Passing Percentage
+                      </div>
+                    </label>
+                    <input
+                      type="number"
+                      value={editTestForm.passingPercentage}
+                      onChange={(e) => setEditTestForm({ ...editTestForm, passingPercentage: Number(e.target.value) })}
+                      min="0"
+                      max="100"
+                      className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <div className="flex items-center gap-1">
+                        <Clock size={14} />
+                        Duration (minutes)
+                      </div>
+                    </label>
+                    <input
+                      type="number"
+                      value={editTestForm.duration}
+                      onChange={(e) => setEditTestForm({ ...editTestForm, duration: Number(e.target.value) })}
+                      min="1"
+                      className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">Publish Status</label>
+                  <div className="flex flex-col sm:flex-row gap-3 sm:gap-6">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="editPublishStatus"
+                        checked={!editTestForm.isPublished}
+                        onChange={() => setEditTestForm({ ...editTestForm, isPublished: false })}
+                        className="w-4 h-4 text-gray-600 focus:ring-gray-500"
+                      />
+                      <span className="text-sm text-gray-700">Draft</span>
+                      <span className="text-xs text-gray-400 ml-1 hidden sm:inline">(Not visible to users)</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="editPublishStatus"
+                        checked={editTestForm.isPublished}
+                        onChange={() => setEditTestForm({ ...editTestForm, isPublished: true })}
+                        className="w-4 h-4 text-green-600 focus:ring-green-500"
+                      />
+                      <span className="text-sm text-gray-700">Published</span>
+                      <span className="text-xs text-green-600 ml-1 hidden sm:inline">(Visible to users)</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div className="sticky bottom-0 bg-gray-50 flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 p-4 sm:p-6 border-t rounded-b-2xl">
+                <button
+                  onClick={() => setIsEditTestModalOpen(false)}
+                  className="px-4 sm:px-5 py-2 text-sm sm:text-base text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition order-2 sm:order-1"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={updateTest}
+                  disabled={isSaving}
+                  className="px-4 sm:px-5 py-2 text-sm sm:text-base bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition disabled:opacity-50 shadow-md order-1 sm:order-2"
+                >
+                  {isSaving && <Loader className="animate-spin inline-block mr-2" size={16} />}
+                  Update Test
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Question Modal - Responsive */}
         {isQuestionModalOpen && (
