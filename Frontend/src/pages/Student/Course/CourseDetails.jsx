@@ -281,11 +281,11 @@ const CourseDetails = () => {
   const handleDownloadNotesPDF = async (topic) => {
     const hasAccess = isEnrolled || topic.isPreviewFree || isCompletelyFree();
     if (!hasAccess) return showToast('Enroll to access notes', 'error');
-    
+
     if (!topic.notes && !topic.notesUrl) {
       return showToast('No notes available for download', 'error');
     }
-    
+
     // If we have a URL, it means the notes are an uploaded file (like a PDF).
     // Download it directly instead of trying to parse it as text.
     if (topic.notesUrl) {
@@ -331,7 +331,7 @@ const CourseDetails = () => {
         return showToast('Failed to download notes', 'error');
       }
     }
-    
+
     // If it's pure text notes stored in DB, generate a PDF out of it
     downloadNotesAsPDF(topic);
   };
@@ -340,13 +340,13 @@ const CourseDetails = () => {
   const openTopicInfo = (topic) => {
     const hasAccess = isEnrolled || topic.isPreviewFree || isCompletelyFree();
     if (!hasAccess) return showToast('Enroll to access topic information', 'error');
-    navigate("/topicinfo", { 
-      state: { 
+    navigate("/topicinfo", {
+      state: {
         topic,
         courseId: course._id,
         courseTitle: course.title,
-        isEnrolled 
-      } 
+        isEnrolled
+      }
     });
   };
 
@@ -392,9 +392,8 @@ const CourseDetails = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Toast */}
       {toast.show && (
-        <div className={`fixed top-5 right-4 z-50 px-5 py-3 rounded-xl shadow-lg text-sm font-medium text-white flex items-center gap-2 transition-all ${
-          toast.type === 'success' ? 'bg-green-500' : toast.type === 'error' ? 'bg-red-500' : 'bg-blue-500'
-        }`}>
+        <div className={`fixed top-5 right-4 z-50 px-5 py-3 rounded-xl shadow-lg text-sm font-medium text-white flex items-center gap-2 transition-all ${toast.type === 'success' ? 'bg-green-500' : toast.type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+          }`}>
           {toast.type === 'success' && <CheckCircle size={15} />}
           {toast.type === 'error' && <X size={15} />}
           {toast.message}
@@ -482,9 +481,8 @@ const CourseDetails = () => {
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`px-5 py-2 text-sm font-medium rounded-lg transition-colors capitalize ${
-                    activeTab === tab ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-                  }`}
+                  className={`px-5 py-2 text-sm font-medium rounded-lg transition-colors capitalize ${activeTab === tab ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                    }`}
                 >
                   {tab}
                 </button>
@@ -631,28 +629,15 @@ const CourseDetails = () => {
                                                 <button
                                                   onClick={() => playVideo(topic)}
                                                   disabled={!hasAccess}
-                                                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                                                    hasAccess
+                                                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${hasAccess
                                                       ? 'bg-blue-600 text-white hover:bg-blue-700'
                                                       : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                                  }`}
+                                                    }`}
                                                 >
                                                   <Play size={11} /> Watch
                                                 </button>
                                               )}
-                                              {(topic.notes || topic.notesUrl) && (
-                                                <button
-                                                  onClick={() => handleDownloadNotesPDF(topic)}
-                                                  disabled={!hasAccess}
-                                                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                                                    hasAccess
-                                                      ? 'bg-green-600 text-white hover:bg-green-700'
-                                                      : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                                  }`}
-                                                >
-                                                  <Download size={11} /> PDF
-                                                </button>
-                                              )}
+
                                               {topic.description && (
                                                 <button
                                                   onClick={() => openTopicInfo(topic)}
@@ -722,7 +707,7 @@ const CourseDetails = () => {
                   </div>
                   <p className="font-bold text-gray-900 mb-1">You're enrolled!</p>
                   <p className="text-xs text-gray-500 mb-4">Full access to all lessons</p>
-                 
+
                 </div>
               )}
             </div>
