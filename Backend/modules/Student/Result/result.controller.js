@@ -87,9 +87,38 @@ export const checkTestAttempt = async(req,res,next)=>{
 
     return res.status(200).json({
       attempted: !!existing,
+      success: true,
+      data: existing
     })
     
   } catch (error) {
     next(error)
   }
 }
+
+export const getStudentResults = async (req, res) => {
+  try {
+    const { studentId } = req.body;
+    if (!studentId) {
+      return res.status(400).json({
+        success: false,
+        message: "studentId is required"
+      });
+    }
+
+    const results = await Result.find({ studentId }).populate('testId').sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      message: "Student results fetched successfully",
+      data: results
+    });
+
+  } catch (error) {
+    console.error('Error in getStudentResults:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};

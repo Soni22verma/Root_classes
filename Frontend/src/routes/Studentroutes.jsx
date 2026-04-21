@@ -44,7 +44,7 @@ const StudentRoutes = [
                 element: <CourseDetails/>
             },
            {
-            path:"/topicinfo",
+            path:"/topicinfo/:topicId",
             element:<TopicInfo/>
            },
             {
