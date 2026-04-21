@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast, Toaster } from 'react-hot-toast';
-import { Pencil, Trash2, Plus, X, Eye } from 'lucide-react';
+import { Pencil, Trash2, Plus, X, Eye, Video } from 'lucide-react';
 import api from '../../services/adminendpoint';
 
 const ManageSlider = () => {
@@ -168,6 +168,95 @@ const ManageSlider = () => {
   const closeModal = () => {
     setShowModal(false);
     resetForm();
+  };
+
+  // --- Video Success Stories (Success Stories in Action) Logic ---
+  const [videoStories, setVideoStories] = useState([]);
+  const [vLoading, setVLoading] = useState(false);
+  const [vShowModal, setVShowModal] = useState(false);
+  const [vIsEditing, setVIsEditing] = useState(false);
+  const [selectedV, setSelectedV] = useState(null);
+  const [vFormData, setVFormData] = useState({
+    title: '',
+    youtubeUrl: '',
+    duration: '00:00',
+    order: 0,
+    isActive: true
+  });
+
+  const fetchVideoStories = async () => {
+    setVLoading(true);
+    try {
+      const res = await axios.get(api.successStory.get);
+      if (res.data.success) {
+        setVideoStories(res.data.data);
+      }
+    } catch (error) {
+      toast.error('Failed to fetch video stories');
+    } finally {
+      setVLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchVideoStories();
+  }, []);
+
+  const handleVInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setVFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  const resetVForm = () => {
+    setVFormData({
+      title: '',
+      youtubeUrl: '',
+      duration: '00:00',
+      order: videoStories.length,
+      isActive: true
+    });
+    setVIsEditing(false);
+    setSelectedV(null);
+  };
+
+  const handleVSubmit = async (e) => {
+    e.preventDefault();
+    setVLoading(true);
+    try {
+      if (vIsEditing) {
+        const res = await axios.post(api.successStory.update, {
+          storyId: selectedV._id,
+          ...vFormData
+        });
+        if (res.data.success) toast.success('Video story updated');
+      } else {
+        const res = await axios.post(api.successStory.create, vFormData);
+        if (res.data.success) toast.success('Video story added');
+      }
+      setVShowModal(false);
+      fetchVideoStories();
+    } catch (error) {
+      toast.error('Operation failed');
+    } finally {
+      setVLoading(false);
+    }
+  };
+
+  const handleVDelete = async (id) => {
+    if (window.confirm('Delete this video story?')) {
+      try {
+        const res = await axios.post(api.successStory.delete, { storyId: id });
+        if (res.data.success) {
+          toast.success('Video deleted');
+          fetchVideoStories();
+        }
+      } catch (error) {
+        toast.error('Failed to delete');
+      }
+    }
   };
 
   return (
@@ -379,9 +468,78 @@ const ManageSlider = () => {
             </table>
           </div>
         </div>
+
+        {/* --- Video Success Stories (Success Stories in Action) Section --- */}
+        <div className="mt-12 mb-8 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4 border-t pt-12">
+          <div>
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Success Stories in Action</h2>
+            <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1">Manage video stories and YouTube-based student feedback</p>
+          </div>
+          <button
+            onClick={() => { resetVForm(); setVShowModal(true); }}
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-[#FB0500] text-white rounded-lg hover:shadow-lg transition-all duration-300 text-sm font-semibold"
+          >
+            <Video size={18} />
+            Add Video Story
+          </button>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-20 border border-gray-100">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-widest">Video Thumbnail</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-widest">Title</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-widest">Duration</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-widest">Order</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-widest">Status</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-widest text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-100">
+                {vLoading && videoStories.length === 0 ? (
+                  <tr><td colSpan="6" className="text-center py-10"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#FB0500] mx-auto" /></td></tr>
+                ) : videoStories.length === 0 ? (
+                  <tr><td colSpan="6" className="text-center py-20 text-gray-400">No video stories found.</td></tr>
+                ) : (
+                  videoStories.map((v) => (
+                    <tr key={v._id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="w-24 aspect-video rounded-lg overflow-hidden bg-gray-100 border border-gray-100">
+                          <img src={v.thumbnailUrl} alt={v.title} className="w-full h-full object-cover" />
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-bold text-gray-900 line-clamp-1">{v.title}</div>
+                        <div className="text-[10px] text-gray-400 truncate max-w-[150px]">{v.youtubeUrl}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{v.duration}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-700">{v.order}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-bold">
+                        {v.isActive ? <span className="text-green-600">Active</span> : <span className="text-gray-400">Inactive</span>}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                        <div className="flex justify-center gap-2">
+                          <button onClick={() => { 
+                            setVIsEditing(true); 
+                            setSelectedV(v); 
+                            setVFormData({ title: v.title, youtubeUrl: v.youtubeUrl, duration: v.duration, order: v.order, isActive: v.isActive });
+                            setVShowModal(true);
+                          }} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><Pencil size={18} /></button>
+                          <button onClick={() => handleVDelete(v._id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"><Trash2 size={18} /></button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
-      {/* Create/Edit Modal - Responsive */}
+      {/* --- Slider Modal --- */}
       {showModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-3 sm:p-4 overflow-y-auto">
           <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
@@ -563,8 +721,50 @@ const ManageSlider = () => {
           </div>
         </div>
       )}
+
+      {/* --- Video Success Story Modal --- */}
+      {vShowModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-xl w-full">
+            <div className="p-6 border-b flex justify-between items-center">
+              <h2 className="text-xl font-bold text-gray-900">{vIsEditing ? 'Edit Video Story' : 'Add Video Story'}</h2>
+              <button onClick={() => setVShowModal(false)} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>
+            </div>
+            <form onSubmit={handleVSubmit} className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Video Title</label>
+                <input type="text" name="title" value={vFormData.title} onChange={handleVInputChange} className="w-full px-4 py-2 bg-gray-50 border rounded-xl" required />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">YouTube URL</label>
+                <input type="url" name="youtubeUrl" value={vFormData.youtubeUrl} onChange={handleVInputChange} className="w-full px-4 py-2 bg-gray-50 border rounded-xl" placeholder="https://www.youtube.com/watch?v=..." required />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Duration</label>
+                  <input type="text" name="duration" value={vFormData.duration} onChange={handleVInputChange} className="w-full px-4 py-2 bg-gray-50 border rounded-xl" placeholder="e.g. 12:45" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Order</label>
+                  <input type="number" name="order" value={vFormData.order} onChange={handleVInputChange} className="w-full px-4 py-2 bg-gray-50 border rounded-xl" />
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <input type="checkbox" name="isActive" checked={vFormData.isActive} onChange={handleVInputChange} id="v-active" className="w-4 h-4 text-[#FB0500] border-gray-300 rounded focus:ring-[#FB0500]" />
+                <label htmlFor="v-active" className="text-sm font-semibold text-gray-700">Active (Show in carousel)</label>
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button type="button" onClick={() => setVShowModal(false)} className="flex-1 px-4 py-2.5 border rounded-xl font-bold text-gray-600 hover:bg-gray-50 transition">Cancel</button>
+                <button type="submit" disabled={vLoading} className="flex-1 px-4 py-2.5 bg-[#FB0500] text-white rounded-xl font-bold hover:shadow-lg transition">
+                  {vLoading ? 'Saving...' : vIsEditing ? 'Update Story' : 'Add Story'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-export default ManageSlider;
+export default ManageSlider;

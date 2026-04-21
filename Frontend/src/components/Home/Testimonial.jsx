@@ -69,7 +69,7 @@ const TestimonialsPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
               {testimonials.map((t, i) => {
                 const isWide = i % 3 === 0;
-                const isDark = i % 5 === 1;
+                const isDark = false; // Always light
                 return (
                   <div key={t.id}
                     className={`

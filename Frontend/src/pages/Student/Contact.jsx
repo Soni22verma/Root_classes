@@ -1,4 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { MapPin, Clock, Send, MessageSquare } from 'lucide-react';
+import { FaFacebook, FaInstagram, FaLinkedin, FaYoutube } from 'react-icons/fa';
+import axios from 'axios';
+import api from '../../services/endpoints';
 import useStudentStore from '../../Store/studentstore';
 
 /* ── decorative education SVG ────────────────────────────────────────────── */
@@ -53,11 +57,16 @@ const Contact = () => {
     setIsSubmitting(true);
     setSubmitStatus(null);
     try {
-      await new Promise(r => setTimeout(r, 1500));
-      setSubmitStatus('success');
-      setFormData(p => ({ ...p, subject: '', message: '' }));
+      const res = await axios.post(api.callback.contact, formData);
+      if (res.data.success) {
+        setSubmitStatus('success');
+        setFormData(p => ({ ...p, subject: '', message: '' }));
+      } else {
+        setSubmitStatus('error');
+      }
       setTimeout(() => setSubmitStatus(null), 5000);
-    } catch {
+    } catch (err) {
+      console.error('Contact form error:', err);
       setSubmitStatus('error');
       setTimeout(() => setSubmitStatus(null), 5000);
     } finally {
@@ -68,36 +77,44 @@ const Contact = () => {
   return (
     <div className="min-h-screen bg-white">
 
-      {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <div className="bg-blueprint relative overflow-hidden">
-        {/* Red glow */}
-        <div className="absolute bottom-0 left-1/4 w-72 h-72 bg-[#FB0500]/10 rounded-full blur-3xl pointer-events-none" />
-        {/* Decorative pencil */}
-        <div className="absolute right-8 top-4 w-20 h-20 text-[#0078FF] pointer-events-none hidden lg:block">
-          <PencilIcon />
-        </div>
-        {/* Decorative book lines */}
-        <div className="absolute left-8 bottom-4 pointer-events-none hidden lg:block">
-          {[0,1,2,3].map(i => (
-            <div key={i} className="w-16 h-px bg-[#0078FF]/20 mb-2" style={{ width: `${40 + i*12}px` }} />
-          ))}
-        </div>
+      {/* ── Hero (Light & Sleek) ── */}
+      <div className="relative bg-white border-b border-gray-100 overflow-hidden">
+        {/* Dot pattern matching StatsBar */}
+        <div className="absolute inset-0 opacity-[0.4]" style={{
+          backgroundImage: 'radial-gradient(#e5e7eb 1px, transparent 1px)',
+          backgroundSize: '24px 24px'
+        }} />
+        
+        {/* Subtle glows */}
+        <div className="absolute -top-24 -right-24 w-96 h-96 bg-[#0078FF]/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-[#FB0500]/5 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="max-w-2xl">
-            <p className="text-xs font-bold text-[#0078FF] uppercase tracking-widest mb-3">Contact Us</p>
-            <h1 className="text-4xl md:text-5xl font-black text-white leading-tight">
-              Let's start a<br />
-              <span className="text-[#FB0500]">conversation</span>
-            </h1>
-            <p className="text-gray-400 mt-4 text-sm leading-relaxed max-w-lg">
-              Have a question about our courses, fee structure, or admissions? We're here to help. Reach out and our team will respond within 24 hours.
-            </p>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
+            <div className="flex-1">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-50 border border-gray-100 mb-3">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#0078FF]"></span>
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em]">Get in Touch</p>
+              </div>
+              <h1 className="text-3xl md:text-5xl font-black text-gray-900 leading-tight">
+                Let's start a<br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FB0500] via-[#0078FF] to-[#28A745]">
+                  conversation
+                </span>
+              </h1>
+            </div>
 
-            {/* Quick badges */}
-            <div className="flex flex-wrap gap-3 mt-7">
-              {['⚡ Responds within 24h', '📍 Ludhiana, Punjab', '🎓 10,000+ Students Guided'].map(t => (
-                <span key={t} className="text-xs font-medium px-3 py-1.5 rounded-full bg-white/10 text-gray-300 border border-white/10">{t}</span>
+            {/* Quick Connect Badges - Compact */}
+            <div className="flex flex-wrap gap-4 md:px-10 md:border-l border-gray-100">
+              {[
+                { t: '⚡ Fast Reply', c: '#FB0500' },
+                { t: '📍 Ludhiana', c: '#0078FF' },
+                { t: '🎓 10K+ Guided', c: '#28A745' }
+              ].map(item => (
+                <span key={item.t} className="text-[10px] font-bold px-3 py-2 rounded-lg bg-gray-50 text-gray-500 border border-gray-100 uppercase tracking-widest flex items-center gap-2">
+                  <span className="w-1 h-1 rounded-full" style={{ backgroundColor: item.c }}></span>
+                  {item.t}
+                </span>
               ))}
             </div>
           </div>
@@ -110,15 +127,34 @@ const Contact = () => {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[
               { icon: '📞', label: 'Call Us', value: '+91 98775-15330', hint: 'Mon–Sat, 9am–6pm', bg: 'hover:border-red-200 hover:bg-red-50', accent: 'text-[#FB0500]', href: 'tel:+919877515330' },
-              { icon: '✉️', label: 'Email Us', value: 'rootsclasses1313@gmail.com', hint: 'We reply within 24h', bg: 'hover:border-blue-200 hover:bg-blue-50', accent: 'text-[#0078FF]', href: 'mailto:rootsclasses1313@gmail.com' },
+              { icon: '✉️', label: 'Email Us', value: 'rootsclasses1313@gmail.com', hint: 'We reply within 24h', bg: 'hover:border-blue-200 hover:bg-blue-50', accent: 'text-[#0078FF]', href: 'mailto:rootsclasses1313@gmail.com?subject=Root%20classes%20enquiry&body=Hi%2C%20I%20wanted%20to%20enquire%20about...' },
               { icon: '💬', label: 'WhatsApp', value: 'Chat with us', hint: 'Quick responses', bg: 'hover:border-green-200 hover:bg-green-50', accent: 'text-green-600', href: 'https://wa.me/919877515330' },
             ].map(item => (
-              <a key={item.label} href={item.href} target="_blank" rel="noopener noreferrer"
+              <a key={item.label} 
+                href={item.label === 'Email Us' 
+                  ? `https://mail.google.com/mail/?view=cm&fs=1&to=rootsclasses1313@gmail.com&su=Root%20classes%20enquiry&body=Hi%2C%20I%20wanted%20to%20enquire%20about...`
+                  : item.href
+                }
+                onClick={async (e) => {
+                  if (item.label === 'Email Us') {
+                    // Use Nodemailer to notify admin of interest
+                    try {
+                      axios.post(api.callback.contact, {
+                        name: student?.fullName || 'Interested Student',
+                        email: student?.email || 'via Quick Link',
+                        subject: 'Quick Email Link Clicked',
+                        message: 'A student just clicked the direct email card to contact you via Gmail.'
+                      });
+                    } catch (err) { console.error(err); }
+                  }
+                }}
+                target="_blank"
+                rel="noopener noreferrer"
                 className={`flex items-center gap-4 p-4 rounded-2xl border border-gray-100 transition-all group cursor-pointer ${item.bg}`}>
                 <span className="text-2xl flex-shrink-0">{item.icon}</span>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">{item.label}</p>
-                  <p className={`text-sm font-semibold truncate ${item.accent} group-hover:underline`}>{item.value}</p>
+                  <p className={`text-sm font-semibold ${item.accent} group-hover:underline`}>{item.value}</p>
                   <p className="text-xs text-gray-400 mt-0.5">{item.hint}</p>
                 </div>
                 <svg className="w-4 h-4 text-gray-300 ml-auto flex-shrink-0 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -139,17 +175,17 @@ const Contact = () => {
             <div className="lg:col-span-4 space-y-4">
 
               {/* Address card — dark */}
-              <div className="bg-[#0a0a0a] rounded-2xl p-6 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-[#0078FF]/10 rounded-full blur-2xl pointer-events-none" />
-                <div className="w-10 h-10 bg-[#FB0500]/15 rounded-xl flex items-center justify-center mb-4">
+              <div className="bg-white rounded-2xl p-6 relative overflow-hidden border border-gray-100 shadow-sm">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-[#0078FF]/5 rounded-full blur-2xl pointer-events-none" />
+                <div className="w-10 h-10 bg-red-50 rounded-xl flex items-center justify-center mb-4">
                   <svg className="w-5 h-5 text-[#FB0500]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
                 </div>
                 <p className="text-xs font-bold text-[#FB0500] uppercase tracking-widest mb-1">Our Location</p>
-                <h3 className="font-bold text-white mb-2">Ludhiana Centre</h3>
-                <p className="text-sm text-gray-400 leading-relaxed">
+                <h3 className="font-bold text-gray-900 mb-2">Ludhiana Centre</h3>
+                <p className="text-sm text-gray-500 leading-relaxed">
                   Gill Rd, opp. ITI College,<br />Shilapuri, Ludhiana,<br />Punjab — 141003
                 </p>
                 <a href="https://maps.google.com/?q=Roots+Classes+Ludhiana" target="_blank" rel="noopener noreferrer"
@@ -185,14 +221,14 @@ const Contact = () => {
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Follow Us</p>
                 <div className="grid grid-cols-4 gap-3">
                   {[
-                    { name: 'Facebook',  href: 'https://www.facebook.com/rootsclasses1313/', color: 'hover:bg-blue-600',  icon: <path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/> },
-                    { name: 'Instagram', href: 'https://www.instagram.com/roots_classes', color: 'hover:bg-pink-600',  icon: <><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></> },
-                    { name: 'LinkedIn',  href: 'https://www.linkedin.com/company/roots-classes/', color: 'hover:bg-blue-700', icon: <><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></> },
-                    { name: 'YouTube',   href: 'https://www.youtube.com/@nikolaphysics', color: 'hover:bg-red-600',   icon: <><path d="M22.54 6.42a2.78 2.78 0 00-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 00-1.94 2A29 29 0 001 12a29 29 0 00.46 5.33A2.78 2.78 0 003.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 001.94-2 29 29 0 00.46-5.25 29 29 0 00-.46-5.33z"/><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/></> },
+                    { name: 'Facebook',  href: 'https://www.facebook.com/rootsclasses1313/', color: 'hover:bg-blue-600',  icon: <FaFacebook size={18} /> },
+                    { name: 'Instagram', href: 'https://www.instagram.com/roots_classes', color: 'hover:bg-pink-600',  icon: <FaInstagram size={18} /> },
+                    { name: 'LinkedIn',  href: 'https://www.linkedin.com/company/roots-classes/', color: 'hover:bg-blue-700', icon: <FaLinkedin size={18} /> },
+                    { name: 'YouTube',   href: 'https://www.youtube.com/@nikolaphysics', color: 'hover:bg-red-600',   icon: <FaYoutube size={18} /> },
                   ].map(s => (
                     <a key={s.name} href={s.href} target="_blank" rel="noopener noreferrer"
                       className={`w-full aspect-square rounded-xl bg-gray-100 flex items-center justify-center text-gray-500 transition-all hover:text-white hover:shadow-sm ${s.color}`}>
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">{s.icon}</svg>
+                      {s.icon}
                     </a>
                   ))}
                 </div>
@@ -218,22 +254,22 @@ const Contact = () => {
             </div>
 
             {/* ── Right column — Form ── */}
-            <div className="lg:col-span-8">
+            <div className="lg:col-span-8" id="contact-form">
               <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
 
                 {/* Form header */}
-                <div className="bg-dot-dark px-8 py-6 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-40 h-40 bg-[#0078FF]/10 rounded-full blur-3xl pointer-events-none" />
+                <div className="bg-gray-50/50 px-8 py-6 relative overflow-hidden border-b border-gray-100">
+                  <div className="absolute top-0 right-0 w-40 h-40 bg-[#0078FF]/5 rounded-full blur-3xl pointer-events-none" />
                   {/* Notebook line decoration */}
-                  <div className="absolute bottom-3 left-8 flex gap-3 opacity-30">
+                  <div className="absolute bottom-3 left-8 flex gap-3 opacity-20">
                     {[60,80,50,70].map((w,i) => (
                       <div key={i} className="h-px bg-[#0078FF]" style={{ width: `${w}px` }} />
                     ))}
                   </div>
                   <div className="relative">
                     <p className="text-xs font-bold text-[#0078FF] uppercase tracking-widest mb-1">Drop a Message</p>
-                    <h2 className="text-xl font-bold text-white">Send us a message</h2>
-                    <p className="text-gray-400 text-xs mt-1">We typically respond within one business day.</p>
+                    <h2 className="text-xl font-bold text-gray-900">Send us a message</h2>
+                    <p className="text-gray-500 text-xs mt-1">We typically respond within one business day.</p>
                   </div>
                 </div>
 
@@ -353,15 +389,15 @@ const Contact = () => {
 
             {/* Visit us card */}
             <div className="lg:col-span-4 flex flex-col gap-4">
-              <div className="bg-dot-dark rounded-2xl p-7 flex-1 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-[#0078FF]/10 rounded-full blur-2xl pointer-events-none" />
+              <div className="bg-gray-50 rounded-2xl p-7 flex-1 relative overflow-hidden border border-gray-100">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-[#0078FF]/5 rounded-full blur-2xl pointer-events-none" />
                 <p className="text-xs font-bold text-[#0078FF] uppercase tracking-widest mb-3 relative">Visit Us</p>
-                <h3 className="text-lg font-bold text-white mb-3 relative">Come see us<br />in person</h3>
-                <p className="text-sm text-gray-400 leading-relaxed relative">
+                <h3 className="text-lg font-bold text-gray-900 mb-3 relative">Come see us<br />in person</h3>
+                <p className="text-sm text-gray-500 leading-relaxed relative">
                   Gill Rd, opp. ITI College,<br />Shilapuri, Ludhiana,<br />Punjab — 141003
                 </p>
                 <a href="https://maps.google.com/?q=Gill+Road+ITI+College+Shilapuri+Ludhiana" target="_blank" rel="noopener noreferrer"
-                  className="relative inline-flex items-center gap-2 mt-5 px-4 py-2 bg-[#FB0500] text-white text-xs font-bold rounded-xl hover:opacity-90 transition">
+                  className="relative inline-flex items-center gap-2 mt-5 px-4 py-2 bg-[#FB0500] text-white text-xs font-bold rounded-xl hover:opacity-90 transition shadow-lg shadow-red-100">
                   Get Directions →
                 </a>
               </div>

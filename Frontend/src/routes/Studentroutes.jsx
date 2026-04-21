@@ -2,7 +2,7 @@ import Home from "../components/Home/Home";
 import StudentLogin from "../components/Student/StudentLogin";
 import StudentRegister from "../components/Student/StudentRegister";
 // import OnlineCourse from "../pages/Student/OnlineCourse";
-import Schollarship from "../pages/Student/Schollarship";
+import Scholarship from "../pages/Student/Scholarship";
 import TestList from "../pages/Student/TestList";
 import Blog from "../pages/Student/Blog";
 import Contact from "../pages/Student/Contact";
@@ -47,8 +47,8 @@ const StudentRoutes = [
             //     element: <OnlineCourse />,
             // },
             {
-                path: "/schollarship",
-                element: <Schollarship />,
+                path: "/scholarship",
+                element: <Scholarship />,
             },
             {
                 path: "/test",

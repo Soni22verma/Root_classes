@@ -58,7 +58,7 @@ const VideoCarousel = () => {
     >
       <div
         ref={scrollRef}
-        className="flex space-x-6 overflow-x-hidden whitespace-nowrap cursor-pointer px-4"
+        className="flex space-x-6 overflow-x-hidden whitespace-nowrap cursor-pointer px-4 py-8"
         style={{ scrollBehavior: 'auto' }}
       >
         {displayVideos.map((video, index) => (

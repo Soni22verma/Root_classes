@@ -65,7 +65,8 @@ const api = {
        delete: Base_Url + "/success-story/delete",
      },
      callback: {
-       request: Base_Url + "/callback/request"
+       request: Base_Url + "/callback/request",
+       contact: Base_Url + "/callback/contact"
      }
 }
 
