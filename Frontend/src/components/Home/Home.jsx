@@ -3,7 +3,7 @@ import Classes from './Classes';
 import Testimonial from './Testimonial';
 import CallBack from './CallBack';
 import Experts from './Experts';
-import StatsBar from './StatsBar';
+// import StatsBar from './StatsBar';
 import WhyChooseUs from './WhyChooseUs';
 import FAQ from './FAQ';
 import axios from 'axios';
@@ -75,8 +75,7 @@ const SliderPage = () => {
         </div>
       )}
 
-      {/* Stats Bar */}
-      <StatsBar />
+     
 
       {/* Programs */}
       <Classes />
