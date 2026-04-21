@@ -20,6 +20,10 @@ const sliderSchema = new mongoose.Schema(
         isActive: {
             type: Boolean,
             default: true
+        },
+        isDefault: {
+            type: Boolean,
+            default: false
         }
     }, { timestamps: true }
 )

@@ -3,7 +3,7 @@ import { Slider } from "./slider.model.js";
 
 export const CreateSlider = async (req, res, next) => {
     try {
-        const { title, subtitle, buttonText, classText } = req.body;
+        const { title, subtitle, buttonText, classText, isDefault } = req.body;
 
         if (!title || !subtitle || !buttonText || !classText) {
             return res.status(400).json({
@@ -24,12 +24,17 @@ export const CreateSlider = async (req, res, next) => {
 
         console.log("Cloudinary URL:", result.secure_url);
 
+        if (isDefault === 'true' || isDefault === true) {
+            await Slider.updateMany({}, { isDefault: false });
+        }
+
         const  slider = await Slider.create({
             title,
             subtitle,
             buttonText,
             classText,
-            image:result.secure_url
+            image:result.secure_url,
+            isDefault: isDefault === 'true' || isDefault === true
         })
 
         return res.status(200).json({
@@ -46,7 +51,7 @@ export const CreateSlider = async (req, res, next) => {
 
 export const GetSlider = async(req,res,next)=>{
     try {
-        const allslider = await Slider.find()
+        const allslider = await Slider.find().sort({ isDefault: -1, createdAt: -1 })
 
         return res.status(200).json({
             message:"ALl slider fatched successfully",
@@ -62,7 +67,7 @@ export const GetSlider = async(req,res,next)=>{
 
 export const UpdateSlider = async(req,res,next)=>{
     try {
-        const {sliderId,title, subtitle, buttonText, classText} = req.body;
+        const {sliderId,title, subtitle, buttonText, classText, isDefault} = req.body;
         if(!sliderId){
             return res.status(400).json({
                 message:"slider Id is required",
@@ -86,12 +91,17 @@ export const UpdateSlider = async(req,res,next)=>{
                     imageUrl = result.secure_url;
                 }
 
+        if (isDefault === 'true' || isDefault === true) {
+            await Slider.updateMany({ _id: { $ne: sliderId } }, { isDefault: false });
+        }
+
         const editSlider = await Slider.findByIdAndUpdate(sliderId,{
             title: title || existingSlider.title, 
             subtitle: subtitle || existingSlider.subtitle,
              buttonText: buttonText || existingSlider.buttonText, 
              classText: classText || existingSlider.classText,
-             image:imageUrl
+             image:imageUrl,
+             isDefault: isDefault !== undefined ? (isDefault === 'true' || isDefault === true) : existingSlider.isDefault
         },{new:true})
 
         return res.status(200).json({
