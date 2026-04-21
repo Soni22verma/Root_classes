@@ -340,7 +340,7 @@ const CourseDetails = () => {
   const openTopicInfo = (topic) => {
     const hasAccess = isEnrolled || topic.isPreviewFree || isCompletelyFree();
     if (!hasAccess) return showToast('Enroll to access topic information', 'error');
-    navigate("/topicinfo", {
+    navigate(`/topicinfo/${topic._id}`, {
       state: {
         topic,
         courseId: course._id,

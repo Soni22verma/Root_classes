@@ -43,6 +43,7 @@ const api = {
      result:{
         submitTest:Base_Url+"/result/submit_test",
         attemptTest:Base_Url+"/result/check-existing-test",
+        getStudentResults:Base_Url+"/result/get-student-results",
      },
      enrollment:{
        enrollCourse:Base_Url+"/student/enroll-course"
