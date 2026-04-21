@@ -4,11 +4,11 @@ import axios from 'axios';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../../../services/instructorendpoint';
 import { useEffect, useState } from 'react';
-import { 
-  Plus, 
-  Edit, 
-  Trash2, 
-  ChevronDown, 
+import {
+  Plus,
+  Edit,
+  Trash2,
+  ChevronDown,
   ChevronRight,
   Video,
   FileText,
@@ -60,15 +60,15 @@ import UnderlineExtension from '@tiptap/extension-underline';
 
 // Custom YouTube icon component
 const YoutubeIcon = ({ size = 16 }) => (
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    width={size} 
-    height={size} 
-    viewBox="0 0 24 24" 
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
     fill="currentColor"
     style={{ display: 'inline-block' }}
   >
-    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.376.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.376-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.376.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.376-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
   </svg>
 );
 
@@ -76,11 +76,10 @@ const YoutubeIcon = ({ size = 16 }) => (
 const MenuButton = ({ onClick, isActive, children, title }) => (
   <button
     onClick={onClick}
-    className={`p-1.5 sm:p-2 rounded-lg transition-all ${
-      isActive 
-        ? 'bg-indigo-100 text-indigo-700' 
+    className={`p-1.5 sm:p-2 rounded-lg transition-all ${isActive
+        ? 'bg-indigo-100 text-indigo-700'
         : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-    }`}
+      }`}
     title={title}
     type="button"
   >
@@ -108,16 +107,16 @@ const CourseContentManager = () => {
   // Form states
   const [moduleTitle, setModuleTitle] = useState('');
   const [chapterTitle, setChapterTitle] = useState('');
-  const [topicData, setTopicData] = useState({ 
-    title: '', 
-    description: '', 
+  const [topicData, setTopicData] = useState({
+    title: '',
+    description: '',
     isPreviewFree: false,
     order: 0,
     videoType: 'upload',
     youtubeUrl: '',
     removeNotes: false // Flag to remove existing notes
   });
-  
+
   // File states
   const [videoFile, setVideoFile] = useState(null);
   const [notesFile, setNotesFile] = useState(null);
@@ -341,7 +340,7 @@ const CourseContentManager = () => {
     if (notesFile) {
       formData.append('notes', notesFile);
     }
-    
+
     // If editing and we want to remove existing notes
     if (editingItem?.type === 'topic' && topicData.removeNotes) {
       formData.append('removeNotes', 'true');
@@ -371,7 +370,7 @@ const CourseContentManager = () => {
       setUploading(false);
     }
   };
-  
+
   const handleDeleteTopic = async (moduleId, chapterId, topicId) => {
     if (window.confirm('Delete this topic?')) {
       try {
@@ -464,7 +463,7 @@ const CourseContentManager = () => {
     setModalType('topic');
     setSelectedModule(module);
     setSelectedChapter(chapter);
-    
+
     if (topic) {
       setEditingItem({ type: 'topic', id: topic._id });
       setSelectedTopic(topic);
@@ -484,9 +483,9 @@ const CourseContentManager = () => {
     } else {
       setEditingItem(null);
       setSelectedTopic(null);
-      setTopicData({ 
-        title: '', 
-        description: '', 
+      setTopicData({
+        title: '',
+        description: '',
         isPreviewFree: false,
         order: chapter.topics?.length || 0,
         videoType: 'upload',
@@ -510,10 +509,10 @@ const CourseContentManager = () => {
     setSelectedTopic(null);
     setModuleTitle('');
     setChapterTitle('');
-    setTopicData({ 
-      title: '', 
-      description: '', 
-      isPreviewFree: false, 
+    setTopicData({
+      title: '',
+      description: '',
+      isPreviewFree: false,
       order: 0,
       videoType: 'upload',
       youtubeUrl: '',
@@ -534,7 +533,7 @@ const CourseContentManager = () => {
 
   const totalModules = course?.modules?.length || 0;
   const totalChapters = course?.modules?.reduce((sum, module) => sum + (module.chapters?.length || 0), 0) || 0;
-  const totalTopics = course?.modules?.reduce((sum, module) => 
+  const totalTopics = course?.modules?.reduce((sum, module) =>
     sum + (module.chapters?.reduce((chapSum, chapter) => chapSum + (chapter.topics?.length || 0), 0) || 0), 0) || 0;
 
   if (loading) {
@@ -554,8 +553,8 @@ const CourseContentManager = () => {
         <div className="text-center bg-white p-6 sm:p-10 rounded-2xl shadow-xl max-w-md w-full">
           <AlertCircle className="w-12 h-12 sm:w-16 sm:h-16 text-red-500 mx-auto mb-4" />
           <p className="text-red-500 text-base sm:text-lg font-semibold mb-4">Course not found</p>
-          <button 
-            onClick={() => navigate('/admin/allcourses')} 
+          <button
+            onClick={() => navigate('/admin/allcourses')}
             className="inline-flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all font-medium text-sm sm:text-base w-full sm:w-auto justify-center"
           >
             <ArrowLeft size={18} />
@@ -578,62 +577,62 @@ const CourseContentManager = () => {
       {/* Header - Compact Pro */}
       <div className="bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-6 py-4">
-          <button 
-            onClick={() => navigate(-1)} 
+          <button
+            onClick={() => navigate(-1)}
             className="text-[9px] font-black text-gray-300 hover:text-[#0078FF] mb-2 inline-flex items-center gap-2 uppercase tracking-widest transition-all"
           >
             <ArrowLeft size={12} /> Dashboard
           </button>
-          
+
           <div className="flex flex-col lg:flex-row justify-between items-center gap-4">
             <div className="flex-1 w-full">
               <div className="flex items-center gap-2 mb-1">
-                 <div className="w-1.5 h-1.5 rounded-full bg-[#FB0500]" />
-                 <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em]">Curriculum Manager</p>
+                <div className="w-1.5 h-1.5 rounded-full bg-[#FB0500]" />
+                <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em]">Curriculum Manager</p>
               </div>
               <h1 className="text-xl font-black text-gray-900 tracking-tight leading-none mb-2">
                 {course.title}
               </h1>
-              
+
               <div className="flex gap-2">
                 <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-blue-50 border border-blue-100 text-[9px] font-black text-[#0078FF] rounded-md uppercase">
-                   {course.category?.name || 'Curriculum'}
+                  {course.category?.name || 'Curriculum'}
                 </span>
                 <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-gray-50 border border-gray-100 text-[9px] font-black text-gray-500 rounded-md uppercase">
-                   {course.level}
+                  {course.level}
                 </span>
               </div>
             </div>
 
             {/* High-End Compact Stats */}
             <div className="flex gap-2 w-full lg:w-auto">
-               <div className="bg-white px-4 py-2 rounded-xl border border-gray-100 flex items-center gap-3 shadow-sm min-w-[100px]">
-                  <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-[#0078FF]">
-                     <FolderTree size={14} />
-                  </div>
-                  <div>
-                     <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Modules</p>
-                     <p className="text-[14px] font-black text-gray-900 leading-none">{totalModules}</p>
-                  </div>
-               </div>
-               <div className="bg-white px-4 py-2 rounded-xl border border-gray-100 flex items-center gap-3 shadow-sm min-w-[100px]">
-                  <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center text-green-600">
-                     <Grid3x3 size={14} />
-                  </div>
-                  <div>
-                     <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Units</p>
-                     <p className="text-[14px] font-black text-gray-900 leading-none">{totalChapters}</p>
-                  </div>
-               </div>
-               <div className="bg-white px-4 py-2 rounded-xl border border-gray-100 flex items-center gap-3 shadow-sm min-w-[100px]">
-                  <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600">
-                     <Sparkles size={14} />
-                  </div>
-                  <div>
-                     <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Lessons</p>
-                     <p className="text-[14px] font-black text-gray-900 leading-none">{totalTopics}</p>
-                  </div>
-               </div>
+              <div className="bg-white px-4 py-2 rounded-xl border border-gray-100 flex items-center gap-3 shadow-sm min-w-[100px]">
+                <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-[#0078FF]">
+                  <FolderTree size={14} />
+                </div>
+                <div>
+                  <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Modules</p>
+                  <p className="text-[14px] font-black text-gray-900 leading-none">{totalModules}</p>
+                </div>
+              </div>
+              <div className="bg-white px-4 py-2 rounded-xl border border-gray-100 flex items-center gap-3 shadow-sm min-w-[100px]">
+                <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center text-green-600">
+                  <Grid3x3 size={14} />
+                </div>
+                <div>
+                  <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Units</p>
+                  <p className="text-[14px] font-black text-gray-900 leading-none">{totalChapters}</p>
+                </div>
+              </div>
+              <div className="bg-white px-4 py-2 rounded-xl border border-gray-100 flex items-center gap-3 shadow-sm min-w-[100px]">
+                <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600">
+                  <Sparkles size={14} />
+                </div>
+                <div>
+                  <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Lessons</p>
+                  <p className="text-[14px] font-black text-gray-900 leading-none">{totalTopics}</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -642,18 +641,18 @@ const CourseContentManager = () => {
       {/* Main Studio Workspace - Standard Industrial Layout */}
       <div className="max-w-full mx-auto px-4 py-4">
         <div className="flex gap-0 items-start relative bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm h-[calc(100vh-160px)]">
-          
+
           {/* LEFT: The Curriculum Explorer (Integrated Pane) */}
           {!isExplorerCollapsed && (
             <div className="w-[350px] flex flex-col border-r border-gray-200 h-full bg-gray-50/20">
               <div className="p-4 border-b border-gray-200 bg-white flex items-center justify-between">
-                 <h3 className="text-[11px] font-black text-gray-900 uppercase tracking-widest">Explorer</h3>
-                 <button
-                   onClick={() => openModuleModal()}
-                   className="bg-gray-900 text-white px-3 py-1.5 rounded-lg font-black text-[9px] uppercase tracking-widest hover:bg-black transition-all flex items-center gap-2 shadow-sm"
-                 >
-                   <Plus size={12} /> Add Module
-                 </button>
+                <h3 className="text-[11px] font-black text-gray-900 uppercase tracking-widest">Explorer</h3>
+                <button
+                  onClick={() => openModuleModal()}
+                  className="bg-gray-900 text-white px-3 py-1.5 rounded-lg font-black text-[9px] uppercase tracking-widest hover:bg-black transition-all flex items-center gap-2 shadow-sm"
+                >
+                  <Plus size={12} /> Add Module
+                </button>
               </div>
 
               <div className="flex-1 overflow-y-auto custom-scrollbar p-2">
@@ -666,56 +665,56 @@ const CourseContentManager = () => {
                     {course.modules.map((module, mIdx) => (
                       <div key={module._id} className="rounded-lg overflow-hidden">
                         <div className={`flex items-center justify-between px-3 py-2 transition-all cursor-pointer group rounded-lg ${isModalOpen && selectedModule?._id === module._id && modalType === 'module' ? 'bg-white border border-gray-200 shadow-sm' : 'hover:bg-white'}`} onClick={() => toggleModule(module._id)}>
-                           <div className="flex items-center gap-2.5 min-w-0">
-                              <div className={`w-4 h-4 rounded flex items-center justify-center transition-all ${expandedModules[module._id] ? 'text-gray-900' : 'text-gray-400'}`}>
-                                 {expandedModules[module._id] ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                              </div>
-                              <div className="min-w-0">
-                                 <h2 className="text-[11px] font-black text-gray-900 leading-tight uppercase truncate">{module.title}</h2>
-                                 <p className="text-[7px] font-black text-gray-400 uppercase tracking-widest mt-0.5">M{mIdx + 1} • {module.chapters?.length || 0} Units</p>
-                              </div>
-                           </div>
-                           <div className="flex items-center gap-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button onClick={(e) => { e.stopPropagation(); openChapterModal(module); }} className="p-1 text-gray-400 hover:text-blue-600 transition-all"><Plus size={14} /></button>
-                              <button onClick={(e) => { e.stopPropagation(); openModuleModal(module); }} className="p-1 text-gray-400 hover:text-green-600 transition-all"><Edit size={14} /></button>
-                              <button onClick={(e) => { e.stopPropagation(); handleDeleteModule(module._id); }} className="p-1 text-gray-400 hover:text-red-600 transition-all"><Trash2 size={14} /></button>
-                           </div>
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div className={`w-4 h-4 rounded flex items-center justify-center transition-all ${expandedModules[module._id] ? 'text-gray-900' : 'text-gray-400'}`}>
+                              {expandedModules[module._id] ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                            </div>
+                            <div className="min-w-0">
+                              <h2 className="text-[11px] font-black text-gray-900 leading-tight uppercase truncate">{module.title}</h2>
+                              <p className="text-[7px] font-black text-gray-400 uppercase tracking-widest mt-0.5">M{mIdx + 1} • {module.chapters?.length || 0} Units</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onClick={(e) => { e.stopPropagation(); openChapterModal(module); }} className="p-1 text-gray-400 hover:text-blue-600 transition-all"><Plus size={14} /></button>
+                            <button onClick={(e) => { e.stopPropagation(); openModuleModal(module); }} className="p-1 text-gray-400 hover:text-green-600 transition-all"><Edit size={14} /></button>
+                            <button onClick={(e) => { e.stopPropagation(); handleDeleteModule(module._id); }} className="p-1 text-gray-400 hover:text-red-600 transition-all"><Trash2 size={14} /></button>
+                          </div>
                         </div>
 
                         {expandedModules[module._id] && (
                           <div className="ml-4 border-l border-gray-100 pb-1 mt-0.5">
                             {module.chapters?.map((chapter, cIdx) => (
                               <div key={chapter._id}>
-                                 <div className={`flex items-center justify-between pl-6 pr-3 py-1.5 transition-all cursor-pointer group relative ${isModalOpen && selectedChapter?._id === chapter._id && modalType === 'chapter' ? 'bg-white border-y border-gray-100 shadow-sm' : 'hover:bg-white/30'}`} onClick={() => toggleChapter(chapter._id)}>
-                                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-4 h-px bg-gray-100" />
-                                    <div className="flex items-center gap-2 min-w-0">
-                                       <div className={`w-4 h-4 rounded flex items-center justify-center transition-all ${expandedChapters[chapter._id] ? 'text-indigo-600' : 'text-gray-300'}`}>
-                                          {expandedChapters[chapter._id] ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-                                       </div>
-                                       <h3 className="text-[10px] font-black text-gray-700 uppercase truncate">U{cIdx + 1} • {chapter.title}</h3>
+                                <div className={`flex items-center justify-between pl-6 pr-3 py-1.5 transition-all cursor-pointer group relative ${isModalOpen && selectedChapter?._id === chapter._id && modalType === 'chapter' ? 'bg-white border-y border-gray-100 shadow-sm' : 'hover:bg-white/30'}`} onClick={() => toggleChapter(chapter._id)}>
+                                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-4 h-px bg-gray-100" />
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <div className={`w-4 h-4 rounded flex items-center justify-center transition-all ${expandedChapters[chapter._id] ? 'text-indigo-600' : 'text-gray-300'}`}>
+                                      {expandedChapters[chapter._id] ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
                                     </div>
-                                    <div className="flex items-center gap-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                                       <button onClick={(e) => { e.stopPropagation(); openTopicModal(module, chapter); }} className="p-1 text-gray-400 hover:text-blue-600 transition-all"><Plus size={12} /></button>
-                                       <button onClick={(e) => { e.stopPropagation(); handleDeleteChapter(module._id, chapter._id); }} className="p-1 text-gray-400 hover:text-red-600 transition-all"><Trash2 size={12} /></button>
-                                    </div>
-                                 </div>
+                                    <h3 className="text-[10px] font-black text-gray-700 uppercase truncate">U{cIdx + 1} • {chapter.title}</h3>
+                                  </div>
+                                  <div className="flex items-center gap-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button onClick={(e) => { e.stopPropagation(); openTopicModal(module, chapter); }} className="p-1 text-gray-400 hover:text-blue-600 transition-all"><Plus size={12} /></button>
+                                    <button onClick={(e) => { e.stopPropagation(); handleDeleteChapter(module._id, chapter._id); }} className="p-1 text-gray-400 hover:text-red-600 transition-all"><Trash2 size={12} /></button>
+                                  </div>
+                                </div>
 
-                                 {expandedChapters[chapter._id] && (
-                                   <div className="ml-4 border-l border-gray-100">
-                                      {chapter.topics?.map((topic, tIdx) => (
-                                        <div key={topic._id} className={`flex items-center justify-between pl-6 pr-3 py-1 group/lesson transition-all relative ${isModalOpen && editingItem?._id === topic._id && modalType === 'topic' ? 'bg-blue-50 border-l-2 border-l-blue-600 shadow-sm' : 'hover:bg-gray-100'}`} onClick={() => openTopicModal(module, chapter, topic)}>
-                                           <div className="absolute left-0 top-1/2 -translate-y-1/2 w-4 h-px bg-gray-100" />
-                                           <div className="flex items-center gap-2 min-w-0">
-                                              <div className="w-1 h-1 rounded-full bg-gray-300" />
-                                              <h4 className={`text-[10px] font-bold uppercase truncate ${isModalOpen && editingItem?._id === topic._id && modalType === 'topic' ? 'text-blue-600' : 'text-gray-500'}`}>{topic.title}</h4>
-                                           </div>
-                                           <div className="flex items-center gap-0 opacity-0 group-hover/lesson:opacity-100 transition-opacity">
-                                              <button onClick={(e) => { e.stopPropagation(); handleDeleteTopic(module._id, chapter._id, topic._id); }} className="p-1 text-gray-400 hover:text-red-600 transition-all"><Trash2 size={10} /></button>
-                                           </div>
+                                {expandedChapters[chapter._id] && (
+                                  <div className="ml-4 border-l border-gray-100">
+                                    {chapter.topics?.map((topic, tIdx) => (
+                                      <div key={topic._id} className={`flex items-center justify-between pl-6 pr-3 py-1 group/lesson transition-all relative ${isModalOpen && editingItem?._id === topic._id && modalType === 'topic' ? 'bg-blue-50 border-l-2 border-l-blue-600 shadow-sm' : 'hover:bg-gray-100'}`} onClick={() => openTopicModal(module, chapter, topic)}>
+                                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-4 h-px bg-gray-100" />
+                                        <div className="flex items-center gap-2 min-w-0">
+                                          <div className="w-1 h-1 rounded-full bg-gray-300" />
+                                          <h4 className={`text-[10px] font-bold uppercase truncate ${isModalOpen && editingItem?._id === topic._id && modalType === 'topic' ? 'text-blue-600' : 'text-gray-500'}`}>{topic.title}</h4>
                                         </div>
-                                      ))}
-                                   </div>
-                                 )}
+                                        <div className="flex items-center gap-0 opacity-0 group-hover/lesson:opacity-100 transition-opacity">
+                                          <button onClick={(e) => { e.stopPropagation(); handleDeleteTopic(module._id, chapter._id, topic._id); }} className="p-1 text-gray-400 hover:text-red-600 transition-all"><Trash2 size={10} /></button>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
                             ))}
                           </div>
@@ -730,316 +729,322 @@ const CourseContentManager = () => {
 
           {/* RIGHT: The Editorial Studio (Integrated Workspace) */}
           <div className="flex-1 flex flex-col h-full bg-white relative overflow-hidden">
-             {isModalOpen ? (
-               <div className="flex flex-col h-full animate-fadeIn">
-                  {/* Studio Header - Integrated Controls */}
-                  <div className="px-6 py-3 border-b border-gray-100 flex items-center justify-between bg-white sticky top-0 z-10">
-                     <div className="flex items-center gap-4">
-                        <button 
-                           onClick={() => setIsExplorerCollapsed(!isExplorerCollapsed)}
-                           className={`p-1.5 rounded-md transition-all ${isExplorerCollapsed ? 'bg-gray-900 text-white shadow-sm' : 'text-gray-400 hover:text-gray-900 hover:bg-gray-50'}`}
-                        >
-                           {isExplorerCollapsed ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-                        </button>
-                        <div className="h-4 w-px bg-gray-200" />
-                        <div>
-                           <p className="text-[7px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Editorial Canvas</p>
-                           <h2 className="text-[10px] font-black text-gray-900 uppercase tracking-tight">
-                             {editingItem ? 'Execute Update' : 'New Component'} • {modalType}
-                           </h2>
-                        </div>
-                     </div>
-                     
-                     <div className="flex items-center gap-3">
-                        <div className="flex bg-gray-50 p-0.5 rounded-lg border border-gray-200">
-                           <button onClick={() => setStudioMode('edit')} className={`px-3 py-1 rounded-md text-[9px] font-black uppercase transition-all ${studioMode === 'edit' ? 'bg-white text-gray-900 shadow-sm border border-gray-100' : 'text-gray-400 hover:text-gray-600'}`}>Edit</button>
-                           <button onClick={() => setStudioMode('preview')} className={`px-3 py-1 rounded-md text-[9px] font-black uppercase transition-all ${studioMode === 'preview' ? 'bg-white text-gray-900 shadow-sm border border-gray-100' : 'text-gray-400 hover:text-gray-600'}`}>Preview</button>
-                        </div>
-                        <button onClick={closeModal} className="p-1.5 text-gray-400 hover:text-red-600 transition-all">
-                           <X size={16} />
-                        </button>
-                     </div>
+            {isModalOpen ? (
+              <div className="flex flex-col h-full animate-fadeIn">
+                {/* Studio Header - Integrated Controls */}
+                <div className="px-6 py-3 border-b border-gray-100 flex items-center justify-between bg-white sticky top-0 z-10">
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={() => setIsExplorerCollapsed(!isExplorerCollapsed)}
+                      className={`p-1.5 rounded-md transition-all ${isExplorerCollapsed ? 'bg-gray-900 text-white shadow-sm' : 'text-gray-400 hover:text-gray-900 hover:bg-gray-50'}`}
+                    >
+                      {isExplorerCollapsed ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+                    </button>
+                    <div className="h-4 w-px bg-gray-200" />
+                    <div>
+                      <p className="text-[7px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Editorial Canvas</p>
+                      <h2 className="text-[10px] font-black text-gray-900 uppercase tracking-tight">
+                        {editingItem ? 'Execute Update' : 'New Component'} • {modalType}
+                      </h2>
+                    </div>
                   </div>
 
-                  <div className="flex-1 overflow-y-auto custom-scrollbar bg-white">
-                     <div className="max-w-4xl mx-auto p-10">
-                        {studioMode === 'preview' ? (
-                           <div className="animate-fadeIn space-y-8">
-                              <div className="flex items-center gap-2">
-                                 <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                                 <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Active Student View</span>
+                  <div className="flex items-center gap-3">
+                    <div className="flex bg-gray-50 p-0.5 rounded-lg border border-gray-200">
+                      <button onClick={() => setStudioMode('edit')} className={`px-3 py-1 rounded-md text-[9px] font-black uppercase transition-all ${studioMode === 'edit' ? 'bg-white text-gray-900 shadow-sm border border-gray-100' : 'text-gray-400 hover:text-gray-600'}`}>Edit</button>
+                      <button onClick={() => setStudioMode('preview')} className={`px-3 py-1 rounded-md text-[9px] font-black uppercase transition-all ${studioMode === 'preview' ? 'bg-white text-gray-900 shadow-sm border border-gray-100' : 'text-gray-400 hover:text-gray-600'}`}>Preview</button>
+                    </div>
+                    <button 
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); closeModal(); }} 
+                      className="p-1.5 text-gray-400 hover:text-red-600 transition-all"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex-1 overflow-y-auto custom-scrollbar bg-white">
+                  <div className="max-w-4xl mx-auto p-10">
+                    {studioMode === 'preview' ? (
+                      <div className="animate-fadeIn space-y-8">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                          <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Active Student View</span>
+                        </div>
+
+                        <h1 className="text-4xl font-black text-gray-900 tracking-tighter uppercase leading-none">
+                          {modalType === 'module' ? moduleTitle : modalType === 'chapter' ? chapterTitle : topicData.title}
+                        </h1>
+
+                        {modalType === 'topic' && (
+                          <div className="space-y-10">
+                            {topicData.videoType === 'youtube' && topicData.youtubeUrl ? (
+                              <div className="aspect-video w-full rounded-xl overflow-hidden bg-black border border-gray-200 shadow-2xl">
+                                <iframe
+                                  src={`https://www.youtube.com/embed/${topicData.youtubeUrl.split('v=')[1]?.split('&')[0] || topicData.youtubeUrl.split('/').pop()}`}
+                                  className="w-full h-full"
+                                  allowFullScreen
+                                  title="Video Player"
+                                />
                               </div>
-                              
-                              <h1 className="text-4xl font-black text-gray-900 tracking-tighter uppercase leading-none">
-                                {modalType === 'module' ? moduleTitle : modalType === 'chapter' ? chapterTitle : topicData.title}
-                              </h1>
+                            ) : (videoPreview || selectedTopic?.videoUrl) ? (
+                              <div className="aspect-video w-full rounded-xl overflow-hidden bg-black border border-gray-200 shadow-2xl">
+                                <video src={videoPreview || selectedTopic?.videoUrl} className="w-full h-full" controls />
+                              </div>
+                            ) : null}
 
-                              {modalType === 'topic' && (
-                                 <div className="space-y-10">
-                                    {topicData.videoType === 'youtube' && topicData.youtubeUrl ? (
-                                       <div className="aspect-video w-full rounded-xl overflow-hidden bg-black border border-gray-200 shadow-2xl">
-                                          <iframe 
-                                             src={`https://www.youtube.com/embed/${topicData.youtubeUrl.split('v=')[1]?.split('&')[0] || topicData.youtubeUrl.split('/').pop()}`}
-                                             className="w-full h-full"
-                                             allowFullScreen
-                                             title="Video Player"
-                                          />
-                                       </div>
-                                    ) : (videoPreview || selectedTopic?.videoUrl) ? (
-                                       <div className="aspect-video w-full rounded-xl overflow-hidden bg-black border border-gray-200 shadow-2xl">
-                                          <video src={videoPreview || selectedTopic?.videoUrl} className="w-full h-full" controls />
-                                       </div>
-                                    ) : null}
+                            <div className="prose prose-blue max-w-none">
+                              <div className="text-gray-700 leading-relaxed text-lg font-medium" dangerouslySetInnerHTML={{ __html: editor?.getHTML() }} />
+                            </div>
 
-                                    <div className="prose prose-blue max-w-none">
-                                       <div className="text-gray-700 leading-relaxed text-lg font-medium" dangerouslySetInnerHTML={{ __html: editor?.getHTML() }} />
-                                    </div>
-
-                                    {/* Notes Preview Section */}
-                                    {(notesFile || selectedTopic?.notesUrl) && (
-                                       <div className="mt-8 p-6 bg-gray-50 rounded-xl border border-gray-200">
-                                          <div className="flex items-center justify-between mb-4">
-                                             <div className="flex items-center gap-2">
-                                                <FileText size={20} className="text-green-600" />
-                                                <h3 className="text-[11px] font-black text-gray-900 uppercase tracking-widest">Course Material</h3>
-                                             </div>
-                                             <button
-                                                onClick={() => window.open(notesFile ? URL.createObjectURL(notesFile) : selectedTopic?.notesUrl, '_blank')}
-                                                className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-[9px] font-black text-gray-700 hover:border-green-500 transition-all"
-                                             >
-                                                <Download size={12} />
-                                                Download Notes
-                                             </button>
-                                          </div>
-                                          <p className="text-[11px] text-gray-600">
-                                             {notesPreview || selectedTopic?.notesUrl?.split('/').pop() || 'Notes.pdf'}
-                                          </p>
-                                       </div>
-                                    )}
-                                 </div>
-                              )}
-
-                              {(modalType === 'module' || modalType === 'chapter') && (
-                                 <div className="p-20 text-center bg-gray-50 border border-dashed border-gray-200 rounded-xl">
-                                    <BookOpen size={40} className="mx-auto text-gray-200 mb-4" />
-                                    <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Metadata Context</p>
-                                 </div>
-                              )}
-                           </div>
-                        ) : (
-                           <div className="animate-fadeIn space-y-10">
-                              {modalType === 'module' && (
-                                 <div className="space-y-4">
-                                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em]">Module Title</label>
-                                    <input type="text" className="w-full border-b border-gray-200 py-4 text-3xl font-black focus:outline-none focus:border-gray-900 bg-transparent placeholder-gray-100 tracking-tighter uppercase" placeholder="MODULE NAME..." value={moduleTitle} onChange={(e) => setModuleTitle(e.target.value)} autoFocus />
-                                 </div>
-                              )}
-
-                              {modalType === 'chapter' && (
-                                 <div className="space-y-6">
-                                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em]">Unit Title</label>
-                                    <input type="text" className="w-full border-b border-gray-200 py-4 text-3xl font-black focus:outline-none focus:border-indigo-600 bg-transparent placeholder-gray-100 tracking-tighter uppercase" placeholder="UNIT NAME..." value={chapterTitle} onChange={(e) => setChapterTitle(e.target.value)} autoFocus />
-                                 </div>
-                              )}
-
-                              {modalType === 'topic' && (
-                                 <div className="space-y-12">
-                                    <div className="space-y-4">
-                                       <label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em]">Lesson Title</label>
-                                       <input type="text" className="w-full border-b border-gray-200 py-4 text-3xl font-black focus:outline-none focus:border-blue-600 bg-transparent placeholder-gray-100 tracking-tighter uppercase" placeholder="LESSON NAME..." value={topicData.title} onChange={(e) => setTopicData({ ...topicData, title: e.target.value })} />
-                                    </div>
-
-                                    <div className="space-y-4">
-                                       <div className="flex items-center justify-between border-b border-gray-100 pb-2">
-                                          <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Content Production</label>
-                                          <div className="flex gap-1">
-                                             <MenuButton onClick={() => editor?.chain().focus().toggleBold().run()} isActive={editor?.isActive('bold')}><Bold size={14} /></MenuButton>
-                                             <MenuButton onClick={() => editor?.chain().focus().toggleBulletList().run()} isActive={editor?.isActive('bulletList')}><List size={14} /></MenuButton>
-                                             <MenuButton onClick={() => editor?.chain().focus().toggleCodeBlock().run()} isActive={editor?.isActive('codeBlock')}><Code size={14} /></MenuButton>
-                                          </div>
-                                       </div>
-                                       <EditorContent editor={editor} className="min-h-[350px] text-gray-800 font-medium text-lg focus:outline-none" />
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-12 pt-8 border-t border-gray-50">
-                                       <div className="space-y-4">
-                                          <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Media Type</label>
-                                          <div className="flex bg-gray-50 p-1 rounded-lg border border-gray-200 shadow-sm">
-                                             <button type="button" onClick={() => setTopicData({...topicData, videoType: 'upload'})} className={`flex-1 py-2.5 rounded-md text-[9px] font-black uppercase transition-all ${topicData.videoType === 'upload' ? 'bg-white text-gray-900 shadow-sm border border-gray-100' : 'text-gray-400 hover:text-gray-600'}`}>Internal</button>
-                                             <button type="button" onClick={() => setTopicData({...topicData, videoType: 'youtube'})} className={`flex-1 py-2.5 rounded-md text-[9px] font-black uppercase transition-all flex items-center justify-center gap-2 ${topicData.videoType === 'youtube' ? 'bg-red-600 text-white shadow-md' : 'text-gray-400 hover:text-gray-600'}`}>
-                                                <YoutubeIcon size={12} /> YouTube
-                                             </button>
-                                          </div>
-                                       </div>
-                                       <div className="space-y-4">
-                                          <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Publicity</label>
-                                          <button onClick={() => setTopicData({ ...topicData, isPreviewFree: !topicData.isPreviewFree })} className={`w-full py-3 rounded-lg border text-[9px] font-black uppercase transition-all flex items-center justify-center gap-3 shadow-sm ${topicData.isPreviewFree ? 'bg-green-50 border-green-200 text-green-700' : 'bg-gray-50 border-gray-200 text-gray-400 hover:border-gray-300'}`}>
-                                             {topicData.isPreviewFree ? <Unlock size={14} /> : <Lock size={14} />}
-                                             {topicData.isPreviewFree ? 'Free Preview' : 'Enrollment Required'}
-                                          </button>
-                                       </div>
-                                    </div>
-
-                                    <div className="bg-gray-50/50 border border-gray-100 rounded-xl p-8">
-                                       <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-4">Resource Payload</label>
-                                       
-                                       {/* Video Section */}
-                                       <div className="mb-8">
-                                          <div className="flex items-center justify-between mb-3">
-                                             <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Video Asset</span>
-                                             {editingItem && selectedTopic?.videoUrl && topicData.videoType === 'upload' && !videoPreview && (
-                                                <button 
-                                                   onClick={() => window.open(selectedTopic.videoUrl, '_blank')}
-                                                   className="text-[8px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1"
-                                                >
-                                                   <ExternalLink size={10} /> View Existing
-                                                </button>
-                                             )}
-                                          </div>
-                                          
-                                          {topicData.videoType === 'youtube' ? (
-                                             <input 
-                                                type="url" 
-                                                placeholder="YOUTUBE LINK..." 
-                                                className="w-full bg-white border border-gray-200 rounded-lg py-4 px-6 text-xs font-black focus:outline-none focus:border-red-600 transition-all tracking-wider" 
-                                                value={topicData.youtubeUrl} 
-                                                onChange={(e) => setTopicData({ ...topicData, youtubeUrl: e.target.value })} 
-                                             />
-                                          ) : (
-                                             <div className="text-center">
-                                                {!videoPreview && !selectedTopic?.videoUrl ? (
-                                                   <label className="cursor-pointer block group p-10 bg-white border border-dashed border-gray-200 rounded-xl hover:border-blue-500 transition-all">
-                                                      <Upload size={32} className="mx-auto mb-3 text-gray-200 group-hover:text-blue-500 transition-colors" />
-                                                      <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Upload Video Asset</p>
-                                                      <p className="text-[7px] text-gray-300 mt-1">MP4, MOV, AVI (Max 100MB)</p>
-                                                      <input type="file" accept="video/*" onChange={handleVideoChange} className="hidden" />
-                                                   </label>
-                                                ) : (
-                                                   <div className="relative inline-block group">
-                                                      <video src={videoPreview || selectedTopic?.videoUrl} className="h-32 rounded-lg border border-gray-200 shadow-xl" controls />
-                                                      <button onClick={removeVideo} className="absolute -top-3 -right-3 bg-red-600 text-white p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
-                                                         <X size={12} />
-                                                      </button>
-                                                   </div>
-                                                )}
-                                             </div>
-                                          )}
-                                       </div>
-
-                                       {/* Notes Section */}
-                                       <div className="border-t border-gray-200 pt-6">
-                                          <div className="flex items-center justify-between mb-3">
-                                             <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Notes / Resource Material</span>
-                                             {editingItem && selectedTopic?.notesUrl && !notesFile && (
-                                                <div className="flex gap-2">
-                                                   <button 
-                                                      onClick={() => window.open(selectedTopic.notesUrl, '_blank')}
-                                                      className="text-[8px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1"
-                                                   >
-                                                      <ExternalLink size={10} /> View Existing
-                                                   </button>
-                                                   <button 
-                                                      onClick={() => {
-                                                         if (window.confirm('Remove existing notes? This action will be saved when you update the topic.')) {
-                                                            setNotesFile(null);
-                                                            setTopicData({ ...topicData, removeNotes: true });
-                                                         }
-                                                      }}
-                                                      className="text-[8px] font-black text-red-600 uppercase tracking-widest flex items-center gap-1"
-                                                   >
-                                                      <Trash2 size={10} /> Remove
-                                                   </button>
-                                                </div>
-                                             )}
-                                          </div>
-                                          
-                                          {!notesPreview && !selectedTopic?.notesUrl ? (
-                                             <label className="cursor-pointer block group p-8 bg-white border border-dashed border-gray-200 rounded-xl hover:border-green-500 transition-all">
-                                                <div className="flex items-center justify-center gap-3">
-                                                   <FileText size={24} className="text-gray-300 group-hover:text-green-500 transition-colors" />
-                                                   <div className="text-left">
-                                                      <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest group-hover:text-green-600 transition-colors">
-                                                         Upload Notes (PDF)
-                                                      </p>
-                                                      <p className="text-[7px] text-gray-300 mt-0.5">PDF only, Max 10MB</p>
-                                                   </div>
-                                                </div>
-                                                <input type="file" accept=".pdf,application/pdf" onChange={handleNotesChange} className="hidden" />
-                                             </label>
-                                          ) : (
-                                             <div className="bg-white border border-green-200 rounded-xl p-4 flex items-center justify-between group hover:shadow-md transition-all">
-                                                <div className="flex items-center gap-3">
-                                                   <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
-                                                      <FileText size={20} className="text-green-600" />
-                                                   </div>
-                                                   <div>
-                                                      <p className="text-[10px] font-black text-gray-800 uppercase tracking-wide">
-                                                         {notesPreview || selectedTopic?.notesUrl?.split('/').pop() || 'Notes.pdf'}
-                                                      </p>
-                                                      <p className="text-[7px] font-black text-gray-400 uppercase tracking-widest mt-0.5">
-                                                         {notesFile ? `${(notesFile.size / 1024 / 1024).toFixed(2)} MB • Pending Upload` : 'Existing Resource'}
-                                                      </p>
-                                                   </div>
-                                                </div>
-                                                <button 
-                                                   onClick={notesFile ? removeNotes : () => {
-                                                      if (window.confirm('Remove existing notes? This action will be saved when you update the topic.')) {
-                                                         removeNotes();
-                                                         setTopicData({ ...topicData, removeNotes: true });
-                                                      }
-                                                   }} 
-                                                   className="p-2 text-gray-400 hover:text-red-600 transition-all opacity-0 group-hover:opacity-100"
-                                                >
-                                                   <X size={14} />
-                                                </button>
-                                             </div>
-                                          )}
-                                          
-                                          {/* Optional: Add note about existing file replacement */}
-                                          {editingItem && selectedTopic?.notesUrl && !notesFile && !topicData.removeNotes && (
-                                             <p className="text-[7px] text-amber-600 mt-2 flex items-center gap-1">
-                                                <AlertCircle size={10} />
-                                                Upload a new PDF to replace the existing notes
-                                             </p>
-                                          )}
-                                       </div>
-                                    </div>
-                                 </div>
-                              )}
-                           </div>
+                            {/* Notes Preview Section */}
+                            {(notesFile || selectedTopic?.notesUrl) && (
+                              <div className="mt-8 p-6 bg-gray-50 rounded-xl border border-gray-200">
+                                <div className="flex items-center justify-between mb-4">
+                                  <div className="flex items-center gap-2">
+                                    <FileText size={20} className="text-green-600" />
+                                    <h3 className="text-[11px] font-black text-gray-900 uppercase tracking-widest">Course Material</h3>
+                                  </div>
+                                  <button
+                                    onClick={() => window.open(notesFile ? URL.createObjectURL(notesFile) : selectedTopic?.notesUrl, '_blank')}
+                                    className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-[9px] font-black text-gray-700 hover:border-green-500 transition-all"
+                                  >
+                                    <Download size={12} />
+                                    Download Notes
+                                  </button>
+                                </div>
+                                <p className="text-[11px] text-gray-600">
+                                  {notesPreview || selectedTopic?.notesUrl?.split('/').pop() || 'Notes.pdf'}
+                                </p>
+                              </div>
+                            )}
+                          </div>
                         )}
-                     </div>
-                  </div>
 
-                  {/* Studio Integrated Footer */}
-                  <div className="px-10 py-6 border-t border-gray-100 bg-white flex items-center justify-between">
-                     <button onClick={closeModal} className="text-[9px] font-black uppercase text-gray-400 hover:text-red-600 transition-all tracking-[0.3em]">Discard Changes</button>
-                     <button
-                        onClick={() => {
-                          if (modalType === 'module') handleAddModule();
-                          else if (modalType === 'chapter') handleAddChapter();
-                          else if (modalType === 'topic') handleAddTopic();
-                        }}
-                        disabled={uploading}
-                        className="bg-gray-900 text-white px-10 py-4 rounded-lg font-black text-[10px] uppercase tracking-[0.3em] hover:bg-black transition-all shadow-xl shadow-black/10 disabled:opacity-50 flex items-center gap-4"
-                     >
-                        {uploading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <CheckCircle2 size={18} />}
-                        {editingItem ? 'Sync Updates' : 'Initialize Component'}
-                     </button>
+                        {(modalType === 'module' || modalType === 'chapter') && (
+                          <div className="p-20 text-center bg-gray-50 border border-dashed border-gray-200 rounded-xl">
+                            <BookOpen size={40} className="mx-auto text-gray-200 mb-4" />
+                            <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Metadata Context</p>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="animate-fadeIn space-y-10">
+                        {modalType === 'module' && (
+                          <div className="space-y-4">
+                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em]">Module Title</label>
+                            <input type="text" className="w-full border-b border-gray-200 py-4 text-3xl font-black focus:outline-none focus:border-gray-900 bg-transparent placeholder-gray-100 tracking-tighter uppercase" placeholder="MODULE NAME..." value={moduleTitle} onChange={(e) => setModuleTitle(e.target.value)} autoFocus />
+                          </div>
+                        )}
+
+                        {modalType === 'chapter' && (
+                          <div className="space-y-6">
+                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em]">Unit Title</label>
+                            <input type="text" className="w-full border-b border-gray-200 py-4 text-3xl font-black focus:outline-none focus:border-indigo-600 bg-transparent placeholder-gray-100 tracking-tighter uppercase" placeholder="UNIT NAME..." value={chapterTitle} onChange={(e) => setChapterTitle(e.target.value)} autoFocus />
+                          </div>
+                        )}
+
+                        {modalType === 'topic' && (
+                          <div className="space-y-12">
+                            <div className="space-y-4">
+                              <label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em]">Lesson Title</label>
+                              <input type="text" className="w-full border-b border-gray-200 py-4 text-3xl font-black focus:outline-none focus:border-blue-600 bg-transparent placeholder-gray-100 tracking-tighter uppercase" placeholder="LESSON NAME..." value={topicData.title} onChange={(e) => setTopicData({ ...topicData, title: e.target.value })} />
+                            </div>
+
+                            <div className="space-y-4">
+                              <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Content Production</label>
+                                <div className="flex gap-1">
+                                  <MenuButton onClick={() => editor?.chain().focus().toggleBold().run()} isActive={editor?.isActive('bold')}><Bold size={14} /></MenuButton>
+                                  <MenuButton onClick={() => editor?.chain().focus().toggleBulletList().run()} isActive={editor?.isActive('bulletList')}><List size={14} /></MenuButton>
+                                  <MenuButton onClick={() => editor?.chain().focus().toggleCodeBlock().run()} isActive={editor?.isActive('codeBlock')}><Code size={14} /></MenuButton>
+                                </div>
+                              </div>
+                              <EditorContent editor={editor} className="min-h-[350px] text-gray-800 font-medium text-lg focus:outline-none" />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-12 pt-8 border-t border-gray-50">
+                              <div className="space-y-4">
+                                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Media Type</label>
+                                <div className="flex bg-gray-50 p-1 rounded-lg border border-gray-200 shadow-sm">
+                                  <button type="button" onClick={() => setTopicData({ ...topicData, videoType: 'upload' })} className={`flex-1 py-2.5 rounded-md text-[9px] font-black uppercase transition-all ${topicData.videoType === 'upload' ? 'bg-white text-gray-900 shadow-sm border border-gray-100' : 'text-gray-400 hover:text-gray-600'}`}>Internal</button>
+                                  <button type="button" onClick={() => setTopicData({ ...topicData, videoType: 'youtube' })} className={`flex-1 py-2.5 rounded-md text-[9px] font-black uppercase transition-all flex items-center justify-center gap-2 ${topicData.videoType === 'youtube' ? 'bg-red-600 text-white shadow-md' : 'text-gray-400 hover:text-gray-600'}`}>
+                                    <YoutubeIcon size={12} /> YouTube
+                                  </button>
+                                </div>
+                              </div>
+                              <div className="space-y-4">
+                                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Publicity</label>
+                                <button onClick={() => setTopicData({ ...topicData, isPreviewFree: !topicData.isPreviewFree })} className={`w-full py-3 rounded-lg border text-[9px] font-black uppercase transition-all flex items-center justify-center gap-3 shadow-sm ${topicData.isPreviewFree ? 'bg-green-50 border-green-200 text-green-700' : 'bg-gray-50 border-gray-200 text-gray-400 hover:border-gray-300'}`}>
+                                  {topicData.isPreviewFree ? <Unlock size={14} /> : <Lock size={14} />}
+                                  {topicData.isPreviewFree ? 'Free Preview' : 'Enrollment Required'}
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="bg-gray-50/50 border border-gray-100 rounded-xl p-8">
+                              <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-4">Resource Payload</label>
+
+                              {/* Video Section */}
+                              <div className="mb-8">
+                                <div className="flex items-center justify-between mb-3">
+                                  <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Video Asset</span>
+                                  {editingItem && selectedTopic?.videoUrl && topicData.videoType === 'upload' && !videoPreview && (
+                                    <button
+                                      onClick={() => window.open(selectedTopic.videoUrl, '_blank')}
+                                      className="text-[8px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1"
+                                    >
+                                      <ExternalLink size={10} /> View Existing
+                                    </button>
+                                  )}
+                                </div>
+
+                                {topicData.videoType === 'youtube' ? (
+                                  <input
+                                    type="url"
+                                    placeholder="YOUTUBE LINK..."
+                                    className="w-full bg-white border border-gray-200 rounded-lg py-4 px-6 text-xs font-black focus:outline-none focus:border-red-600 transition-all tracking-wider"
+                                    value={topicData.youtubeUrl}
+                                    onChange={(e) => setTopicData({ ...topicData, youtubeUrl: e.target.value })}
+                                  />
+                                ) : (
+                                  <div className="text-center">
+                                    {!videoPreview && !selectedTopic?.videoUrl ? (
+                                      <label className="cursor-pointer block group p-10 bg-white border border-dashed border-gray-200 rounded-xl hover:border-blue-500 transition-all">
+                                        <Upload size={32} className="mx-auto mb-3 text-gray-200 group-hover:text-blue-500 transition-colors" />
+                                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Upload Video Asset</p>
+                                        <p className="text-[7px] text-gray-300 mt-1">MP4, MOV, AVI (Max 100MB)</p>
+                                        <input type="file" accept="video/*" onChange={handleVideoChange} className="hidden" />
+                                      </label>
+                                    ) : (
+                                      <div className="relative inline-block group">
+                                        <video src={videoPreview || selectedTopic?.videoUrl} className="h-32 rounded-lg border border-gray-200 shadow-xl" controls />
+                                        <button onClick={removeVideo} className="absolute -top-3 -right-3 bg-red-600 text-white p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                                          <X size={12} />
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Notes Section */}
+                              <div className="border-t border-gray-200 pt-6">
+                                <div className="flex items-center justify-between mb-3">
+                                  <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Notes / Resource Material</span>
+                                  {editingItem && selectedTopic?.notesUrl && !notesFile && !topicData.removeNotes && (
+                                    <div className="flex gap-2">
+                                      <button
+                                        onClick={() => window.open(selectedTopic.notesUrl, '_blank')}
+                                        className="text-[8px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1"
+                                      >
+                                        <ExternalLink size={10} /> View Existing
+                                      </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            if (window.confirm('Remove existing notes? This action will be saved when you update the topic.')) {
+                                              setNotesFile(null);
+                                              setTopicData({ ...topicData, removeNotes: true });
+                                            }
+                                          }}
+                                          className="text-[8px] font-black text-red-600 uppercase tracking-widest flex items-center gap-1"
+                                        >
+                                          <Trash2 size={10} /> Remove
+                                        </button>
+                                    </div>
+                                  )}
+                                </div>
+
+                                {!notesPreview && (!selectedTopic?.notesUrl || topicData.removeNotes) ? (
+                                  <label className="cursor-pointer block group p-8 bg-white border border-dashed border-gray-200 rounded-xl hover:border-green-500 transition-all">
+                                    <div className="flex items-center justify-center gap-3">
+                                      <FileText size={24} className="text-gray-300 group-hover:text-green-500 transition-colors" />
+                                      <div className="text-left">
+                                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest group-hover:text-green-600 transition-colors">
+                                          Upload Notes (PDF)
+                                        </p>
+                                        <p className="text-[7px] text-gray-300 mt-0.5">PDF only, Max 10MB</p>
+                                      </div>
+                                    </div>
+                                    <input type="file" accept=".pdf,application/pdf" onChange={handleNotesChange} className="hidden" />
+                                  </label>
+                                ) : (
+                                  <div className="bg-white border border-green-200 rounded-xl p-4 flex items-center justify-between group hover:shadow-md transition-all">
+                                    <div className="flex items-center gap-3">
+                                      <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
+                                        <FileText size={20} className="text-green-600" />
+                                      </div>
+                                      <div>
+                                        <p className="text-[10px] font-black text-gray-800 uppercase tracking-wide">
+                                          {notesPreview || selectedTopic?.notesUrl?.split('/').pop() || 'Notes.pdf'}
+                                        </p>
+                                        <p className="text-[7px] font-black text-gray-400 uppercase tracking-widest mt-0.5">
+                                          {notesFile ? `${(notesFile.size / 1024 / 1024).toFixed(2)} MB • Pending Upload` : 'Existing Resource'}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={notesFile ? removeNotes : () => {
+                                        if (window.confirm('Remove existing notes? This action will be saved when you update the topic.')) {
+                                          removeNotes();
+                                          setTopicData({ ...topicData, removeNotes: true });
+                                        }
+                                      }}
+                                      className="p-2 text-gray-400 hover:text-red-600 transition-all opacity-0 group-hover:opacity-100"
+                                    >
+                                      <X size={14} />
+                                    </button>
+                                  </div>
+                                )}
+
+                                {/* Optional: Add note about existing file replacement */}
+                                {editingItem && selectedTopic?.notesUrl && !notesFile && !topicData.removeNotes && (
+                                  <p className="text-[7px] text-amber-600 mt-2 flex items-center gap-1">
+                                    <AlertCircle size={10} />
+                                    Upload a new PDF to replace the existing notes
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
-               </div>
-             ) : (
-               <div className="flex-1 flex flex-col items-center justify-center p-20 text-center bg-gray-50/10">
-                  <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mb-8 text-gray-200 border border-gray-100 shadow-sm"><ZapIcon size={32} /></div>
-                  <h3 className="text-[11px] font-black text-gray-900 uppercase tracking-[0.4em] mb-3 leading-none">Editorial Studio Ready</h3>
-                  <p className="text-[9px] font-bold text-gray-400 uppercase max-w-[250px] leading-relaxed tracking-wider">Select a curriculum component from the explorer to begin industrial-grade production.</p>
-               </div>
-             )}
+                </div>
+
+                {/* Studio Integrated Footer */}
+                <div className="px-10 py-6 border-t border-gray-100 bg-white flex items-center justify-between">
+                  <button onClick={closeModal} className="text-[9px] font-black uppercase text-gray-400 hover:text-red-600 transition-all tracking-[0.3em]">Discard Changes</button>
+                  <button
+                    onClick={() => {
+                      if (modalType === 'module') handleAddModule();
+                      else if (modalType === 'chapter') handleAddChapter();
+                      else if (modalType === 'topic') handleAddTopic();
+                    }}
+                    disabled={uploading}
+                    className="bg-gray-900 text-white px-10 py-4 rounded-lg font-black text-[10px] uppercase tracking-[0.3em] hover:bg-black transition-all shadow-xl shadow-black/10 disabled:opacity-50 flex items-center gap-4"
+                  >
+                    {uploading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <CheckCircle2 size={18} />}
+                    {editingItem ? 'Sync Updates' : 'Initialize Component'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center p-20 text-center bg-gray-50/10">
+                <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mb-8 text-gray-200 border border-gray-100 shadow-sm"><ZapIcon size={32} /></div>
+                <h3 className="text-[11px] font-black text-gray-900 uppercase tracking-[0.4em] mb-3 leading-none">Editorial Studio Ready</h3>
+                <p className="text-[9px] font-bold text-gray-400 uppercase max-w-[250px] leading-relaxed tracking-wider">Select a curriculum component from the explorer to begin industrial-grade production.</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         @keyframes fadeIn {
           from { opacity: 0; }
           to { opacity: 1; }

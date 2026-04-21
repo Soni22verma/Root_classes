@@ -1,24 +1,127 @@
 // src/pages/TopicInfo.jsx
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, BookOpen, Clock, Play, FileText, Lock, Unlock, CheckCircle, X, Calendar, Download, GraduationCap, ExternalLink } from 'lucide-react';
+import { ArrowLeft, BookOpen, Clock, Play, FileText, Lock, Unlock, CheckCircle, Calendar, Download, GraduationCap, ExternalLink } from 'lucide-react';
+import jsPDF from 'jspdf';
 import axios from 'axios';
 import useStudentStore from '../../../Store/studentstore';
 import api from '../../../services/endpoints';
+
+const showToast = (message, background) => {
+  const toast = document.createElement('div');
+  toast.style.cssText = `position:fixed;top:20px;right:16px;z-index:9999;padding:12px 18px;background:${background};color:#fff;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,.15)`;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  return toast;
+};
+
+const stripHtml = (value) =>
+  String(value || '')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n\n')
+    .replace(/<li>/gi, '- ')
+    .replace(/<\/li>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+
+const downloadLessonContentAsPDF = (topic) => {
+  try {
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pageW = 210;
+    const margin = 15;
+    const contentW = pageW - margin * 2;
+    let y = 20;
+
+    const addText = (text, fontSize, bold = false, color = [30, 30, 30]) => {
+      pdf.setFontSize(fontSize);
+      pdf.setFont('helvetica', bold ? 'bold' : 'normal');
+      pdf.setTextColor(...color);
+      const lines = pdf.splitTextToSize(String(text || ''), contentW);
+
+      lines.forEach((line) => {
+        if (y > 275) {
+          pdf.addPage();
+          y = 20;
+        }
+
+        pdf.text(line, margin, y);
+        y += fontSize * 0.45;
+      });
+    };
+
+    pdf.setFillColor(37, 99, 235);
+    pdf.rect(0, 0, 210, 28, 'F');
+    pdf.setFontSize(16);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(255, 255, 255);
+    pdf.text('Course Notes', margin, 12);
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text(`Generated: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, margin, 20);
+    y = 38;
+
+    addText(topic.title, 15, true, [17, 24, 39]);
+    y += 2;
+
+    pdf.setDrawColor(229, 231, 235);
+    pdf.line(margin, y, pageW - margin, y);
+    y += 6;
+
+    const descriptionText = stripHtml(topic.description);
+    const notesText = stripHtml(topic.notes);
+
+    if (descriptionText) {
+      addText('Lesson Content', 11, true, [37, 99, 235]);
+      y += 2;
+      addText(descriptionText, 10, false, [55, 65, 81]);
+      y += 5;
+    }
+
+    if (notesText) {
+      addText('Additional Notes', 10, true, [107, 114, 128]);
+      y += 1;
+      addText(notesText, 10, false, [75, 85, 99]);
+    }
+
+    if (!descriptionText && !notesText) {
+      addText('No lesson content available for this topic.', 10, false, [55, 65, 81]);
+    }
+
+    const pageCount = pdf.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i += 1) {
+      pdf.setPage(i);
+      pdf.setFontSize(8);
+      pdf.setTextColor(156, 163, 175);
+      pdf.text(`Page ${i} of ${pageCount}`, pageW - margin, 290, { align: 'right' });
+    }
+
+    pdf.save(`${(topic.title || 'notes').replace(/[^a-z0-9]/gi, '_').toLowerCase()}_notes.pdf`);
+    const successToast = showToast('PDF downloaded successfully!', '#22c55e');
+    setTimeout(() => successToast.remove(), 3000);
+  } catch (err) {
+    console.error('PDF error:', err);
+    const errorToast = showToast('Failed to generate PDF', '#ef4444');
+    setTimeout(() => errorToast.remove(), 3000);
+  }
+};
 
 const TopicInfo = () => {
   const { topicId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const { student } = useStudentStore();
-  
+
   const [topic, setTopic] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [course, setCourse] = useState(null);
 
-  // Get data from location state or fetch from API
   useEffect(() => {
     if (location.state?.topic) {
       setTopic(location.state.topic);
@@ -33,7 +136,6 @@ const TopicInfo = () => {
     }
   }, [topicId, location.state]);
 
-  // Check enrollment status if we have course ID
   useEffect(() => {
     if (student?._id && course?._id) {
       checkEnrollmentStatus();
@@ -46,7 +148,6 @@ const TopicInfo = () => {
       const response = await axios.get(`${api.topics.getTopic}/${topicId}`);
       if (response.data?.success) {
         setTopic(response.data.data);
-        // Fetch course info to check enrollment
         if (response.data.data.courseId) {
           const courseRes = await axios.get(`${api.courses.getCourse}/${response.data.data.courseId}`);
           if (courseRes.data?.success) {
@@ -77,9 +178,7 @@ const TopicInfo = () => {
     }
   };
 
-  const hasAccess = () => {
-    return isEnrolled || topic?.isPreviewFree === true;
-  };
+  const hasAccess = () => isEnrolled || topic?.isPreviewFree === true;
 
   const playVideo = () => {
     if (!hasAccess()) return;
@@ -89,9 +188,21 @@ const TopicInfo = () => {
     window.open(embedUrl, '_blank');
   };
 
-  const openNotes = () => {
+  const openNotes = async () => {
     if (!hasAccess()) return;
-    window.open(topic.notesUrl, '_blank');
+    if (!topic.notes && !topic.description && !topic.notesUrl) {
+      const errorToast = showToast('No notes uploaded in this lesson or chapter.', '#ef4444');
+      setTimeout(() => errorToast.remove(), 3000);
+      return;
+    }
+
+    if (stripHtml(topic.description) || stripHtml(topic.notes)) {
+      downloadLessonContentAsPDF(topic);
+      return;
+    }
+
+    const errorToast = showToast('No notes uploaded in this lesson or chapter.', '#ef4444');
+    setTimeout(() => errorToast.remove(), 3000);
   };
 
   const getYouTubeEmbedUrl = (url) => {
@@ -103,7 +214,10 @@ const TopicInfo = () => {
     let videoId = null;
     for (const p of patterns) {
       const m = url.match(p);
-      if (m?.[1]) { videoId = m[1].split('?')[0].split('&')[0]; break; }
+      if (m?.[1]) {
+        videoId = m[1].split('?')[0].split('&')[0];
+        break;
+      }
     }
     return videoId ? `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&showinfo=0` : url;
   };
@@ -126,8 +240,8 @@ const TopicInfo = () => {
           <BookOpen size={40} className="mx-auto text-gray-200 mb-3" />
           <p className="font-semibold text-gray-800 mb-2">{error || 'Topic not found'}</p>
           <p className="text-sm text-gray-500 mb-4">The topic you're looking for doesn't exist or has been moved.</p>
-          <button 
-            onClick={() => navigate(-1)} 
+          <button
+            onClick={() => navigate(-1)}
             className="text-sm text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-1"
           >
             <ArrowLeft size={14} /> Go Back
@@ -138,14 +252,14 @@ const TopicInfo = () => {
   }
 
   const accessible = hasAccess();
+  const hasNotes = Boolean(topic.notesUrl || stripHtml(topic.notes) || stripHtml(topic.description));
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <div className="bg-white border-b border-gray-100 sticky top-0 z-10 shadow-sm">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3"> {/* Changed from max-w-4xl to max-w-7xl, reduced padding */}
-          <button 
-            onClick={() => navigate(-1)} 
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3">
+          <button
+            onClick={() => navigate(-1)}
             className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
           >
             <ArrowLeft size={16} /> Back to Course
@@ -153,8 +267,7 @@ const TopicInfo = () => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6"> {/* Changed from max-w-4xl to max-w-7xl, reduced padding */}
-        {/* Access Warning */}
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
         {!accessible && (
           <div className="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-4">
             <div className="flex items-start gap-3">
@@ -177,11 +290,9 @@ const TopicInfo = () => {
           </div>
         )}
 
-        {/* Main Content */}
-        <div className="space-y-5"> {/* Reduced from space-y-6 */}
-          {/* Hero Section */}
+        <div className="space-y-5">
           <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-600 to-blue-800 px-4 sm:px-6 py-6 sm:py-8"> {/* Reduced padding on mobile */}
+            <div className="bg-gradient-to-r from-blue-600 to-blue-800 px-4 sm:px-6 py-6 sm:py-8">
               <div className="flex items-center gap-2 mb-3">
                 {topic.isPreviewFree && (
                   <span className="text-xs font-medium text-green-600 bg-green-50 px-2.5 py-1 rounded-md flex items-center gap-1">
@@ -199,7 +310,7 @@ const TopicInfo = () => {
                   </span>
                 )}
               </div>
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-2">{topic.title}</h1> {/* Responsive text */}
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-2">{topic.title}</h1>
               {course && (
                 <p className="text-blue-100 text-sm flex items-center gap-2">
                   <GraduationCap size={14} />
@@ -208,14 +319,13 @@ const TopicInfo = () => {
               )}
             </div>
 
-            {/* Description Section */}
-            <div className="p-4 sm:p-6"> {/* Reduced padding on mobile */}
+            <div className="p-4 sm:p-6">
               <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
                 <BookOpen size={18} className="text-blue-600" />
                 About this lesson
               </h2>
               {topic.description ? (
-                <div 
+                <div
                   className="text-gray-600 leading-relaxed prose prose-sm max-w-none"
                   dangerouslySetInnerHTML={{ __html: topic.description }}
                 />
@@ -225,13 +335,12 @@ const TopicInfo = () => {
             </div>
           </div>
 
-          {/* Details Grid */}
-          <div className="bg-white rounded-xl border border-gray-100 p-4 sm:p-6"> {/* Reduced padding */}
+          <div className="bg-white rounded-xl border border-gray-100 p-4 sm:p-6">
             <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <Clock size={18} className="text-blue-600" />
               Lesson Details
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4"> {/* Reduced gap on mobile */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
               {topic.duration && (
                 <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
                   <div className="flex items-center gap-2 text-gray-500 text-xs mb-1">
@@ -241,7 +350,7 @@ const TopicInfo = () => {
                   <p className="text-base sm:text-lg font-semibold text-gray-900">{topic.duration} minutes</p>
                 </div>
               )}
-              
+
               {topic.order && (
                 <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
                   <div className="flex items-center gap-2 text-gray-500 text-xs mb-1">
@@ -262,7 +371,7 @@ const TopicInfo = () => {
                     {new Date(topic.createdAt).toLocaleDateString('en-US', {
                       year: 'numeric',
                       month: 'long',
-                      day: 'numeric'
+                      day: 'numeric',
                     })}
                   </p>
                 </div>
@@ -270,28 +379,24 @@ const TopicInfo = () => {
             </div>
           </div>
 
-          {/* Learning Materials */}
           <div className="bg-white rounded-xl border border-gray-100 p-4 sm:p-6">
             <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <FileText size={18} className="text-blue-600" />
               Learning Materials
             </h2>
-            
+
             <div className="space-y-3">
               {topic.videoUrl && (
                 <button
                   onClick={playVideo}
                   disabled={!accessible}
-                  className={`w-full flex items-center justify-between p-3 sm:p-4 rounded-xl transition-all ${
-                    accessible 
-                      ? 'bg-blue-50 hover:bg-blue-100 cursor-pointer' 
-                      : 'bg-gray-50 cursor-not-allowed opacity-60'
-                  }`}
+                  className={`w-full flex items-center justify-between p-3 sm:p-4 rounded-xl transition-all ${accessible
+                    ? 'bg-blue-50 hover:bg-blue-100 cursor-pointer'
+                    : 'bg-gray-50 cursor-not-allowed opacity-60'
+                    }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center ${
-                      accessible ? 'bg-blue-600' : 'bg-gray-400'
-                    }`}>
+                    <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center ${accessible ? 'bg-blue-600' : 'bg-gray-400'}`}>
                       <Play size={16} className="text-white sm:w-[18px] sm:h-[18px]" />
                     </div>
                     <div className="text-left">
@@ -303,15 +408,14 @@ const TopicInfo = () => {
                 </button>
               )}
 
-              {topic.notesUrl && (
+              {hasNotes && (
                 <button
                   onClick={openNotes}
                   disabled={!accessible}
-                  className={`w-full flex items-center justify-between p-3 sm:p-4 rounded-xl transition-all ${
-                    accessible 
-                      ? 'bg-gray-50 hover:bg-gray-100 cursor-pointer' 
-                      : 'bg-gray-50 cursor-not-allowed opacity-60'
-                  }`}
+                  className={`w-full flex items-center justify-between p-3 sm:p-4 rounded-xl transition-all ${accessible
+                    ? 'bg-gray-50 hover:bg-gray-100 cursor-pointer'
+                    : 'bg-gray-50 cursor-not-allowed opacity-60'
+                    }`}
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-600 rounded-lg flex items-center justify-center">
@@ -319,14 +423,18 @@ const TopicInfo = () => {
                     </div>
                     <div className="text-left">
                       <p className="font-medium text-gray-900 text-sm sm:text-base">Download Notes</p>
-                      <p className="text-xs text-gray-500">PDF format available</p>
+                      <p className="text-xs text-gray-500">
+                        {stripHtml(topic.description) || stripHtml(topic.notes)
+                          ? 'Export lesson content as PDF'
+                          : 'Download uploaded notes'}
+                      </p>
                     </div>
                   </div>
                   <Download size={16} className="text-gray-500" />
                 </button>
               )}
 
-              {!topic.videoUrl && !topic.notesUrl && (
+              {!topic.videoUrl && !hasNotes && (
                 <div className="text-center py-8 sm:py-12 bg-gray-50 rounded-xl">
                   <FileText size={40} className="mx-auto text-gray-300 mb-3" />
                   <p className="text-gray-400 text-sm">No learning materials available for this lesson yet.</p>
@@ -335,7 +443,6 @@ const TopicInfo = () => {
             </div>
           </div>
 
-          {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 sticky bottom-4">
             <button
               onClick={() => navigate(-1)}

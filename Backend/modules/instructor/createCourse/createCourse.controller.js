@@ -791,6 +791,19 @@ export const handleEditTopic = async (req, res) => {
 
       topic.notesUrl = notesUpload.secure_url;
       topic.notesPublicId = notesUpload.public_id;
+    } else if (req.body.removeNotes === "true" || req.body.removeNotes === true) {
+      // If we want to remove existing notes and no new file is uploaded
+      if (topic.notesPublicId) {
+        try {
+          await cloudinary.uploader.destroy(topic.notesPublicId, {
+            resource_type: "raw"
+          });
+        } catch (cloudinaryError) {
+          console.error("Cloudinary error removing notes:", cloudinaryError);
+        }
+      }
+      topic.notesUrl = "";
+      topic.notesPublicId = "";
     }
 
     await course.save();

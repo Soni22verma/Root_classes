@@ -49,9 +49,8 @@ const FacultyShowcase = () => {
           {faculty.map((member, index) => (
             <div
               key={member._id}
-              className={`group relative rounded-2xl overflow-hidden border border-gray-100 ${
-                index % 3 === 1 ? 'md:mt-8' : ''
-              }`}
+              className={`group relative rounded-2xl overflow-hidden border border-gray-100 ${index % 3 === 1 ? 'md:mt-8' : ''
+                }`}
             >
               {/* Photo area */}
               <div className="relative h-56 bg-gray-100 overflow-hidden">
