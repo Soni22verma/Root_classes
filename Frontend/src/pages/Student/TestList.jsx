@@ -127,7 +127,7 @@ const StudentTestPanel = () => {
                 const attemptStatus = await checkAttemptTest(test._id);
                 isCompleted = attemptStatus.attempted;
                 completedResult = completedResult || attemptStatus.result;
-              } catch (error) {}
+              } catch (error) { }
             }
             return {
               id: test._id,
@@ -197,7 +197,7 @@ const StudentTestPanel = () => {
           correctAnswer: q.correctAnswer !== undefined ? parseInt(q.correctAnswer) : 0
         }));
       }
-    } catch (error) {}
+    } catch (error) { }
     return [];
   };
 
@@ -219,7 +219,7 @@ const StudentTestPanel = () => {
           currentStudentId = user._id || user.id || user.userId || user.studentId;
           if (currentStudentId) { setStudentId(currentStudentId); setIsLoggedIn(true); }
         }
-      } catch (error) {}
+      } catch (error) { }
     }
     if (!currentStudentId) { alert('Please login to take the test'); return; }
 
@@ -370,47 +370,59 @@ const StudentTestPanel = () => {
     return (
       <div className="bg-white min-h-screen">
 
-        {/* Hero */}
-        <div className="bg-dot-dark py-14 px-4 relative overflow-hidden">
-          <div className="absolute top-6 right-12 w-48 h-48 rounded-full opacity-10" style={{ background: 'radial-gradient(circle, #0078FF 0%, transparent 70%)' }}></div>
-          <div className="absolute bottom-0 left-8 w-36 h-36 rounded-full opacity-10" style={{ background: 'radial-gradient(circle, #FB0500 0%, transparent 70%)' }}></div>
-          <div className="max-w-7xl mx-auto relative z-10">
-            <p className="text-xs font-bold text-[#0078FF] uppercase tracking-widest mb-3">Assessment Center</p>
-            <h1 className="text-2xl md:text-3xl font-bold text-white leading-tight mb-3">
-              Available <span className="text-[#FB0500]">Tests</span>
-            </h1>
-            <p className="text-sm text-gray-400 max-w-xl">
-              Challenge yourself with our assessments. Each test is timed and can only be attempted once.
-            </p>
+        {/* ── Hero (Light & Sleek) ── */}
+        <div className="relative bg-white border-b border-gray-100 overflow-hidden">
+          {/* Dot pattern matching StatsBar */}
+          <div className="absolute inset-0 opacity-[0.4]" style={{
+            backgroundImage: 'radial-gradient(#e5e7eb 1px, transparent 1px)',
+            backgroundSize: '24px 24px'
+          }} />
 
-            {/* Login status */}
-            {!isLoggedIn && (
-              <div className="mt-5 inline-flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/30 rounded-xl px-4 py-2.5">
-                <span className="text-yellow-400 text-sm">⚠</span>
-                <p className="text-yellow-300 text-sm">Please login to take tests</p>
+          {/* Subtle color glows */}
+          <div className="absolute -top-24 -right-24 w-96 h-96 bg-[#0078FF]/5 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-[#FB0500]/5 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
+              <div className="flex-1">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-50 border border-gray-100 mb-3">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#0078FF]"></span>
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em]">Assessment Hub</p>
+                </div>
+                <h1 className="text-3xl md:text-5xl font-black text-gray-900 leading-tight">
+                  Available <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FB0500] via-[#0078FF] to-[#28A745]">Tests</span>
+                </h1>
               </div>
-            )}
-            {isLoggedIn && (
-              <div className="mt-5 inline-flex items-center gap-2 bg-green-500/10 border border-green-500/30 rounded-xl px-4 py-2.5">
-                <span className="text-green-400 text-sm">✓</span>
-                <p className="text-green-300 text-sm">Welcome, {student?.name || student?.fullName || 'Student'}! Ready to test.</p>
+
+              {/* Login status - Compact */}
+              <div className="flex-shrink-0">
+                {!isLoggedIn ? (
+                  <div className="inline-flex items-center gap-2 bg-yellow-50 border border-yellow-100 rounded-xl px-4 py-2">
+                    <p className="text-yellow-700 text-xs font-semibold uppercase tracking-wider">Login to attempt</p>
+                  </div>
+                ) : (
+                  <div className="inline-flex items-center gap-2 bg-green-50 border border-green-100 rounded-xl px-4 py-2">
+                    <span className="text-green-600 text-sm font-bold">✓</span>
+                    <p className="text-green-700 text-xs font-semibold uppercase tracking-wider">Ready to Test</p>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
         </div>
 
         {/* Stats bar */}
-        <div className="bg-gray-900 border-b border-gray-800">
-          <div className="max-w-7xl mx-auto px-4 py-4 grid grid-cols-2 md:grid-cols-4 divide-x divide-gray-700">
+        <div className="bg-white border-b border-gray-100 shadow-sm relative z-20">
+          <div className="max-w-7xl mx-auto px-4 py-6 grid grid-cols-2 md:grid-cols-4 divide-x-0 md:divide-x divide-gray-100">
             {[
-              { label: 'Total Tests', value: availableTests.length, color: 'text-[#FB0500]' },
-              { label: 'Total Questions', value: totalQuestions, color: 'text-[#0078FF]' },
-              { label: 'Total Duration', value: `${Math.floor(totalDuration / 60)}h ${totalDuration % 60}m`, color: 'text-[#FB0500]' },
-              { label: 'Completed', value: completedCount, color: 'text-[#0078FF]' },
+              { label: 'Total Tests', value: availableTests.length, color: '#FB0500' },
+              { label: 'Total Questions', value: totalQuestions, color: '#0078FF' },
+              { label: 'Total Duration', value: `${Math.floor(totalDuration / 60)}h ${totalDuration % 60}m`, color: '#28A745' },
+              { label: 'Completed', value: completedCount, color: '#F1C40F' },
             ].map((s, i) => (
-              <div key={i} className="text-center py-2 px-4">
-                <div className={`text-2xl font-bold ${s.color}`}>{s.value}</div>
-                <div className="text-xs text-gray-400 mt-0.5">{s.label}</div>
+              <div key={i} className="text-center py-2 px-4 transition-transform hover:scale-105">
+                <div className="text-2xl md:text-3xl font-black" style={{ color: s.color }}>{s.value}</div>
+                <div className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">{s.label}</div>
               </div>
             ))}
           </div>
@@ -438,13 +450,11 @@ const StudentTestPanel = () => {
                   return (
                     <div
                       key={test.id}
-                      className={`rounded-2xl overflow-hidden border transition-all duration-200 flex flex-col ${
-                        isWide ? 'md:col-span-7' : 'md:col-span-5'
-                      } ${
-                        isDark
+                      className={`rounded-2xl overflow-hidden border transition-all duration-200 flex flex-col ${isWide ? 'md:col-span-7' : 'md:col-span-5'
+                        } ${isDark
                           ? 'bg-[#0a1628] border-[#1e3a5f]'
                           : 'bg-white border-gray-100 hover:border-gray-200 hover:shadow-md'
-                      } ${test.isCompleted ? 'opacity-80' : ''}`}
+                        } ${test.isCompleted ? 'opacity-80' : ''}`}
                     >
                       {/* Card top bar */}
                       <div className={`h-1.5 w-full ${accentRed ? 'bg-[#FB0500]' : 'bg-[#0078FF]'}`}></div>
@@ -513,13 +523,12 @@ const StudentTestPanel = () => {
                           <button
                             onClick={() => handleStartTest(test)}
                             disabled={!isLoggedIn}
-                            className={`w-full py-2.5 rounded-xl font-semibold text-sm transition ${
-                              isLoggedIn
+                            className={`w-full py-2.5 rounded-xl font-semibold text-sm transition ${isLoggedIn
                                 ? accentRed
                                   ? 'bg-[#FB0500] text-white hover:opacity-90'
                                   : 'bg-[#0078FF] text-white hover:opacity-90'
                                 : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                            }`}
+                              }`}
                           >
                             {isLoggedIn ? 'Start Test →' : 'Login to Start'}
                           </button>
@@ -642,9 +651,8 @@ const StudentTestPanel = () => {
               </div>
               <div className="flex items-center gap-3">
                 {timeRemaining !== null && (
-                  <div className={`px-3 py-1.5 rounded-lg font-mono font-bold text-sm tabular-nums ${
-                    timeRemaining < 300 ? 'bg-red-50 text-[#FB0500] border border-red-200' : 'bg-blue-50 text-[#0078FF] border border-blue-100'
-                  }`}>
+                  <div className={`px-3 py-1.5 rounded-lg font-mono font-bold text-sm tabular-nums ${timeRemaining < 300 ? 'bg-red-50 text-[#FB0500] border border-red-200' : 'bg-blue-50 text-[#0078FF] border border-blue-100'
+                    }`}>
                     {formatTime(timeRemaining)}
                   </div>
                 )}
@@ -694,11 +702,10 @@ const StudentTestPanel = () => {
                   {currentQ?.options.map((option, idx) => (
                     <label
                       key={idx}
-                      className={`flex items-start p-3.5 border-2 rounded-xl cursor-pointer transition-all ${
-                        answers[currentQ.id] === idx
+                      className={`flex items-start p-3.5 border-2 rounded-xl cursor-pointer transition-all ${answers[currentQ.id] === idx
                           ? 'border-[#0078FF] bg-blue-50'
                           : 'border-gray-100 hover:border-gray-200 bg-gray-50'
-                      }`}
+                        }`}
                     >
                       <input
                         type="radio"
@@ -717,20 +724,18 @@ const StudentTestPanel = () => {
                   <button
                     onClick={handlePreviousQuestion}
                     disabled={currentQuestion === 0}
-                    className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition ${
-                      currentQuestion === 0 ? 'bg-gray-100 text-gray-300 cursor-not-allowed' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
+                    className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition ${currentQuestion === 0 ? 'bg-gray-100 text-gray-300 cursor-not-allowed' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
                   >
                     ← Previous
                   </button>
                   <button
                     onClick={handleNextQuestion}
                     disabled={!hasAnswered || submitting}
-                    className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition ${
-                      !hasAnswered || submitting
+                    className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition ${!hasAnswered || submitting
                         ? 'bg-gray-100 text-gray-300 cursor-not-allowed'
                         : 'bg-[#FB0500] text-white hover:opacity-90'
-                    }`}
+                      }`}
                   >
                     {submitting ? (
                       <span className="flex items-center gap-2">
@@ -755,13 +760,12 @@ const StudentTestPanel = () => {
                     <button
                       key={idx}
                       onClick={() => setCurrentQuestion(idx)}
-                      className={`w-9 h-9 rounded-lg font-semibold text-xs transition ${
-                        currentQuestion === idx
+                      className={`w-9 h-9 rounded-lg font-semibold text-xs transition ${currentQuestion === idx
                           ? 'bg-[#0078FF] text-white shadow-sm'
                           : answers[q.id] !== undefined
-                          ? 'bg-[#08B100] text-white'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                      }`}
+                            ? 'bg-[#08B100] text-white'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
                     >
                       {idx + 1}
                     </button>
@@ -817,9 +821,8 @@ const StudentTestPanel = () => {
             <p className={`text-base font-semibold mb-6 ${resultAccent}`}>{resultLabel}</p>
 
             {eligibilityStatus !== undefined && (
-              <div className={`mb-6 px-4 py-3 rounded-xl text-sm font-medium ${
-                eligibilityStatus ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-yellow-50 text-yellow-700 border border-yellow-200'
-              }`}>
+              <div className={`mb-6 px-4 py-3 rounded-xl text-sm font-medium ${eligibilityStatus ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-yellow-50 text-yellow-700 border border-yellow-200'
+                }`}>
                 {eligibilityStatus ? '✓ You are eligible for certification.' : 'Score 70%+ to become eligible for certification.'}
               </div>
             )}

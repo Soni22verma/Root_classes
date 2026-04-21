@@ -16,13 +16,13 @@ const getExcerpt = (content, maxLength = 120) => {
 };
 
 const BlogCard = ({ blog, onClick }) => (
-  <div 
+  <div
     onClick={() => onClick(blog)}
     className="group cursor-pointer bg-white rounded-2xl border border-gray-100 hover:border-[#0078FF]/30 hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300 flex flex-col"
   >
     <div className="relative h-52 overflow-hidden rounded-t-2xl">
-      <img 
-        src={blog.image} 
+      <img
+        src={blog.image}
         alt={blog.title}
         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
         onError={(e) => { e.target.src = "https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=800&auto=format"; }}
@@ -33,21 +33,21 @@ const BlogCard = ({ blog, onClick }) => (
         </span>
       </div>
     </div>
-    
+
     <div className="p-6 flex flex-col flex-1">
       <div className="flex items-center gap-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">
         <span className="flex items-center gap-1.5"><Calendar size={12} className="text-[#FB0500]" /> {formatDate(blog.createdAt)}</span>
         <span className="flex items-center gap-1.5"><Clock size={12} className="text-[#0078FF]" /> 5 min read</span>
       </div>
-      
+
       <h3 className="text-lg font-bold text-gray-900 mb-3 group-hover:text-[#0078FF] transition-colors line-clamp-2 leading-snug">
         {blog.title}
       </h3>
-      
+
       <p className="text-sm text-gray-500 mb-6 line-clamp-3 leading-relaxed flex-1">
         {getExcerpt(blog.content)}
       </p>
-      
+
       <div className="pt-4 border-t border-gray-50 flex items-center justify-between">
         <span className="text-xs font-bold text-gray-900 flex items-center gap-1 group-hover:gap-2 transition-all">
           Read Article <ChevronRight size={14} className="text-[#FB0500]" />
@@ -78,24 +78,24 @@ const BlogDetail = ({ blog, onClose }) => {
             <X size={20} />
           </button>
         </div>
-        
+
         <div className="overflow-y-auto custom-scrollbar">
           <div className="h-64 md:h-96 w-full relative">
             <img src={blog.image} className="w-full h-full object-cover" alt="" />
             <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent" />
           </div>
-          
+
           <div className="px-6 md:px-16 py-10">
             <div className="flex items-center gap-6 mb-6 text-xs font-bold text-gray-400 uppercase tracking-widest">
-               <span className="px-3 py-1 bg-red-50 text-[#FB0500] rounded-lg">{blog.category || 'Education'}</span>
-               <span>{formatDate(blog.createdAt)}</span>
-               <span>By {blog.author || 'Root Faculty'}</span>
+              <span className="px-3 py-1 bg-red-50 text-[#FB0500] rounded-lg">{blog.category || 'Education'}</span>
+              <span>{formatDate(blog.createdAt)}</span>
+              <span>By {blog.author || 'Root Faculty'}</span>
             </div>
-            
+
             <h1 className="text-3xl md:text-5xl font-bold text-gray-900 mb-8 leading-tight">
               {blog.title}
             </h1>
-            
+
             <div className="prose prose-lg max-w-none text-gray-600 leading-relaxed space-y-6 pb-20">
               {blog.content.split('\n').map((p, i) => p ? <p key={i}>{p}</p> : <br key={i} />)}
             </div>
@@ -153,10 +153,10 @@ const Blog = () => {
           <p className="text-gray-500 max-w-2xl mx-auto mb-10 text-sm md:text-base leading-relaxed">
             Stay updated with the latest in competitive exams, effective study techniques, and success stories from our top performers.
           </p>
-          
+
           <div className="max-w-lg mx-auto relative group">
-            <input 
-              type="text" 
+            <input
+              type="text"
               placeholder="Search articles..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -168,18 +168,17 @@ const Blog = () => {
       </section>
 
       {/* Category Navigation */}
-      <div className="sticky top-[72px] z-20 bg-white/80 backdrop-blur-md border-b border-gray-100 px-4 py-4 overflow-x-auto no-scrollbar">
+      <div className="sticky top-[91px] z-20 bg-white/80 backdrop-blur-md border-b border-gray-100 px-4 py-4 overflow-x-auto no-scrollbar">
         <div className="max-w-7xl mx-auto flex items-center gap-3">
           <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mr-4 whitespace-nowrap">Topic:</span>
           {categories.map(cat => (
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
-              className={`px-5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-                activeCategory === cat 
-                ? 'bg-[#0078FF] text-white shadow-lg shadow-blue-500/20' 
-                : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
-              }`}
+              className={`px-5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${activeCategory === cat
+                  ? 'bg-[#0078FF] text-white shadow-lg shadow-blue-500/20'
+                  : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
+                }`}
             >
               {cat}
             </button>
@@ -196,29 +195,27 @@ const Blog = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredBlogs.map((blog, idx) => (
-              <BlogCard key={blog._id || idx} blog={blog} onClick={(b) => { setSelectedBlog(b); document.body.style.overflow='hidden'; }} />
+              <BlogCard key={blog._id || idx} blog={blog} onClick={(b) => { setSelectedBlog(b); document.body.style.overflow = 'hidden'; }} />
             ))}
           </div>
         )}
       </main>
 
-      {/* Footer CTA */}
+      {/* Footer CTA — Light & Sleek */}
       <section className="bg-dot-grid py-24 px-4">
-        <div className="max-w-4xl mx-auto bg-[#0a1628] rounded-[2.5rem] p-10 md:p-16 text-center relative overflow-hidden">
-           <div className="absolute top-0 right-0 w-64 h-64 bg-[#FB0500]/10 blur-[80px] rounded-full" />
-           <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#0078FF]/10 blur-[80px] rounded-full" />
-           
-           <h2 className="text-2xl md:text-3xl font-bold text-white mb-4 relative z-10">Don't miss a beat.</h2>
-           <p className="text-blue-200/60 mb-8 max-w-md mx-auto text-sm relative z-10">Subscribe to our newsletter and get expert exam tips delivered straight to your inbox.</p>
-           
-           <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto relative z-10">
-              <input type="email" placeholder="Enter your email" className="flex-1 bg-white/10 border border-white/10 rounded-xl px-5 py-3 text-white text-sm focus:outline-none focus:border-[#0078FF]" />
-              <button className="bg-[#0078FF] text-white px-8 py-3 rounded-xl text-sm font-bold hover:bg-[#0066DD] transition shadow-lg shadow-blue-500/20">Subscribe</button>
-           </div>
+        <div className="max-w-4xl mx-auto bg-[#F8F9FA] rounded-[2.5rem] p-10 md:p-16 text-center relative overflow-hidden border border-red-100 shadow-sm">
+
+          <h2 className="text-2xl md:text-3xl font-black text-gray-900 mb-4 relative z-10">Don't miss a beat.</h2>
+          <p className="text-gray-500 mb-8 max-w-md mx-auto text-sm relative z-10 font-medium">Subscribe to our newsletter and get expert exam tips delivered straight to your inbox.</p>
+
+          <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto relative z-10">
+            <input type="email" placeholder="Enter your email" className="flex-1 bg-gray-50 border border-gray-200 rounded-2xl px-6 py-4 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#0078FF]/20 focus:border-[#0078FF] transition-all" />
+            <button className="bg-[#0078FF] text-white px-8 py-4 rounded-2xl text-sm font-bold hover:bg-[#0066DD] transition shadow-lg shadow-blue-500/10">Subscribe</button>
+          </div>
         </div>
       </section>
 
-      {selectedBlog && <BlogDetail blog={selectedBlog} onClose={() => { setSelectedBlog(null); document.body.style.overflow='auto'; }} />}
+      {selectedBlog && <BlogDetail blog={selectedBlog} onClose={() => { setSelectedBlog(null); document.body.style.overflow = 'auto'; }} />}
 
       <style>{`
         .no-scrollbar::-webkit-scrollbar { display: none; }

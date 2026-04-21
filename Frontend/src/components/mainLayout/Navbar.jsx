@@ -6,21 +6,21 @@ import { SiCoursera } from 'react-icons/si';
 import NotificationDropdown from '../Notification/NotificationDropdown';
 
 const navItems = [
-  { name: 'Courses',            path: '/course' },
-  { name: '100% Scholarship',   path: '/schollarship' },
-  { name: 'Test Series',        path: '/test' },
-  { name: 'Blog',               path: '/blog' },
-  { name: 'Contact',            path: '/contact' },
+  { name: 'Courses', path: '/course' },
+  { name: '100% Scholarship', path: '/scholarship' },
+  { name: 'Test Series', path: '/test' },
+  { name: 'Blog', path: '/blog' },
+  { name: 'Contact', path: '/contact' },
 ];
 
 const Navbar = () => {
   const { student, logout, setStudent } = useStudentStore();
-  const [isMenuOpen,     setIsMenuOpen]     = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isLoggedIn,     setIsLoggedIn]     = useState(false);
-  const [scrolled,       setScrolled]       = useState(false);
-  const navigate    = useNavigate();
-  const location    = useLocation();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
   const dropdownRef = useRef(null);
 
   /* scroll shadow */
@@ -39,7 +39,7 @@ const Navbar = () => {
         if (s) { const p = JSON.parse(s); if (p?._id || p?.id) { setIsLoggedIn(true); if (!student && setStudent) setStudent(p); return; } }
         const u = localStorage.getItem('user');
         if (u) { const p = JSON.parse(u); if (p?._id || p?.id) { setIsLoggedIn(true); return; } }
-      } catch {}
+      } catch { }
       setIsLoggedIn(false);
     };
     check();
@@ -53,8 +53,8 @@ const Navbar = () => {
   }, []);
 
   const getName = () => {
-    if (student?.fullName)  return student.fullName;
-    if (student?.name)      return student.name;
+    if (student?.fullName) return student.fullName;
+    if (student?.name) return student.name;
     try {
       const s = JSON.parse(localStorage.getItem('student') || '{}');
       return s.fullName || s.name || s.username || s.email?.split('@')[0] || 'Student';
@@ -70,7 +70,7 @@ const Navbar = () => {
   const isStudent = () => student?.role === 'student' || (!student?.role && isLoggedIn);
 
   const handleLogout = () => {
-    ['user','student','token','authToken','studentToken'].forEach(k => localStorage.removeItem(k));
+    ['user', 'student', 'token', 'authToken', 'studentToken'].forEach(k => localStorage.removeItem(k));
     sessionStorage.clear();
     logout?.();
     setIsLoggedIn(false);
@@ -82,15 +82,30 @@ const Navbar = () => {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <>
-      {/* Announcement bar */}
-      <div className="bg-[#0a0a0a] text-center py-2 px-4 text-xs text-gray-400">
-        🎯 Admissions open for 2025-26 batch —{' '}
-        <Link to="/schollarship" className="text-[#00BFFE] hover:underline font-medium">Apply for 100% Scholarship →</Link>
+    <header className="sticky top-0 z-[60] w-full">
+      {/* Announcement bar (Glassmorphism Light) */}
+      <div className="relative overflow-hidden bg-[#fdfdfd]/80 backdrop-blur-md border-b border-gray-200/50 py-1.5 px-4 text-center">
+        {/* Subtle decorative color accents */}
+        <div className="absolute top-0 left-0 w-1/4 h-full bg-gradient-to-r from-[#FB0500]/5 to-[#FB0500]/1 pointer-events-none" />
+        <div className="absolute top-0 right-0 w-1/4 h-full bg-gradient-to-l from-[#0078FF]/5 to-[#0078FF]/1 pointer-events-none" />
+
+        <div className="relative z-10 flex items-center justify-center gap-2 text-[10px] sm:text-xs tracking-wide">
+          <span className="flex items-center gap-1.5 font-bold text-gray-700 bg-[#FEF2F2] px-2.5 py-0.5 rounded-full border border-red-100/50">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#FB0500] animate-pulse"></span>
+            Admissions open for 2025-26 batch
+          </span>
+          <span className="text-gray-300 hidden sm:inline">|</span>
+          <Link to="/scholarship" className="group flex items-center gap-1 font-black">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#0078FF] to-[#28A745] group-hover:from-[#FB0500] group-hover:to-[#FB0500] transition-all">
+              Apply for 100% Scholarship
+            </span>
+            <span className="text-[#28A745] group-hover:translate-x-0.5 transition-transform">→</span>
+          </Link>
+        </div>
       </div>
 
       {/* Main Navbar */}
-      <nav className={`bg-white/95 backdrop-blur-md sticky top-0 z-50 transition-shadow duration-200 ${scrolled ? 'shadow-[0_1px_20px_rgba(0,0,0,0.08)]' : 'border-b border-gray-100'}`}>
+      <nav className={`bg-white/95 backdrop-blur-md transition-shadow duration-200 ${scrolled ? 'shadow-[0_1px_20px_rgba(0,0,0,0.08)]' : 'border-b border-gray-100'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
 
@@ -109,11 +124,10 @@ const Navbar = () => {
                 <Link
                   key={item.name}
                   to={item.path}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    isActive(item.path)
-                      ? 'text-[#FB0500] bg-red-50'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                  }`}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive(item.path)
+                    ? 'text-[#FB0500] bg-red-50'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    }`}
                 >
                   {item.name}
                 </Link>
@@ -123,7 +137,7 @@ const Navbar = () => {
             {/* Desktop actions */}
             <div className="hidden md:flex items-center gap-3">
               {isLoggedIn ? (
-                <>
+                <div className="flex items-center gap-3">
                   <NotificationDropdown />
                   <div className="relative" ref={dropdownRef}>
                     <button
@@ -179,9 +193,9 @@ const Navbar = () => {
                       </div>
                     )}
                   </div>
-                </>
+                </div>
               ) : (
-                <>
+                <div className="flex items-center gap-3">
                   <Link to="/stdlogin">
                     <button className="px-4 py-2 text-sm font-semibold text-gray-700 hover:text-gray-900 border border-gray-200 rounded-xl hover:border-gray-300 transition-colors">
                       Login
@@ -192,7 +206,7 @@ const Navbar = () => {
                       Sign Up Free
                     </button>
                   </Link>
-                </>
+                </div>
               )}
             </div>
 
@@ -213,9 +227,8 @@ const Navbar = () => {
               {navItems.map((item) => (
                 <Link key={item.name} to={item.path}
                   onClick={() => setIsMenuOpen(false)}
-                  className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                    isActive(item.path) ? 'text-[#FB0500] bg-red-50' : 'text-gray-600 hover:bg-gray-50'
-                  }`}
+                  className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${isActive(item.path) ? 'text-[#FB0500] bg-red-50' : 'text-gray-600 hover:bg-gray-50'
+                    }`}
                 >
                   {item.name}
                 </Link>
@@ -267,7 +280,7 @@ const Navbar = () => {
           </div>
         )}
       </nav>
-    </>
+    </header>
   );
 };
 

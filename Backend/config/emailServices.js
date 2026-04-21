@@ -91,4 +91,41 @@ const sendCallbackEmail = async (userData) => {
     }
 };
 
-export { sendOTP, sendCallbackEmail };
+// Function to send Contact Form Email to Admin
+const sendContactEmail = async (userData) => {
+    try {
+        const { name, email, subject, message } = userData;
+
+        const mailOptions = {
+            from: `"Roots Classes Contact" <${process.env.EMAIL_USER}>`,
+            to: "rootsclasses1313@gmail.com",
+            subject: `Contact Form: ${subject}`,
+            html: `
+                <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden;">
+                    <div style="background-color: #FB0500; padding: 20px; text-align: center;">
+                        <h2 style="color: #ffffff; margin: 0;">New Message Received</h2>
+                    </div>
+                    <div style="padding: 30px; line-height: 1.6; color: #333;">
+                        <p><strong>From:</strong> ${name} (${email})</p>
+                        <p><strong>Subject:</strong> ${subject}</p>
+                        <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 20px 0;" />
+                        <p style="white-space: pre-wrap;">${message}</p>
+                        <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 20px 0;" />
+                        <p style="text-align: center; color: #9ca3af; font-size: 12px;">
+                            RootsClasses Portal • Contact Form Submission
+                        </p>
+                    </div>
+                </div>
+            `
+        };
+
+        const info = await transporter.sendMail(mailOptions);
+        console.log('Contact Email sent: ', info.response);
+        return true;
+    } catch (error) {
+        console.error('Error sending contact email:', error);
+        return false;
+    }
+};
+
+export { sendOTP, sendCallbackEmail, sendContactEmail };
