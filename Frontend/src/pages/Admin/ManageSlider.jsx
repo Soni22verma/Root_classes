@@ -11,6 +11,11 @@ const ManageSlider = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [selectedSlider, setSelectedSlider] = useState(null);
   const [formData, setFormData] = useState({
+    title: '',
+    subtitle: '',
+    buttonText: '',
+    classText: '',
+    isDefault: false,
     image: null
   });
 
@@ -35,7 +40,13 @@ const ManageSlider = () => {
     fetchSliders();
   }, []);
 
-
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -51,6 +62,11 @@ const ManageSlider = () => {
 
   const resetForm = () => {
     setFormData({
+      title: '',
+      subtitle: '',
+      buttonText: '',
+      classText: '',
+      isDefault: false,
       image: null
     });
 
@@ -68,6 +84,11 @@ const ManageSlider = () => {
     setIsEditing(true);
     setSelectedSlider(slider);
     setFormData({
+      title: slider.title || '',
+      subtitle: slider.subtitle || '',
+      buttonText: slider.buttonText || '',
+      classText: slider.classText || '',
+      isDefault: slider.isDefault || false,
       image: null
     });
 
@@ -79,13 +100,23 @@ const ManageSlider = () => {
     e.preventDefault();
     setLoading(true);
     try {
-
       const formDataToSend = new FormData();
-      formDataToSend.append("sliderId", selectedSlider?._id);
-
+      if (isEditing) {
+        formDataToSend.append("sliderId", selectedSlider?._id);
+      }
+      
+      formDataToSend.append('title', formData.title);
+      formDataToSend.append('subtitle', formData.subtitle);
+      formDataToSend.append('buttonText', formData.buttonText);
+      formDataToSend.append('classText', formData.classText);
+      formDataToSend.append('isDefault', formData.isDefault);
 
       if (formData.image) {
         formDataToSend.append('image', formData.image);
+      } else if (!isEditing) {
+        toast.error('Image is required for new slider');
+        setLoading(false);
+        return;
       }
 
       let response;
@@ -308,7 +339,14 @@ const ManageSlider = () => {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <div className="text-sm font-medium text-gray-900">Slider Image</div>
+                        <div className="flex items-center gap-2">
+                          <div className="text-sm font-medium text-gray-900">Slider Image</div>
+                          {slider.isDefault && (
+                            <span className="px-2 py-0.5 text-[10px] font-bold bg-green-100 text-green-700 rounded-full border border-green-200">
+                              DEFAULT
+                            </span>
+                          )}
+                        </div>
                       </td>
 
                       <td className="px-4 py-3 whitespace-nowrap">
@@ -360,7 +398,72 @@ const ManageSlider = () => {
             </div>
 
             <form onSubmit={handleSubmit} className="p-4 sm:p-6">
+              {/* Text Fields */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                  <input
+                    type="text"
+                    name="title"
+                    value={formData.title}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    placeholder="e.g. JEE Preparation"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Subtitle</label>
+                  <input
+                    type="text"
+                    name="subtitle"
+                    value={formData.subtitle}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    placeholder="e.g. Best coaching for JEE"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Button Text</label>
+                  <input
+                    type="text"
+                    name="buttonText"
+                    value={formData.buttonText}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    placeholder="e.g. Join Now"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Class Text</label>
+                  <input
+                    type="text"
+                    name="classText"
+                    value={formData.classText}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    placeholder="e.g. Class 11 & 12"
+                    required
+                  />
+                </div>
+              </div>
 
+              {/* Default Option */}
+              <div className="flex items-center gap-2 mb-6">
+                <input
+                  type="checkbox"
+                  id="isDefault"
+                  name="isDefault"
+                  checked={formData.isDefault}
+                  onChange={handleInputChange}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <label htmlFor="isDefault" className="text-sm font-medium text-gray-700">
+                  Set as Default (This will be shown first and as a fallback)
+                </label>
+              </div>
 
               {/* Image Upload */}
               <div className="mb-6">
