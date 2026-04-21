@@ -104,7 +104,7 @@ const ManageSlider = () => {
       if (isEditing) {
         formDataToSend.append("sliderId", selectedSlider?._id);
       }
-      
+
       formDataToSend.append('title', formData.title);
       formDataToSend.append('subtitle', formData.subtitle);
       formDataToSend.append('buttonText', formData.buttonText);
@@ -521,9 +521,9 @@ const ManageSlider = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         <div className="flex justify-center gap-2">
-                          <button onClick={() => { 
-                            setVIsEditing(true); 
-                            setSelectedV(v); 
+                          <button onClick={() => {
+                            setVIsEditing(true);
+                            setSelectedV(v);
                             setVFormData({ title: v.title, youtubeUrl: v.youtubeUrl, duration: v.duration, order: v.order, isActive: v.isActive });
                             setVShowModal(true);
                           }} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><Pencil size={18} /></button>
@@ -670,7 +670,7 @@ const ManageSlider = () => {
                             htmlFor="image-upload"
                             className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500"
                           >
-                            <span>Upload a file</span>
+                            <span>Upload a file (1920 x 600px)</span>
                             <input
                               id="image-upload"
                               name="image"
@@ -767,4 +767,4 @@ const ManageSlider = () => {
   );
 };
 
-export default ManageSlider;
+export default ManageSlider;

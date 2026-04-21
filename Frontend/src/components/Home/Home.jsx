@@ -9,6 +9,7 @@ import FAQ from './FAQ';
 import axios from 'axios';
 import api from '../../services/endpoints';
 import fallbackImage from '../../assets/fallback.jpg';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const SliderPage = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -44,11 +45,17 @@ const SliderPage = () => {
 
   useEffect(() => { GetSlider(); }, []);
 
+  const nextSlide = () => {
+    setCurrentSlide((prev) => (prev + 1) % slides.length);
+  };
+
+  const prevSlide = () => {
+    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
+  };
+
   useEffect(() => {
     if (slides.length > 0 && !isPaused) {
-      const interval = setInterval(() => {
-        setCurrentSlide((prev) => (prev + 1) % slides.length);
-      }, 3000);
+      const interval = setInterval(nextSlide, 5000);
       return () => clearInterval(interval);
     }
   }, [slides.length, isPaused]);
@@ -58,38 +65,49 @@ const SliderPage = () => {
       {/* Slider */}
       {slides.length > 0 && (
         <div
-          className="relative w-full"
+          className="relative w-full group overflow-hidden bg-white sm:px-4 lg:px-6 mt-2"
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}
         >
-          <div className="relative aspect-[1.8/1] md:aspect-[3.5/1] lg:aspect-[4.5/1] w-full overflow-hidden bg-gray-50">
+          <div className="relative aspect-[2/1] md:aspect-[3.5/1] lg:aspect-[4.5/1] w-full overflow-hidden shadow-lg border border-gray-100">
             {slides.map((slide, idx) => (
               <div
                 key={slide._id || idx}
-                className={`absolute inset-0 w-full h-full transition-opacity duration-700 ${currentSlide === idx ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
+                className={`absolute inset-0 w-full h-full transition-all duration-700 ease-in-out transform ${currentSlide === idx ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}`}
               >
-                {/* 1. Subtle Blurred Background to fill the edges (prevents black bars) */}
-                <div
-                  className="absolute inset-0 w-full h-full bg-center bg-cover blur-2xl scale-110 opacity-30"
-                  style={{ backgroundImage: `url(${slide.image})` }}
+                {/* 1. Main Image (Premium cover look) */}
+                <img
+                  src={slide.image}
+                  alt={slide.title || `Slide ${idx + 1}`}
+                  className="w-full h-full object-cover"
                 />
 
-                {/* 2. Main Image (Zero cutting, fully visible) */}
-                <div className="relative w-full h-full flex items-center justify-center z-10">
-                  <img
-                    src={slide.image}
-                    alt={slide.title || `Slide ${idx + 1}`}
-                    className="max-w-full max-h-full object-contain"
-                  />
-                </div>
+                {/* 2. Optional Gradient Overlay (PW style for readability) */}
+                <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-transparent z-10" />
               </div>
             ))}
-            <div className="absolute bottom-3 left-0 right-0 z-20 flex justify-center gap-1.5">
+
+            {/* Navigation Arrows (PW Style) */}
+            <button
+              onClick={prevSlide}
+              className="absolute left-4 top-1/2 -translate-y-1/2 z-30 p-2 rounded-full bg-white/80 backdrop-blur-sm text-gray-800 shadow-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-white"
+            >
+              <ChevronLeft size={24} />
+            </button>
+            <button
+              onClick={nextSlide}
+              className="absolute right-4 top-1/2 -translate-y-1/2 z-30 p-2 rounded-full bg-white/80 backdrop-blur-sm text-gray-800 shadow-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-white"
+            >
+              <ChevronRight size={24} />
+            </button>
+
+            {/* Pagination Dots (Modern Pill Style) */}
+            <div className="absolute bottom-4 left-0 right-0 z-30 flex justify-center gap-2">
               {slides.map((_, idx) => (
                 <button
                   key={idx}
                   onClick={() => setCurrentSlide(idx)}
-                  className={`transition-all duration-300 rounded-full ${currentSlide === idx ? 'w-6 h-1.5 bg-white' : 'w-1.5 h-1.5 bg-white/50'}`}
+                  className={`transition-all duration-300 rounded-full h-1.5 ${currentSlide === idx ? 'w-8 bg-indigo-600' : 'w-2 bg-gray-300'}`}
                 />
               ))}
             </div>
