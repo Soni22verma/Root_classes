@@ -5,7 +5,7 @@ const facultyMembers = [
     id: 1,
     name: "Sunil Kumar Singh",
     subject: "Physics",
-    expertise: "Expert in advanced physics and quantum mechanics with 15+ years of teaching experience. Specializes in making complex concepts simple and engaging.",
+    expertise: "Expert in advanced physics and quantum mechanics with 10+ years of teaching experience. Specializes in making complex concepts simple and engaging.",
     image: "https://randomuser.me/api/portraits/men/32.jpg",
 
     color: "from-blue-500 to-cyan-500"

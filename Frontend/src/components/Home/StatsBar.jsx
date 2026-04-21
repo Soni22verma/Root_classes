@@ -1,10 +1,10 @@
 import React from 'react';
 
 const stats = [
-  { value: '10,000+', label: 'Students Enrolled',  color: '#FB0500' },
-  { value: '98%',     label: 'Selection Rate',      color: '#0078FF' },
-  { value: '50+',     label: 'Expert Faculty',      color: '#FB0500' },
-  { value: '15+',     label: 'Years of Excellence', color: '#0078FF' },
+  { value: '10,000+', label: 'Students Enrolled', color: '#FB0500' },
+  { value: '98%', label: 'Selection Rate', color: '#0078FF' },
+  { value: '50+', label: 'Expert Faculty', color: '#FB0500' },
+  { value: '10+', label: 'Years of Excellence', color: '#0078FF' },
 ];
 
 const StatsBar = () => (
