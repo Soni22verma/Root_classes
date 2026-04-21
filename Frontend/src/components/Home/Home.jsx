@@ -8,13 +8,14 @@ import WhyChooseUs from './WhyChooseUs';
 import FAQ from './FAQ';
 import axios from 'axios';
 import api from '../../services/endpoints';
+import fallbackImage from '../../assets/fallback.jpg';
 
 const SliderPage = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [slides, setSlides] = useState([
     {
       _id: 'default',
-      image: "/assets/student_study.png", // Using a more appropriate educational image as fallback
+      image: fallbackImage, // fallback
       title: "Roots Classes",
       subtitle: "Empowering Your Future with Quality Education",
       buttonText: "Explore Courses",
@@ -68,17 +69,17 @@ const SliderPage = () => {
                 className={`absolute inset-0 w-full h-full transition-opacity duration-700 ${currentSlide === idx ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
               >
                 {/* 1. Subtle Blurred Background to fill the edges (prevents black bars) */}
-                <div 
+                <div
                   className="absolute inset-0 w-full h-full bg-center bg-cover blur-2xl scale-110 opacity-30"
                   style={{ backgroundImage: `url(${slide.image})` }}
                 />
-                
+
                 {/* 2. Main Image (Zero cutting, fully visible) */}
                 <div className="relative w-full h-full flex items-center justify-center z-10">
-                  <img 
-                    src={slide.image} 
-                    alt={slide.title || `Slide ${idx + 1}`} 
-                    className="max-w-full max-h-full object-contain" 
+                  <img
+                    src={slide.image}
+                    alt={slide.title || `Slide ${idx + 1}`}
+                    className="max-w-full max-h-full object-contain"
                   />
                 </div>
               </div>

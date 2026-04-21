@@ -9,7 +9,6 @@ import {
   GraduationCap, Users, Info, Download
 } from 'lucide-react';
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const getYouTubeEmbedUrl = (url) => {
@@ -37,110 +36,90 @@ const loadRazorpayScript = () =>
     document.body.appendChild(s);
   });
 
-// ─── PDF Download Function ──────────────────────────────────────────────────
-const downloadNotesAsPDF = async (topic) => {
+// ─── PDF Download Function (pure jsPDF, no html2canvas, no crash) ────────────
+const downloadNotesAsPDF = (topic) => {
   try {
-    // Show loading indicator
-    const loadingToast = document.createElement('div');
-    loadingToast.className = 'fixed top-5 right-4 z-50 px-5 py-3 rounded-xl shadow-lg text-sm font-medium text-white bg-blue-500 flex items-center gap-2';
-    loadingToast.innerHTML = '<div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> Generating PDF...';
-    document.body.appendChild(loadingToast);
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pageW = 210;
+    const margin = 15;
+    const contentW = pageW - margin * 2;
+    let y = 20;
 
-    // Create a temporary container for the notes content
-    const tempDiv = document.createElement('div');
-    tempDiv.style.width = '800px';
-    tempDiv.style.padding = '40px';
-    tempDiv.style.backgroundColor = 'white';
-    tempDiv.style.fontFamily = 'Arial, sans-serif';
-    tempDiv.style.position = 'absolute';
-    tempDiv.style.left = '-9999px';
-    tempDiv.style.top = '-9999px';
-    
-    // Format the notes content
-    tempDiv.innerHTML = `
-      <div style="max-width: 800px; margin: 0 auto;">
-        <div style="text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #e5e7eb;">
-          <h1 style="font-size: 24px; font-weight: bold; color: #1f2937; margin-bottom: 8px;">${topic.title}</h1>
-          <p style="font-size: 14px; color: #6b7280;">Course Notes</p>
-        </div>
-        
-        <div style="margin-bottom: 20px;">
-          <div style="background-color: #f3f4f6; padding: 12px; border-radius: 8px; margin-bottom: 20px;">
-            <p style="font-size: 14px; color: #4b5563; margin: 0;"><strong>Topic:</strong> ${topic.title}</p>
-            ${topic.description ? `<p style="font-size: 14px; color: #4b5563; margin-top: 8px;"><strong>Description:</strong> ${topic.description}</p>` : ''}
-          </div>
-        </div>
+    const addText = (text, fontSize, bold = false, color = [30, 30, 30]) => {
+      pdf.setFontSize(fontSize);
+      pdf.setFont('helvetica', bold ? 'bold' : 'normal');
+      pdf.setTextColor(...color);
+      const lines = pdf.splitTextToSize(String(text || ''), contentW);
+      lines.forEach((line) => {
+        if (y > 275) { pdf.addPage(); y = 20; }
+        pdf.text(line, margin, y);
+        y += fontSize * 0.45;
+      });
+    };
 
-        <div style="margin-bottom: 30px;">
-          <h2 style="font-size: 18px; font-weight: bold; color: #374151; margin-bottom: 12px;">Notes Content</h2>
-          <div style="line-height: 1.6; color: #4b5563;">
-            ${topic.notes ? `<div style="white-space: pre-wrap;">${topic.notes.replace(/\n/g, '<br/>')}</div>` : '<p>No notes available for this topic.</p>'}
-          </div>
-        </div>
+    // ── Header ──
+    pdf.setFillColor(37, 99, 235);
+    pdf.rect(0, 0, 210, 28, 'F');
+    pdf.setFontSize(16);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(255, 255, 255);
+    pdf.text('Course Notes', margin, 12);
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text(`Generated: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, margin, 20);
+    y = 38;
 
-        <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; font-size: 12px; color: #9ca3af;">
-          <p>Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}</p>
-        </div>
-      </div>
-    `;
-    
-    document.body.appendChild(tempDiv);
-    
-    // Capture the content as canvas
-    const canvas = await html2canvas(tempDiv, {
-      scale: 2,
-      backgroundColor: '#ffffff',
-      logging: false,
-      useCORS: true
-    });
-    
-    // Remove temporary div
-    document.body.removeChild(tempDiv);
-    
-    // Create PDF
-    const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4'
-    });
-    
-    const imgWidth = 210; // A4 width in mm
-    const pageHeight = 297; // A4 height in mm
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-    let heightLeft = imgHeight;
-    let position = 0;
-    
-    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-    heightLeft -= pageHeight;
-    
-    while (heightLeft >= 0) {
-      position = heightLeft - imgHeight;
-      pdf.addPage();
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
+    // ── Topic Title ──
+    addText(topic.title, 15, true, [17, 24, 39]);
+    y += 2;
+
+    // ── Divider ──
+    pdf.setDrawColor(229, 231, 235);
+    pdf.line(margin, y, pageW - margin, y);
+    y += 6;
+
+    // ── Description ──
+    if (topic.description) {
+      addText('Description', 10, true, [107, 114, 128]);
+      y += 1;
+      const descText = topic.description.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').trim();
+      addText(descText, 10, false, [75, 85, 99]);
+      y += 5;
     }
-    
-    // Save PDF
+
+    // ── Notes ──
+    addText('Notes', 11, true, [37, 99, 235]);
+    y += 2;
+    const notesText = topic.notes
+      ? topic.notes.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').trim()
+      : 'No notes available for this topic.';
+    addText(notesText, 10, false, [55, 65, 81]);
+
+    // ── Footer ──
+    const pageCount = pdf.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      pdf.setPage(i);
+      pdf.setFontSize(8);
+      pdf.setTextColor(156, 163, 175);
+      pdf.text(`Page ${i} of ${pageCount}`, pageW - margin, 290, { align: 'right' });
+    }
+
     pdf.save(`${topic.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_notes.pdf`);
-    
-    // Remove loading toast
-    document.body.removeChild(loadingToast);
-    
-    // Show success message (optional)
-    const successToast = document.createElement('div');
-    successToast.className = 'fixed top-5 right-4 z-50 px-5 py-3 rounded-xl shadow-lg text-sm font-medium text-white bg-green-500 flex items-center gap-2';
-    successToast.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> PDF Downloaded Successfully!';
-    document.body.appendChild(successToast);
-    setTimeout(() => document.body.removeChild(successToast), 3000);
-    
-  } catch (error) {
-    console.error('PDF generation error:', error);
-    const errorToast = document.createElement('div');
-    errorToast.className = 'fixed top-5 right-4 z-50 px-5 py-3 rounded-xl shadow-lg text-sm font-medium text-white bg-red-500 flex items-center gap-2';
-    errorToast.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg> Failed to generate PDF';
-    document.body.appendChild(errorToast);
-    setTimeout(() => document.body.removeChild(errorToast), 3000);
+
+    // ── Success toast ──
+    const t = document.createElement('div');
+    t.style.cssText = 'position:fixed;top:20px;right:16px;z-index:9999;padding:12px 18px;background:#22c55e;color:#fff;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,.15)';
+    t.textContent = '✓ PDF Downloaded!';
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3000);
+
+  } catch (err) {
+    console.error('PDF error:', err);
+    const t = document.createElement('div');
+    t.style.cssText = 'position:fixed;top:20px;right:16px;z-index:9999;padding:12px 18px;background:#ef4444;color:#fff;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,.15)';
+    t.textContent = '✗ Failed to generate PDF';
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3000);
   }
 };
 
@@ -288,7 +267,14 @@ const CourseDetails = () => {
   const openNotes = (topic) => {
     const hasAccess = isEnrolled || topic.isPreviewFree || isCompletelyFree();
     if (!hasAccess) return showToast('Enroll to access notes', 'error');
-    window.open(topic.notesUrl, '_blank');
+    // Direct download — no new tab, no Save As dialog
+    const a = document.createElement('a');
+    a.href = topic.notesUrl;
+    a.download = `${(topic.title || 'notes').replace(/[^a-z0-9]/gi, '_').toLowerCase()}_notes`;
+    a.target = '_self';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   };
 
   // ── Download Notes as PDF ─────────────────────────────────────────────────
@@ -296,24 +282,58 @@ const CourseDetails = () => {
     const hasAccess = isEnrolled || topic.isPreviewFree || isCompletelyFree();
     if (!hasAccess) return showToast('Enroll to access notes', 'error');
     
-    // Check if topic has notes content
     if (!topic.notes && !topic.notesUrl) {
       return showToast('No notes available for download', 'error');
     }
     
-    // If notes are from URL, fetch them first
-    if (topic.notesUrl && !topic.notes) {
+    // If we have a URL, it means the notes are an uploaded file (like a PDF).
+    // Download it directly instead of trying to parse it as text.
+    if (topic.notesUrl) {
       try {
+        // Show downloading toast
+        const toast = document.createElement('div');
+        toast.style.cssText = 'position:fixed;top:20px;right:16px;z-index:9999;padding:12px 18px;background:#3b82f6;color:#fff;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,.15)';
+        toast.textContent = '⏳ Downloading...';
+        document.body.appendChild(toast);
+
         const response = await fetch(topic.notesUrl);
-        const text = await response.text();
-        topic.notes = text;
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+
+        const contentType = response.headers.get('content-type') || '';
+        let ext = 'pdf';
+        if (contentType.includes('word') || topic.notesUrl.includes('.doc')) ext = 'docx';
+        else if (contentType.includes('png')) ext = 'png';
+        else if (contentType.includes('jpeg') || contentType.includes('jpg')) ext = 'jpg';
+        else if (topic.notesUrl.match(/\.(\w+)(\?|$)/)) {
+          ext = topic.notesUrl.match(/\.(\w+)(\?|$)/)[1];
+        }
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${(topic.title || 'notes').replace(/[^a-z0-9]/gi, '_').toLowerCase()}_notes.${ext}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        toast.remove();
+
+        const success = document.createElement('div');
+        success.style.cssText = 'position:fixed;top:20px;right:16px;z-index:9999;padding:12px 18px;background:#22c55e;color:#fff;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,.15)';
+        success.textContent = '✓ Notes Downloaded!';
+        document.body.appendChild(success);
+        setTimeout(() => success.remove(), 3000);
+
+        return; // Early return since we successfully downloaded the file
       } catch (error) {
         console.error('Error fetching notes:', error);
-        return showToast('Failed to fetch notes content', 'error');
+        return showToast('Failed to download notes', 'error');
       }
     }
     
-    await downloadNotesAsPDF(topic);
+    // If it's pure text notes stored in DB, generate a PDF out of it
+    downloadNotesAsPDF(topic);
   };
 
   // ── Navigate to Topic Info Page ─────────────────────────────────────────────
@@ -620,7 +640,7 @@ const CourseDetails = () => {
                                                   <Play size={11} /> Watch
                                                 </button>
                                               )}
-                                              {topic.notes && (
+                                              {(topic.notes || topic.notesUrl) && (
                                                 <button
                                                   onClick={() => handleDownloadNotesPDF(topic)}
                                                   disabled={!hasAccess}
@@ -631,19 +651,6 @@ const CourseDetails = () => {
                                                   }`}
                                                 >
                                                   <Download size={11} /> PDF
-                                                </button>
-                                              )}
-                                              {topic.notesUrl && !topic.notes && (
-                                                <button
-                                                  onClick={() => openNotes(topic)}
-                                                  disabled={!hasAccess}
-                                                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                                                    hasAccess
-                                                      ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                                      : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                                  }`}
-                                                >
-                                                  <FileText size={11} /> Notes
                                                 </button>
                                               )}
                                               {topic.description && (
