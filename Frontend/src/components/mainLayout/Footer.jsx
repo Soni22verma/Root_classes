@@ -8,7 +8,7 @@ const Footer = () => {
 
   const quickLinks = [
     { name: "Classroom Courses", href: "/course" },
-    { name: "Online Courses", href: "/onlinecourse" },
+    { name: "Test Series", href: "/test" },
     { name: "Contact Us", href: "/contact" },
     { name: "Terms & Conditions", href: "/termsandconditions" },
     { name: "Privacy Policy", href: "/privacypolicy" }

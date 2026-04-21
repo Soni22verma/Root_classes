@@ -202,10 +202,12 @@ const StudentTestPanel = () => {
   };
 
   const handleStartTest = async (test) => {
+    // Check if test is already completed from the local state
     if (test.isCompleted) {
-      alert('You have already completed this test. You cannot retake it.');
+      alert('⚠️ You have already taken this test! You cannot retake it.');
       return;
     }
+    
     let currentStudentId = studentId;
     if (!currentStudentId && student) {
       currentStudentId = student._id || student.id;
@@ -221,13 +223,16 @@ const StudentTestPanel = () => {
         }
       } catch (error) { }
     }
-    if (!currentStudentId) { alert('Please login to take the test'); return; }
+    if (!currentStudentId) { 
+      alert('Please login to take the test'); 
+      return; 
+    }
 
     setCheckingAttempt(true);
     const attemptStatus = await checkAttemptTest(test.id);
     if (attemptStatus.attempted) {
-      alert('You have already completed this test. You cannot retake it.');
-      await GetAllPublishedTest();
+      alert('⚠️ You have already taken this test! You cannot retake it.');
+      await GetAllPublishedTest(); // Refresh the test list to update the button state
       setCheckingAttempt(false);
       return;
     }
@@ -372,13 +377,11 @@ const StudentTestPanel = () => {
 
         {/* ── Hero (Light & Sleek) ── */}
         <div className="relative bg-white border-b border-gray-100 overflow-hidden">
-          {/* Dot pattern matching StatsBar */}
           <div className="absolute inset-0 opacity-[0.4]" style={{
             backgroundImage: 'radial-gradient(#e5e7eb 1px, transparent 1px)',
             backgroundSize: '24px 24px'
           }} />
 
-          {/* Subtle color glows */}
           <div className="absolute -top-24 -right-24 w-96 h-96 bg-[#0078FF]/5 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-[#FB0500]/5 rounded-full blur-3xl pointer-events-none" />
 
@@ -394,7 +397,6 @@ const StudentTestPanel = () => {
                 </h1>
               </div>
 
-              {/* Login status - Compact */}
               <div className="flex-shrink-0">
                 {!isLoggedIn ? (
                   <div className="inline-flex items-center gap-2 bg-yellow-50 border border-yellow-100 rounded-xl px-4 py-2">
@@ -443,49 +445,45 @@ const StudentTestPanel = () => {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
                 {availableTests.map((test, i) => {
-                  const isDark = i % 7 === 2;
                   const isWide = i % 5 === 0;
                   const accentRed = i % 2 === 0;
 
                   return (
                     <div
                       key={test.id}
-                      className={`rounded-2xl overflow-hidden border transition-all duration-200 flex flex-col ${isWide ? 'md:col-span-7' : 'md:col-span-5'
-                        } ${isDark
-                          ? 'bg-[#0a1628] border-[#1e3a5f]'
-                          : 'bg-white border-gray-100 hover:border-gray-200 hover:shadow-md'
-                        } ${test.isCompleted ? 'opacity-80' : ''}`}
+                      className={`rounded-2xl overflow-hidden border transition-all duration-200 flex flex-col ${
+                        isWide ? 'md:col-span-7' : 'md:col-span-5'
+                      } bg-white border-gray-100 hover:border-gray-200 hover:shadow-md ${
+                        test.isCompleted ? 'opacity-80' : ''
+                      }`}
                     >
-                      {/* Card top bar */}
                       <div className={`h-1.5 w-full ${accentRed ? 'bg-[#FB0500]' : 'bg-[#0078FF]'}`}></div>
 
                       <div className="p-6 flex flex-col flex-1">
-                        {/* Header row */}
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className={`text-xs font-semibold px-2.5 py-1 rounded-lg ${getDifficultyColor(test.difficulty)}`}>
                               {test.difficulty}
                             </span>
-                            <span className={`text-xs px-2.5 py-1 rounded-lg ${isDark ? 'bg-white/10 text-gray-300' : 'bg-gray-100 text-gray-500'}`}>
+                            <span className="text-xs px-2.5 py-1 rounded-lg bg-gray-100 text-gray-500">
                               {test.category}
                             </span>
                           </div>
                           {test.isCompleted && (
                             <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-green-50 text-green-700 border border-green-200 flex-shrink-0">
-                              ✓ Done
+                              ✓ Completed
                             </span>
                           )}
                         </div>
 
-                        <h3 className={`text-lg font-bold mb-2 leading-snug ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                        <h3 className="text-lg font-bold mb-2 leading-snug text-gray-900">
                           {test.title}
                         </h3>
-                        <p className={`text-sm mb-5 line-clamp-2 leading-relaxed flex-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                        <p className="text-sm mb-5 line-clamp-2 leading-relaxed flex-1 text-gray-500">
                           {test.description}
                         </p>
 
-                        {/* Meta row */}
-                        <div className={`grid grid-cols-2 gap-2 mb-5 text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                        <div className="grid grid-cols-2 gap-2 mb-5 text-xs text-gray-500">
                           <div className="flex items-center gap-1.5">
                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -511,7 +509,7 @@ const StudentTestPanel = () => {
                           )}
                         </div>
 
-                        {/* Action */}
+                        {/* Action Buttons */}
                         {test.isCompleted ? (
                           <button
                             onClick={() => handleViewResult(test)}
@@ -523,14 +521,15 @@ const StudentTestPanel = () => {
                           <button
                             onClick={() => handleStartTest(test)}
                             disabled={!isLoggedIn}
-                            className={`w-full py-2.5 rounded-xl font-semibold text-sm transition ${isLoggedIn
-                                ? accentRed
-                                  ? 'bg-[#FB0500] text-white hover:opacity-90'
-                                  : 'bg-[#0078FF] text-white hover:opacity-90'
-                                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                              }`}
+                            className={`w-full py-2.5 rounded-xl font-semibold text-sm transition ${
+                              !isLoggedIn
+                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                : accentRed
+                                ? 'bg-[#FB0500] text-white hover:opacity-90'
+                                : 'bg-[#0078FF] text-white hover:opacity-90'
+                            }`}
                           >
-                            {isLoggedIn ? 'Start Test →' : 'Login to Start'}
+                            {!isLoggedIn ? 'Login to Start' : 'Start Test →'}
                           </button>
                         )}
                       </div>
@@ -546,14 +545,14 @@ const StudentTestPanel = () => {
         {showResultModal && viewingResult && (
           <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setShowResultModal(false)}>
             <div className="bg-white rounded-2xl max-w-md w-full overflow-hidden" onClick={e => e.stopPropagation()}>
-              <div className="bg-[#0a1628] p-6">
+              <div className="bg-white p-6 border-b border-gray-100">
                 <div className="flex justify-between items-start">
                   <div>
                     <p className="text-xs font-bold text-[#0078FF] uppercase tracking-widest mb-1">Result</p>
-                    <h2 className="text-xl font-bold text-white">Test Completed</h2>
-                    <p className="text-gray-400 text-sm mt-0.5">{viewingResult.testTitle}</p>
+                    <h2 className="text-xl font-bold text-gray-900">Test Completed</h2>
+                    <p className="text-gray-500 text-sm mt-0.5">{viewingResult.testTitle}</p>
                   </div>
-                  <button onClick={() => setShowResultModal(false)} className="text-gray-400 hover:text-white transition">
+                  <button onClick={() => setShowResultModal(false)} className="text-gray-400 hover:text-gray-700 transition">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -641,7 +640,6 @@ const StudentTestPanel = () => {
 
     return (
       <div className="min-h-screen bg-gray-50">
-        {/* Sticky header */}
         <div className="bg-white border-b border-gray-100 sticky top-0 z-10 shadow-sm">
           <div className="max-w-4xl mx-auto px-4 py-3">
             <div className="flex justify-between items-center mb-3">
@@ -661,7 +659,6 @@ const StudentTestPanel = () => {
                 </button>
               </div>
             </div>
-            {/* Progress bars */}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <div className="flex justify-between text-xs text-gray-400 mb-1">
@@ -685,7 +682,6 @@ const StudentTestPanel = () => {
 
         <div className="max-w-4xl mx-auto px-4 py-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {/* Question panel */}
             <div className="md:col-span-2">
               <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
                 <div className="flex justify-between items-center mb-5">
@@ -751,7 +747,6 @@ const StudentTestPanel = () => {
               </div>
             </div>
 
-            {/* Question palette sidebar */}
             <div className="md:col-span-1">
               <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm sticky top-28">
                 <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Question Palette</p>
@@ -804,19 +799,17 @@ const StudentTestPanel = () => {
     return (
       <div className="min-h-screen bg-dot-grid flex items-center justify-center p-4">
         <div className="max-w-lg w-full bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          {/* Header */}
-          <div className="bg-[#0a1628] px-8 py-7 text-center">
-            <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center mx-auto mb-4">
-              <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="bg-white px-8 py-7 text-center border-b border-gray-100">
+            <div className="w-14 h-14 rounded-2xl bg-gray-50 flex items-center justify-center mx-auto mb-4">
+              <svg className="w-7 h-7 text-[#0078FF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
             <p className="text-xs font-bold text-[#0078FF] uppercase tracking-widest mb-1">Test Complete</p>
-            <h2 className="text-xl font-bold text-white">{selectedTest.title}</h2>
+            <h2 className="text-xl font-bold text-gray-900">{selectedTest.title}</h2>
           </div>
 
           <div className="p-8 text-center">
-            {/* Score */}
             <div className={`text-6xl font-bold mb-1 ${resultAccent}`}>{percentage}%</div>
             <p className={`text-base font-semibold mb-6 ${resultAccent}`}>{resultLabel}</p>
 
@@ -827,7 +820,6 @@ const StudentTestPanel = () => {
               </div>
             )}
 
-            {/* Stats grid */}
             <div className="grid grid-cols-2 gap-3 mb-7">
               {[
                 { label: 'Total Questions', value: questions.length, color: 'text-[#0078FF]' },

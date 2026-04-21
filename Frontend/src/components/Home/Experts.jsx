@@ -85,9 +85,7 @@ const FacultyShowcase = () => {
 
                 <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
                   <span className="text-xs text-gray-400">{member.experience} experience</span>
-                  <button className="text-xs font-semibold text-gray-900 hover:text-[#FB0500] transition-colors">
-                    View Profile →
-                  </button>
+                  
                 </div>
               </div>
             </div>

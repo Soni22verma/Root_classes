@@ -34,11 +34,11 @@ export const updateTest = async (req, res) => {
       return res.status(404).json({ message: "Test not found" });
     }
 
-    if (title) test.title = title;
-    if (duration) test.duration = duration;
-    if (passingPercentage) test.passingPercentage = passingPercentage;
+    if (title !== undefined) test.title = title;
+    if (duration !== undefined) test.duration = duration;
+    if (passingPercentage !== undefined) test.passingPercentage = passingPercentage;
 
-    if (typeof isPublished === "boolean") {
+    if (isPublished !== undefined) {
       test.isPublished = isPublished;
     }
 
