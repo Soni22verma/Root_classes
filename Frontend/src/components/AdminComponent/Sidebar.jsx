@@ -48,7 +48,7 @@ const AdminSidebar = ({ isMobileOpen, setIsMobileOpen }) => {
 
   const toggleSubmenu = (menuName) => setOpenSubmenus(prev => ({ ...prev, [menuName]: !prev[menuName] }));
   const toggleCollapse = () => setIsCollapsed(!isCollapsed);
-  const isActive = (path) => path === '/admin' ? location.pathname === path : location.pathname.startsWith(path);
+  const isActive = (path) => (path === '/admin' || path === '/instructor/dashboard') ? location.pathname === path : location.pathname.startsWith(path);
 
   const menuItems = userData.role === 'admin' ? [
     { name: 'Dashboard', path: '/admin', icon: LayoutDashboard },
@@ -63,18 +63,10 @@ const AdminSidebar = ({ isMobileOpen, setIsMobileOpen }) => {
     { name: 'Admissions', path: '/admin/createtest', icon: SiTestcafe },
     { name: 'Settings', path: '/admin/settings', icon: Settings },
   ] : [
-    { name: 'Overview', path: '/admin', icon: LayoutDashboard },
-    { name: 'My Courses', path: '/instructor/allcourses', icon: BookOpen },
-    { name: 'Students', icon: Users, submenu: [
-        { name: 'Roster', path: '/admin/mystudents', icon: Users },
-        { name: 'Attendance', path: '/admin/attendance', icon: Calendar },
-    ]},
-    { name: 'Resources', icon: FileText, submenu: [
-        { name: 'Lectures', path: '/admin/upload-lectures', icon: Video },
-        { name: 'Notes', path: '/admin/upload-notes', icon: FileText },
-    ]},
-    { name: 'Analytics', path: '/admin/performance', icon: BarChart },
-    { name: 'Settings', path: '/admin/settings', icon: Settings }
+    { name: 'Dashboard', path: '/instructor/dashboard', icon: LayoutDashboard },
+    { name: 'My Courses', path: '/instructor/courses', icon: BookOpen },
+    { name: 'Students', path: '/instructor/students', icon: Users },
+    { name: 'Settings', path: '/instructor/settings', icon: Settings },
   ];
 
   const handleLogout = () => {
