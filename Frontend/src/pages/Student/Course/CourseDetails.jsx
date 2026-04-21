@@ -6,8 +6,10 @@ import api from '../../../services/endpoints';
 import {
   ArrowLeft, BookOpen, Clock, ChevronDown, ChevronRight,
   Play, FileText, Lock, Unlock, CheckCircle, X, CreditCard,
-  GraduationCap, Users,
+  GraduationCap, Users, Info, Download
 } from 'lucide-react';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const getYouTubeEmbedUrl = (url) => {
@@ -35,6 +37,113 @@ const loadRazorpayScript = () =>
     document.body.appendChild(s);
   });
 
+// ─── PDF Download Function ──────────────────────────────────────────────────
+const downloadNotesAsPDF = async (topic) => {
+  try {
+    // Show loading indicator
+    const loadingToast = document.createElement('div');
+    loadingToast.className = 'fixed top-5 right-4 z-50 px-5 py-3 rounded-xl shadow-lg text-sm font-medium text-white bg-blue-500 flex items-center gap-2';
+    loadingToast.innerHTML = '<div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> Generating PDF...';
+    document.body.appendChild(loadingToast);
+
+    // Create a temporary container for the notes content
+    const tempDiv = document.createElement('div');
+    tempDiv.style.width = '800px';
+    tempDiv.style.padding = '40px';
+    tempDiv.style.backgroundColor = 'white';
+    tempDiv.style.fontFamily = 'Arial, sans-serif';
+    tempDiv.style.position = 'absolute';
+    tempDiv.style.left = '-9999px';
+    tempDiv.style.top = '-9999px';
+    
+    // Format the notes content
+    tempDiv.innerHTML = `
+      <div style="max-width: 800px; margin: 0 auto;">
+        <div style="text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #e5e7eb;">
+          <h1 style="font-size: 24px; font-weight: bold; color: #1f2937; margin-bottom: 8px;">${topic.title}</h1>
+          <p style="font-size: 14px; color: #6b7280;">Course Notes</p>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+          <div style="background-color: #f3f4f6; padding: 12px; border-radius: 8px; margin-bottom: 20px;">
+            <p style="font-size: 14px; color: #4b5563; margin: 0;"><strong>Topic:</strong> ${topic.title}</p>
+            ${topic.description ? `<p style="font-size: 14px; color: #4b5563; margin-top: 8px;"><strong>Description:</strong> ${topic.description}</p>` : ''}
+          </div>
+        </div>
+
+        <div style="margin-bottom: 30px;">
+          <h2 style="font-size: 18px; font-weight: bold; color: #374151; margin-bottom: 12px;">Notes Content</h2>
+          <div style="line-height: 1.6; color: #4b5563;">
+            ${topic.notes ? `<div style="white-space: pre-wrap;">${topic.notes.replace(/\n/g, '<br/>')}</div>` : '<p>No notes available for this topic.</p>'}
+          </div>
+        </div>
+
+        <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; font-size: 12px; color: #9ca3af;">
+          <p>Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}</p>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(tempDiv);
+    
+    // Capture the content as canvas
+    const canvas = await html2canvas(tempDiv, {
+      scale: 2,
+      backgroundColor: '#ffffff',
+      logging: false,
+      useCORS: true
+    });
+    
+    // Remove temporary div
+    document.body.removeChild(tempDiv);
+    
+    // Create PDF
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
+    
+    const imgWidth = 210; // A4 width in mm
+    const pageHeight = 297; // A4 height in mm
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    let heightLeft = imgHeight;
+    let position = 0;
+    
+    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+    heightLeft -= pageHeight;
+    
+    while (heightLeft >= 0) {
+      position = heightLeft - imgHeight;
+      pdf.addPage();
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+    }
+    
+    // Save PDF
+    pdf.save(`${topic.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_notes.pdf`);
+    
+    // Remove loading toast
+    document.body.removeChild(loadingToast);
+    
+    // Show success message (optional)
+    const successToast = document.createElement('div');
+    successToast.className = 'fixed top-5 right-4 z-50 px-5 py-3 rounded-xl shadow-lg text-sm font-medium text-white bg-green-500 flex items-center gap-2';
+    successToast.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> PDF Downloaded Successfully!';
+    document.body.appendChild(successToast);
+    setTimeout(() => document.body.removeChild(successToast), 3000);
+    
+  } catch (error) {
+    console.error('PDF generation error:', error);
+    const errorToast = document.createElement('div');
+    errorToast.className = 'fixed top-5 right-4 z-50 px-5 py-3 rounded-xl shadow-lg text-sm font-medium text-white bg-red-500 flex items-center gap-2';
+    errorToast.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg> Failed to generate PDF';
+    document.body.appendChild(errorToast);
+    setTimeout(() => document.body.removeChild(errorToast), 3000);
+  }
+};
+
 // ─── Component ────────────────────────────────────────────────────────────────
 const CourseDetails = () => {
   const location = useLocation();
@@ -49,7 +158,6 @@ const CourseDetails = () => {
   const [expandedModules, setExpandedModules] = useState({});
   const [expandedChapters, setExpandedChapters] = useState({});
   const [activeTab, setActiveTab] = useState('overview');
-  const [selectedTopic, setSelectedTopic] = useState(null);
   const [showVideoPlayer, setShowVideoPlayer] = useState(false);
   const [currentVideo, setCurrentVideo] = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -183,6 +291,45 @@ const CourseDetails = () => {
     window.open(topic.notesUrl, '_blank');
   };
 
+  // ── Download Notes as PDF ─────────────────────────────────────────────────
+  const handleDownloadNotesPDF = async (topic) => {
+    const hasAccess = isEnrolled || topic.isPreviewFree || isCompletelyFree();
+    if (!hasAccess) return showToast('Enroll to access notes', 'error');
+    
+    // Check if topic has notes content
+    if (!topic.notes && !topic.notesUrl) {
+      return showToast('No notes available for download', 'error');
+    }
+    
+    // If notes are from URL, fetch them first
+    if (topic.notesUrl && !topic.notes) {
+      try {
+        const response = await fetch(topic.notesUrl);
+        const text = await response.text();
+        topic.notes = text;
+      } catch (error) {
+        console.error('Error fetching notes:', error);
+        return showToast('Failed to fetch notes content', 'error');
+      }
+    }
+    
+    await downloadNotesAsPDF(topic);
+  };
+
+  // ── Navigate to Topic Info Page ─────────────────────────────────────────────
+  const openTopicInfo = (topic) => {
+    const hasAccess = isEnrolled || topic.isPreviewFree || isCompletelyFree();
+    if (!hasAccess) return showToast('Enroll to access topic information', 'error');
+    navigate("/topicinfo", { 
+      state: { 
+        topic,
+        courseId: course._id,
+        courseTitle: course.title,
+        isEnrolled 
+      } 
+    });
+  };
+
   // ── Expand toggles ───────────────────────────────────────────────────────────
   const toggleModule = (idx) => setExpandedModules(p => ({ ...p, [idx]: !p[idx] }));
   const toggleChapter = (mIdx, cIdx) => {
@@ -270,13 +417,13 @@ const CourseDetails = () => {
 
       {/* Main layout */}
       <div className="max-w-6xl mx-auto px-4 py-6">
-        {/* Back */}
+        {/* Back button */}
         <button onClick={() => navigate('/course')} className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 mb-5 transition-colors">
           <ArrowLeft size={14} /> Back to Courses
         </button>
 
         <div className="flex flex-col lg:flex-row gap-6 items-start">
-          {/* ── LEFT COLUMN ────────────────────────────────────────────────── */}
+          {/* LEFT COLUMN */}
           <div className="flex-1 min-w-0">
             {/* Course header */}
             <div className="bg-white rounded-xl border border-gray-100 p-6 mb-5">
@@ -293,7 +440,6 @@ const CourseDetails = () => {
               {course.description && (
                 <div className="text-gray-600 text-sm leading-relaxed mb-4" dangerouslySetInnerHTML={{ __html: course.description }} />
               )}
-              {/* Quick stats */}
               <div className="flex flex-wrap gap-4 pt-3 border-t border-gray-100">
                 <div className="flex items-center gap-1.5 text-sm text-gray-500">
                   <BookOpen size={15} className="text-blue-500" />
@@ -325,16 +471,13 @@ const CourseDetails = () => {
               ))}
             </div>
 
-            {/* Overview Tab */}
+            {/* Overview Tab Content */}
             {activeTab === 'overview' && (
               <div className="space-y-4">
-                {/* About */}
                 <div className="bg-white rounded-xl border border-gray-100 p-5">
                   <h2 className="text-base font-bold text-gray-900 mb-3">About this course</h2>
                   <p className="text-sm text-gray-600 leading-relaxed">{course.description || 'No description available.'}</p>
                 </div>
-
-                {/* What you'll learn */}
                 {course.whatYouWillLearn?.length > 0 && (
                   <div className="bg-white rounded-xl border border-gray-100 p-5">
                     <h2 className="text-base font-bold text-gray-900 mb-3">What you'll learn</h2>
@@ -348,8 +491,6 @@ const CourseDetails = () => {
                     </div>
                   </div>
                 )}
-
-                {/* Requirements */}
                 {course.requirements?.length > 0 && (
                   <div className="bg-white rounded-xl border border-gray-100 p-5">
                     <h2 className="text-base font-bold text-gray-900 mb-3">Requirements</h2>
@@ -363,8 +504,6 @@ const CourseDetails = () => {
                     </ul>
                   </div>
                 )}
-
-                {/* Instructor */}
                 <div className="bg-white rounded-xl border border-gray-100 p-5">
                   <h2 className="text-base font-bold text-gray-900 mb-3">Instructor</h2>
                   <div className="flex items-center gap-3">
@@ -377,8 +516,6 @@ const CourseDetails = () => {
                     </div>
                   </div>
                 </div>
-
-                {/* Stats */}
                 <div className="bg-white rounded-xl border border-gray-100 p-5">
                   <h2 className="text-base font-bold text-gray-900 mb-3">Course Details</h2>
                   <div className="divide-y divide-gray-50 text-sm">
@@ -413,7 +550,6 @@ const CourseDetails = () => {
                   <div className="divide-y divide-gray-50">
                     {course.modules.map((mod, mIdx) => (
                       <div key={mod._id || mIdx}>
-                        {/* Module row */}
                         <button
                           onClick={() => toggleModule(mIdx)}
                           className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 transition-colors text-left"
@@ -429,12 +565,10 @@ const CourseDetails = () => {
                           </span>
                         </button>
 
-                        {/* Chapters */}
                         {expandedModules[mIdx] && (
                           <div className="bg-gray-50 border-t border-gray-100">
                             {mod.chapters?.map((ch, cIdx) => (
                               <div key={ch._id || cIdx} className="border-b border-gray-100 last:border-0">
-                                {/* Chapter row */}
                                 <button
                                   onClick={() => toggleChapter(mIdx, cIdx)}
                                   className="w-full flex items-center justify-between pl-10 pr-5 py-3 hover:bg-gray-100 transition-colors text-left"
@@ -446,22 +580,16 @@ const CourseDetails = () => {
                                   <span className="text-xs text-gray-400 ml-4">{ch.topics?.length || 0} lessons</span>
                                 </button>
 
-                                {/* Topics */}
                                 {expandedChapters[`${mIdx}-${cIdx}`] && (
                                   <div className="pb-2 space-y-1">
                                     {ch.topics?.map((topic, tIdx) => {
                                       const hasAccess = isEnrolled || topic.isPreviewFree || isCompletelyFree();
-                                      const isSelected = selectedTopic?._id === topic._id;
-
                                       return (
                                         <div key={topic._id || tIdx} className="mx-4 rounded-xl bg-white border border-gray-100 overflow-hidden">
                                           <div className="flex items-center justify-between px-4 py-3 gap-3">
                                             <div className="flex items-center gap-3 min-w-0">
                                               <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${hasAccess ? 'bg-green-50' : 'bg-gray-100'}`}>
-                                                {hasAccess
-                                                  ? <Play size={13} className="text-green-600 ml-0.5" />
-                                                  : <Lock size={12} className="text-gray-400" />
-                                                }
+                                                {hasAccess ? <Play size={13} className="text-green-600 ml-0.5" /> : <Lock size={12} className="text-gray-400" />}
                                               </div>
                                               <div className="min-w-0">
                                                 <p className="text-sm text-gray-800 truncate">{tIdx + 1}. {topic.title}</p>
@@ -492,7 +620,20 @@ const CourseDetails = () => {
                                                   <Play size={11} /> Watch
                                                 </button>
                                               )}
-                                              {topic.notesUrl && (
+                                              {topic.notes && (
+                                                <button
+                                                  onClick={() => handleDownloadNotesPDF(topic)}
+                                                  disabled={!hasAccess}
+                                                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                                                    hasAccess
+                                                      ? 'bg-green-600 text-white hover:bg-green-700'
+                                                      : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                  }`}
+                                                >
+                                                  <Download size={11} /> PDF
+                                                </button>
+                                              )}
+                                              {topic.notesUrl && !topic.notes && (
                                                 <button
                                                   onClick={() => openNotes(topic)}
                                                   disabled={!hasAccess}
@@ -507,24 +648,14 @@ const CourseDetails = () => {
                                               )}
                                               {topic.description && (
                                                 <button
-                                                  onClick={() => setSelectedTopic(isSelected ? null : topic)}
-                                                  className="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+                                                  onClick={() => openTopicInfo(topic)}
+                                                  className="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors flex items-center gap-1"
                                                 >
-                                                  {isSelected ? 'Hide' : 'Info'}
+                                                  <Info size={11} /> Info
                                                 </button>
                                               )}
                                             </div>
                                           </div>
-
-                                          {/* Topic description */}
-                                          {isSelected && topic.description && (
-                                            <div className="px-4 pb-4 border-t border-gray-50 bg-gray-50">
-                                              <div
-                                                className="text-sm text-gray-600 leading-relaxed pt-3 prose prose-sm max-w-none"
-                                                dangerouslySetInnerHTML={{ __html: topic.description }}
-                                              />
-                                            </div>
-                                          )}
                                         </div>
                                       );
                                     })}
@@ -550,7 +681,7 @@ const CourseDetails = () => {
             )}
           </div>
 
-          {/* ── RIGHT COLUMN — Enrollment card ─────────────────────────────── */}
+          {/* RIGHT COLUMN - Enrollment card */}
           <div className="w-full lg:w-72 flex-shrink-0">
             <div className="sticky top-5 bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm">
               {!isEnrolled ? (
@@ -561,7 +692,6 @@ const CourseDetails = () => {
                     </p>
                     {!isCompletelyFree() && <p className="text-xs text-gray-400 mt-1">One-time payment · Full access</p>}
                   </div>
-
                   <div className="p-5 space-y-4">
                     <button
                       onClick={handleEnrollClick}
@@ -570,8 +700,6 @@ const CourseDetails = () => {
                     >
                       {(enrollmentLoading || paymentProcessing) ? 'Processing...' : info.action}
                     </button>
-
-                    {/* Included */}
                     <div className="space-y-2.5 text-sm text-gray-600">
                       <div className="flex items-center gap-2"><BookOpen size={14} className="text-blue-500" /> {course.modules?.length || 0} modules</div>
                       <div className="flex items-center gap-2"><Play size={14} className="text-blue-500" /> {tt} lessons total</div>
@@ -587,12 +715,7 @@ const CourseDetails = () => {
                   </div>
                   <p className="font-bold text-gray-900 mb-1">You're enrolled!</p>
                   <p className="text-xs text-gray-500 mb-4">Full access to all lessons</p>
-                  <button
-                    onClick={() => navigate(`/course-content/${course._id}`, { state: { course } })}
-                    className="w-full py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors"
-                  >
-                    Continue Learning
-                  </button>
+                 
                 </div>
               )}
             </div>
@@ -600,7 +723,7 @@ const CourseDetails = () => {
         </div>
       </div>
 
-      {/* Video Player */}
+      {/* Video Player Modal */}
       {showVideoPlayer && currentVideo && (
         <div
           className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4"

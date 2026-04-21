@@ -114,7 +114,8 @@ const CourseContentManager = () => {
     isPreviewFree: false,
     order: 0,
     videoType: 'upload',
-    youtubeUrl: ''
+    youtubeUrl: '',
+    removeNotes: false // Flag to remove existing notes
   });
   
   // File states
@@ -336,8 +337,14 @@ const CourseContentManager = () => {
       formData.append('video', videoFile);
     }
 
+    // Handle notes: if there's a new notes file, upload it
     if (notesFile) {
       formData.append('notes', notesFile);
+    }
+    
+    // If editing and we want to remove existing notes
+    if (editingItem?.type === 'topic' && topicData.removeNotes) {
+      formData.append('removeNotes', 'true');
     }
 
     try {
@@ -408,6 +415,10 @@ const CourseContentManager = () => {
       }
       setNotesFile(file);
       setNotesPreview(file.name);
+      // Reset remove flag if we're uploading a new file
+      if (topicData.removeNotes) {
+        setTopicData({ ...topicData, removeNotes: false });
+      }
     }
   };
 
@@ -463,7 +474,8 @@ const CourseContentManager = () => {
         isPreviewFree: topic.isPreviewFree || false,
         order: topic.order || 0,
         videoType: topic.videoType || 'upload',
-        youtubeUrl: topic.youtubeUrl || ''
+        youtubeUrl: topic.youtubeUrl || '',
+        removeNotes: false
       });
       setVideoFile(null);
       setNotesFile(null);
@@ -478,7 +490,8 @@ const CourseContentManager = () => {
         isPreviewFree: false,
         order: chapter.topics?.length || 0,
         videoType: 'upload',
-        youtubeUrl: ''
+        youtubeUrl: '',
+        removeNotes: false
       });
       setVideoFile(null);
       setNotesFile(null);
@@ -503,7 +516,8 @@ const CourseContentManager = () => {
       isPreviewFree: false, 
       order: 0,
       videoType: 'upload',
-      youtubeUrl: ''
+      youtubeUrl: '',
+      removeNotes: false
     });
     setVideoFile(null);
     setNotesFile(null);
@@ -768,17 +782,40 @@ const CourseContentManager = () => {
                                              src={`https://www.youtube.com/embed/${topicData.youtubeUrl.split('v=')[1]?.split('&')[0] || topicData.youtubeUrl.split('/').pop()}`}
                                              className="w-full h-full"
                                              allowFullScreen
+                                             title="Video Player"
                                           />
                                        </div>
-                                    ) : videoPreview ? (
+                                    ) : (videoPreview || selectedTopic?.videoUrl) ? (
                                        <div className="aspect-video w-full rounded-xl overflow-hidden bg-black border border-gray-200 shadow-2xl">
-                                          <video src={videoPreview} className="w-full h-full" controls />
+                                          <video src={videoPreview || selectedTopic?.videoUrl} className="w-full h-full" controls />
                                        </div>
                                     ) : null}
 
                                     <div className="prose prose-blue max-w-none">
                                        <div className="text-gray-700 leading-relaxed text-lg font-medium" dangerouslySetInnerHTML={{ __html: editor?.getHTML() }} />
                                     </div>
+
+                                    {/* Notes Preview Section */}
+                                    {(notesFile || selectedTopic?.notesUrl) && (
+                                       <div className="mt-8 p-6 bg-gray-50 rounded-xl border border-gray-200">
+                                          <div className="flex items-center justify-between mb-4">
+                                             <div className="flex items-center gap-2">
+                                                <FileText size={20} className="text-green-600" />
+                                                <h3 className="text-[11px] font-black text-gray-900 uppercase tracking-widest">Course Material</h3>
+                                             </div>
+                                             <button
+                                                onClick={() => window.open(notesFile ? URL.createObjectURL(notesFile) : selectedTopic?.notesUrl, '_blank')}
+                                                className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-[9px] font-black text-gray-700 hover:border-green-500 transition-all"
+                                             >
+                                                <Download size={12} />
+                                                Download Notes
+                                             </button>
+                                          </div>
+                                          <p className="text-[11px] text-gray-600">
+                                             {notesPreview || selectedTopic?.notesUrl?.split('/').pop() || 'Notes.pdf'}
+                                          </p>
+                                       </div>
+                                    )}
                                  </div>
                               )}
 
@@ -845,24 +882,127 @@ const CourseContentManager = () => {
 
                                     <div className="bg-gray-50/50 border border-gray-100 rounded-xl p-8">
                                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-4">Resource Payload</label>
-                                       {topicData.videoType === 'youtube' ? (
-                                          <input type="url" placeholder="YOUTUBE LINK..." className="w-full bg-white border border-gray-200 rounded-lg py-4 px-6 text-xs font-black focus:outline-none focus:border-red-600 transition-all tracking-wider" value={topicData.youtubeUrl} onChange={(e) => setTopicData({ ...topicData, youtubeUrl: e.target.value })} />
-                                       ) : (
-                                          <div className="text-center">
-                                             {!videoPreview ? (
-                                                <label className="cursor-pointer block group p-10 bg-white border border-dashed border-gray-200 rounded-xl hover:border-blue-500 transition-all">
-                                                   <Upload size={32} className="mx-auto mb-3 text-gray-200 group-hover:text-blue-500 transition-colors" />
-                                                   <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Upload Video Asset</p>
-                                                   <input type="file" accept="video/*" onChange={handleVideoChange} className="hidden" />
-                                                </label>
-                                             ) : (
-                                                <div className="relative inline-block group">
-                                                   <video src={videoPreview} className="h-32 rounded-lg border border-gray-200 shadow-xl" controls />
-                                                   <button onClick={removeVideo} className="absolute -top-3 -right-3 bg-red-600 text-white p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"><X size={12} /></button>
+                                       
+                                       {/* Video Section */}
+                                       <div className="mb-8">
+                                          <div className="flex items-center justify-between mb-3">
+                                             <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Video Asset</span>
+                                             {editingItem && selectedTopic?.videoUrl && topicData.videoType === 'upload' && !videoPreview && (
+                                                <button 
+                                                   onClick={() => window.open(selectedTopic.videoUrl, '_blank')}
+                                                   className="text-[8px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1"
+                                                >
+                                                   <ExternalLink size={10} /> View Existing
+                                                </button>
+                                             )}
+                                          </div>
+                                          
+                                          {topicData.videoType === 'youtube' ? (
+                                             <input 
+                                                type="url" 
+                                                placeholder="YOUTUBE LINK..." 
+                                                className="w-full bg-white border border-gray-200 rounded-lg py-4 px-6 text-xs font-black focus:outline-none focus:border-red-600 transition-all tracking-wider" 
+                                                value={topicData.youtubeUrl} 
+                                                onChange={(e) => setTopicData({ ...topicData, youtubeUrl: e.target.value })} 
+                                             />
+                                          ) : (
+                                             <div className="text-center">
+                                                {!videoPreview && !selectedTopic?.videoUrl ? (
+                                                   <label className="cursor-pointer block group p-10 bg-white border border-dashed border-gray-200 rounded-xl hover:border-blue-500 transition-all">
+                                                      <Upload size={32} className="mx-auto mb-3 text-gray-200 group-hover:text-blue-500 transition-colors" />
+                                                      <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Upload Video Asset</p>
+                                                      <p className="text-[7px] text-gray-300 mt-1">MP4, MOV, AVI (Max 100MB)</p>
+                                                      <input type="file" accept="video/*" onChange={handleVideoChange} className="hidden" />
+                                                   </label>
+                                                ) : (
+                                                   <div className="relative inline-block group">
+                                                      <video src={videoPreview || selectedTopic?.videoUrl} className="h-32 rounded-lg border border-gray-200 shadow-xl" controls />
+                                                      <button onClick={removeVideo} className="absolute -top-3 -right-3 bg-red-600 text-white p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                                                         <X size={12} />
+                                                      </button>
+                                                   </div>
+                                                )}
+                                             </div>
+                                          )}
+                                       </div>
+
+                                       {/* Notes Section */}
+                                       <div className="border-t border-gray-200 pt-6">
+                                          <div className="flex items-center justify-between mb-3">
+                                             <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Notes / Resource Material</span>
+                                             {editingItem && selectedTopic?.notesUrl && !notesFile && (
+                                                <div className="flex gap-2">
+                                                   <button 
+                                                      onClick={() => window.open(selectedTopic.notesUrl, '_blank')}
+                                                      className="text-[8px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1"
+                                                   >
+                                                      <ExternalLink size={10} /> View Existing
+                                                   </button>
+                                                   <button 
+                                                      onClick={() => {
+                                                         if (window.confirm('Remove existing notes? This action will be saved when you update the topic.')) {
+                                                            setNotesFile(null);
+                                                            setTopicData({ ...topicData, removeNotes: true });
+                                                         }
+                                                      }}
+                                                      className="text-[8px] font-black text-red-600 uppercase tracking-widest flex items-center gap-1"
+                                                   >
+                                                      <Trash2 size={10} /> Remove
+                                                   </button>
                                                 </div>
                                              )}
                                           </div>
-                                       )}
+                                          
+                                          {!notesPreview && !selectedTopic?.notesUrl ? (
+                                             <label className="cursor-pointer block group p-8 bg-white border border-dashed border-gray-200 rounded-xl hover:border-green-500 transition-all">
+                                                <div className="flex items-center justify-center gap-3">
+                                                   <FileText size={24} className="text-gray-300 group-hover:text-green-500 transition-colors" />
+                                                   <div className="text-left">
+                                                      <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest group-hover:text-green-600 transition-colors">
+                                                         Upload Notes (PDF)
+                                                      </p>
+                                                      <p className="text-[7px] text-gray-300 mt-0.5">PDF only, Max 10MB</p>
+                                                   </div>
+                                                </div>
+                                                <input type="file" accept=".pdf,application/pdf" onChange={handleNotesChange} className="hidden" />
+                                             </label>
+                                          ) : (
+                                             <div className="bg-white border border-green-200 rounded-xl p-4 flex items-center justify-between group hover:shadow-md transition-all">
+                                                <div className="flex items-center gap-3">
+                                                   <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
+                                                      <FileText size={20} className="text-green-600" />
+                                                   </div>
+                                                   <div>
+                                                      <p className="text-[10px] font-black text-gray-800 uppercase tracking-wide">
+                                                         {notesPreview || selectedTopic?.notesUrl?.split('/').pop() || 'Notes.pdf'}
+                                                      </p>
+                                                      <p className="text-[7px] font-black text-gray-400 uppercase tracking-widest mt-0.5">
+                                                         {notesFile ? `${(notesFile.size / 1024 / 1024).toFixed(2)} MB • Pending Upload` : 'Existing Resource'}
+                                                      </p>
+                                                   </div>
+                                                </div>
+                                                <button 
+                                                   onClick={notesFile ? removeNotes : () => {
+                                                      if (window.confirm('Remove existing notes? This action will be saved when you update the topic.')) {
+                                                         removeNotes();
+                                                         setTopicData({ ...topicData, removeNotes: true });
+                                                      }
+                                                   }} 
+                                                   className="p-2 text-gray-400 hover:text-red-600 transition-all opacity-0 group-hover:opacity-100"
+                                                >
+                                                   <X size={14} />
+                                                </button>
+                                             </div>
+                                          )}
+                                          
+                                          {/* Optional: Add note about existing file replacement */}
+                                          {editingItem && selectedTopic?.notesUrl && !notesFile && !topicData.removeNotes && (
+                                             <p className="text-[7px] text-amber-600 mt-2 flex items-center gap-1">
+                                                <AlertCircle size={10} />
+                                                Upload a new PDF to replace the existing notes
+                                             </p>
+                                          )}
+                                       </div>
                                     </div>
                                  </div>
                               )}

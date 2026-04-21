@@ -13,6 +13,7 @@ import CourseDetails from "../pages/Student/Course/CourseDetails"
 import PurchesCourses from "../components/Student/PurchesCourses";
 import TermsAndConditions from "../pages/TermsAndConditions";
 import PrivacyPolicy from "../pages/PrivacyPolicy";
+import TopicInfo from "../pages/Student/Course/Topicinfo";
 
 
 const StudentRoutes = [
@@ -42,10 +43,10 @@ const StudentRoutes = [
                 path:"/coursedetails",
                 element: <CourseDetails/>
             },
-            // {
-            //     path: "/onlinecourse",
-            //     element: <OnlineCourse />,
-            // },
+           {
+            path:"/topicinfo",
+            element:<TopicInfo/>
+           },
             {
                 path: "/schollarship",
                 element: <Schollarship />,
