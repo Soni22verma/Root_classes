@@ -5,7 +5,7 @@ import useStudentStore from '../../Store/studentstore';
 
 const StudentTestPanel = () => {
   const { student } = useStudentStore();
-  
+
   const [availableTests, setAvailableTests] = useState([]);
   const [completedTests, setCompletedTests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -28,25 +28,21 @@ const StudentTestPanel = () => {
 
   useEffect(() => {
     if (student && student._id) {
-      console.log('Student found in store:', student);
       setStudentId(student._id);
       setIsLoggedIn(true);
     } else if (student && student.id) {
-      console.log('Student found with id:', student);
       setStudentId(student.id);
       setIsLoggedIn(true);
     } else {
       try {
         const userStr = localStorage.getItem('user');
         const token = localStorage.getItem('token');
-        
         if (token && userStr) {
           const user = JSON.parse(userStr);
           const id = user._id || user.id || user.userId || user.studentId;
           if (id) {
             setStudentId(id);
             setIsLoggedIn(true);
-            console.log('Student ID from localStorage fallback:', id);
           } else {
             setIsLoggedIn(false);
             setStudentId(null);
@@ -56,7 +52,6 @@ const StudentTestPanel = () => {
           setStudentId(null);
         }
       } catch (error) {
-        console.error('Error checking localStorage:', error);
         setIsLoggedIn(false);
         setStudentId(null);
       }
@@ -65,14 +60,8 @@ const StudentTestPanel = () => {
 
   const fetchCompletedTests = async () => {
     if (!studentId) return [];
-    
     try {
-      const res = await axios.post(api.result.getStudentResults, {
-        studentId: studentId
-      });
-      
-      console.log('Completed tests response:', res);
-      
+      const res = await axios.post(api.result.getStudentResults, { studentId });
       if (res.data && res.data.success && res.data.data) {
         const completed = res.data.data.map(result => ({
           testId: result.testId?._id || result.testId,
@@ -85,62 +74,34 @@ const StudentTestPanel = () => {
           obtainedMarks: result.obtainedMarks,
           totalQuestions: result.totalQuestions
         }));
-        
         setCompletedTests(completed);
         return completed;
       }
     } catch (error) {
       console.error('Error fetching completed tests:', error);
     }
-    
     return [];
   };
 
   const checkAttemptTest = async (testId) => {
-    if (!studentId) {
-      console.log('No student ID found');
-      return { attempted: false, result: null };
-    }
-    
+    if (!studentId) return { attempted: false, result: null };
     try {
-      console.log('Checking attempt for test:', testId, 'Student:', studentId);
-      const res = await axios.post(api.result.attemptTest, {
-        studentId: studentId,
-        testId: testId,
-      });
-      console.log('Attempt check response:', res);
-      
+      const res = await axios.post(api.result.attemptTest, { studentId, testId });
       if (res.data && res.data.success) {
-        // Check if the response indicates test is already attempted
         if (res.data.data && (res.data.data.attempted === true || res.data.data.alreadyAttempted === true)) {
-          return {
-            attempted: true,
-            result: res.data.data
-          };
+          return { attempted: true, result: res.data.data };
         }
-        // Check if message indicates already attempted
         if (res.data.message && (res.data.message.includes('already') || res.data.message.includes('completed'))) {
-          return {
-            attempted: true,
-            result: res.data.data
-          };
+          return { attempted: true, result: res.data.data };
         }
         return { attempted: false, result: null };
       }
       return { attempted: false, result: null };
     } catch (error) {
-      console.log('Error checking attempt:', error);
-      // If the API returns an error with message about already completed
       if (error.response && error.response.data) {
-        const responseData = error.response.data;
-        const message = responseData.message || '';
-        
+        const message = error.response.data.message || '';
         if (message.includes('already') || message.includes('completed') || message.includes('attempted')) {
-          console.log('Test already attempted according to error message');
-          return { 
-            attempted: true, 
-            result: responseData.data || null 
-          };
+          return { attempted: true, result: error.response.data.data || null };
         }
       }
       return { attempted: false, result: null };
@@ -151,39 +112,23 @@ const StudentTestPanel = () => {
     try {
       setLoading(true);
       const res = await axios.post(api.test.publishTest);
-      console.log('API Response:', res);
-      
       if (res.data && res.data.success && res.data.data) {
-        // First, get completed tests from results API
         const completed = await fetchCompletedTests();
         const completedTestIds = new Set(completed.map(t => t.testId));
-        
-        // Create a map for quick lookup of completed results
         const completedResultsMap = new Map();
-        completed.forEach(result => {
-          completedResultsMap.set(result.testId, result);
-        });
-        
-        // Check attempt status for each test
+        completed.forEach(result => completedResultsMap.set(result.testId, result));
+
         const testsWithAttemptStatus = await Promise.all(
           res.data.data.map(async (test) => {
-            // Check if test is in completed tests list
             let isCompleted = completedTestIds.has(test._id);
             let completedResult = completedResultsMap.get(test._id);
-            
-            // If not in completed list, check attempt status via API
             if (!isCompleted) {
               try {
                 const attemptStatus = await checkAttemptTest(test._id);
                 isCompleted = attemptStatus.attempted;
                 completedResult = completedResult || attemptStatus.result;
-                console.log(`Test ${test.title} (${test._id}) - Attempted: ${attemptStatus.attempted}`);
-              } catch (error) {
-                console.error(`Error checking attempt for test ${test._id}:`, error);
-                // Continue with isCompleted = false if API fails
-              }
+              } catch (error) {}
             }
-            
             return {
               id: test._id,
               title: test.title || "Untitled Test",
@@ -193,21 +138,17 @@ const StudentTestPanel = () => {
               description: test.description || `Test your knowledge in ${test.title}`,
               difficulty: test.difficulty || "Medium",
               category: test.category || "General",
-              isCompleted: isCompleted, // This disables the test for completed ones
-              completedResult: completedResult,
+              isCompleted,
+              completedResult,
               originalData: test
             };
           })
         );
-        
-        console.log('Tests with completion status:', testsWithAttemptStatus);
         setAvailableTests(testsWithAttemptStatus);
       } else {
-        console.error('Unexpected API response format:', res.data);
         setAvailableTests([]);
       }
     } catch (error) {
-      console.error('Error fetching tests:', error);
       setAvailableTests([]);
     } finally {
       setLoading(false);
@@ -217,35 +158,16 @@ const StudentTestPanel = () => {
   const SubmitTest = async (testId, answers) => {
     try {
       setSubmitting(true);
-
-      const requestData = {
-        studentId,
-        testId,
-        answers 
-      };
-
-      console.log('Submitting test - Full request:', JSON.stringify(requestData, null, 2));
-      console.log("Answers being submitted:", answers);
-      console.log("Number of answers being submitted:", Object.keys(answers).length);
-      
+      const requestData = { studentId, testId, answers };
       const res = await axios.post(api.result.submitTest, requestData);
-
-      console.log("Submit Response:", res.data);
-
       if (res.data?.success) {
         setScoreDetails(res.data.data);
-        
-        // Refresh both test lists after successful submission
         await GetAllPublishedTest();
         await fetchCompletedTests();
-        
         return { success: true, data: res.data.data };
       }
-
       return { success: false, error: res.data?.message || "Submission failed" };
-
     } catch (error) {
-      console.error("Submit Error Details:", error.response?.data || error.message);
       alert(error.response?.data?.message || "Failed to submit test. Please try again.");
       return { success: false, error: error.message };
     } finally {
@@ -255,12 +177,7 @@ const StudentTestPanel = () => {
 
   const fetchTestQuestions = async (testId) => {
     try {
-      console.log(testId, "Fetching questions for test");
-      const res = await axios.post(api.test.getQuestion, {
-        testId: testId
-      });
-      console.log('Questions API Response:', res);
-      
+      const res = await axios.post(api.test.getQuestion, { testId });
       if (res.data && res.data.success && res.data.data) {
         let questionsData = [];
         if (Array.isArray(res.data.data)) {
@@ -269,94 +186,57 @@ const StudentTestPanel = () => {
           questionsData = res.data.data.questions;
         } else if (res.data.data.question) {
           questionsData = [res.data.data];
-        } else {
-          questionsData = [];
         }
-
-        const transformedQuestions = questionsData.map((q, idx) => ({
-          _id: q._id,  
-          id: q._id,   
-          questionId: q._id,  
+        return questionsData.map((q) => ({
+          _id: q._id,
+          id: q._id,
+          questionId: q._id,
           text: q.question || q.questionText || q.text || "Question not available",
           options: q.options || ["Option 1", "Option 2", "Option 3", "Option 4"],
           marks: q.marks || 1,
           correctAnswer: q.correctAnswer !== undefined ? parseInt(q.correctAnswer) : 0
         }));
-        
-        console.log('Transformed questions:', transformedQuestions);
-        return transformedQuestions;
       }
-    } catch (error) {
-      console.error('Error fetching questions:', error);
-    }
-    
+    } catch (error) {}
     return [];
   };
 
   const handleStartTest = async (test) => {
-    // First check if test is already marked as completed
     if (test.isCompleted) {
-      alert('❌ You have already completed this test. You cannot retake it.');
+      alert('You have already completed this test. You cannot retake it.');
       return;
     }
-    
     let currentStudentId = studentId;
-    
     if (!currentStudentId && student) {
       currentStudentId = student._id || student.id;
-      if (currentStudentId) {
-        setStudentId(currentStudentId);
-        setIsLoggedIn(true);
-      }
+      if (currentStudentId) { setStudentId(currentStudentId); setIsLoggedIn(true); }
     }
-    
     if (!currentStudentId) {
       try {
         const userStr = localStorage.getItem('user');
         if (userStr) {
           const user = JSON.parse(userStr);
           currentStudentId = user._id || user.id || user.userId || user.studentId;
-          if (currentStudentId) {
-            setStudentId(currentStudentId);
-            setIsLoggedIn(true);
-          }
+          if (currentStudentId) { setStudentId(currentStudentId); setIsLoggedIn(true); }
         }
-      } catch (error) {
-        console.error('Error parsing user:', error);
-      }
+      } catch (error) {}
     }
-    
-    if (!currentStudentId) {
-      alert('Please login to take the test');
-      return;
-    }
-    
+    if (!currentStudentId) { alert('Please login to take the test'); return; }
+
     setCheckingAttempt(true);
-    
-    // Double check with API if test is already attempted
     const attemptStatus = await checkAttemptTest(test.id);
-    
     if (attemptStatus.attempted) {
-      alert('❌ You have already completed this test. You cannot retake it.');
-      await GetAllPublishedTest(); // Refresh the list to update UI
+      alert('You have already completed this test. You cannot retake it.');
+      await GetAllPublishedTest();
       setCheckingAttempt(false);
       return;
     }
-    
     setCheckingAttempt(false);
-    
-    // If we reach here, student hasn't taken the test yet
     setSelectedTest(test);
     setLoading(true);
-    
     const testQuestions = await fetchTestQuestions(test.id);
     setQuestions(testQuestions);
-    
-    if (test.duration) {
-      setTimeRemaining(test.duration * 60);
-      setTimerActive(true);
-    }
-    
+    if (test.duration) { setTimeRemaining(test.duration * 60); setTimerActive(true); }
     setTestStarted(true);
     setCurrentQuestion(0);
     setAnswers({});
@@ -379,9 +259,7 @@ const StudentTestPanel = () => {
           if (prev <= 1) {
             clearInterval(interval);
             setTimerActive(false);
-            if (!testCompleted) {
-              calculateAndSubmitScore();
-            }
+            if (!testCompleted) calculateAndSubmitScore();
             return 0;
           }
           return prev - 1;
@@ -393,88 +271,46 @@ const StudentTestPanel = () => {
 
   const calculateAndSubmitScore = async () => {
     if (submitting || testCompleted) return;
-
     const formattedAnswers = {};
-
-    console.log("Current answers state:", answers);
-    console.log("Questions array:", questions);
-
     questions.forEach(question => {
       const questionId = question._id || question.id || question.questionId;
-      
       const userAnswer = answers[questionId];
-      
       if (userAnswer !== undefined && userAnswer !== null) {
         formattedAnswers[questionId] = Number(userAnswer);
-      } else {
-        console.log(`No answer for question: ${questionId}`);
       }
     });
-
-    console.log("Formatted Answers to submit:", formattedAnswers);
-    console.log("Number of answers:", Object.keys(formattedAnswers).length);
-
     if (Object.keys(formattedAnswers).length === 0) {
-      console.warn("No answers to submit!");
       alert("Please answer at least one question before submitting.");
       return;
     }
-
     const result = await SubmitTest(selectedTest.id, formattedAnswers);
-
     if (result.success) {
       setTestCompleted(true);
       setTimerActive(false);
-
-      if (result.data) {
-        setScoreDetails(result.data);
-        setScore(result.data.percentage);
-      }
+      if (result.data) { setScoreDetails(result.data); setScore(result.data.percentage); }
     }
   };
 
   const handleAnswerSelect = (questionId, answerIndex) => {
-    console.log(`Setting answer for question ${questionId} to ${answerIndex}`);
-    setAnswers(prev => {
-      const newAnswers = {
-        ...prev,
-        [questionId]: answerIndex
-      };
-      console.log("New answers state:", newAnswers);
-      return newAnswers;
-    });
+    setAnswers(prev => ({ ...prev, [questionId]: answerIndex }));
   };
 
   const handleNextQuestion = () => {
-    if (currentQuestion < questions.length - 1) {
-      setCurrentQuestion(currentQuestion + 1);
-    } else {
-      calculateAndSubmitScore();
-    }
+    if (currentQuestion < questions.length - 1) setCurrentQuestion(currentQuestion + 1);
+    else calculateAndSubmitScore();
   };
 
   const handlePreviousQuestion = () => {
-    if (currentQuestion > 0) {
-      setCurrentQuestion(currentQuestion - 1);
-    }
+    if (currentQuestion > 0) setCurrentQuestion(currentQuestion - 1);
   };
 
   const handleBackToTests = () => {
     if (testStarted && !testCompleted) {
-      const confirmExit = window.confirm('Are you sure you want to exit? Your progress will be lost.');
-      if (!confirmExit) return;
+      if (!window.confirm('Are you sure you want to exit? Your progress will be lost.')) return;
     }
-    
-    setTestStarted(false);
-    setSelectedTest(null);
-    setTestCompleted(false);
-    setCurrentQuestion(0);
-    setAnswers({});
-    setScore(null);
-    setScoreDetails(null);
-    setQuestions([]);
-    setTimerActive(false);
-    setTimeRemaining(null);
+    setTestStarted(false); setSelectedTest(null); setTestCompleted(false);
+    setCurrentQuestion(0); setAnswers({}); setScore(null); setScoreDetails(null);
+    setQuestions([]); setTimerActive(false); setTimeRemaining(null);
   };
 
   const formatTime = (seconds) => {
@@ -485,12 +321,12 @@ const StudentTestPanel = () => {
   };
 
   const getDifficultyColor = (difficulty) => {
-    if (!difficulty) return 'bg-gray-100 text-gray-800';
-    switch(difficulty.toLowerCase()) {
-      case 'easy': return 'bg-green-100 text-green-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'hard': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+    if (!difficulty) return 'bg-gray-100 text-gray-600';
+    switch (difficulty.toLowerCase()) {
+      case 'easy': return 'bg-green-50 text-green-700 border border-green-200';
+      case 'medium': return 'bg-yellow-50 text-yellow-700 border border-yellow-200';
+      case 'hard': return 'bg-red-50 text-[#FB0500] border border-red-200';
+      default: return 'bg-gray-100 text-gray-600';
     }
   };
 
@@ -499,27 +335,16 @@ const StudentTestPanel = () => {
     return questions.length > 0 ? (answeredCount / questions.length) * 100 : 0;
   };
 
-  // Initial load when studentId is available
-  useEffect(() => {
-    if (studentId) {
-      GetAllPublishedTest();
-    }
-  }, [studentId]);
+  useEffect(() => { GetAllPublishedTest(); }, [studentId]);
+  useEffect(() => { if (testCompleted && studentId) { GetAllPublishedTest(); fetchCompletedTests(); } }, [testCompleted]);
 
-  // Refresh test list when test is completed
-  useEffect(() => {
-    if (testCompleted && studentId) {
-      GetAllPublishedTest();
-      fetchCompletedTests();
-    }
-  }, [testCompleted]);
-
+  // ── Loading / Checking Screens ──────────────────────────────────────────────
   if (loading && !testStarted) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center">
+      <div className="min-h-screen bg-dot-grid flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mb-4"></div>
-          <p className="text-gray-600 text-lg">Loading available tests...</p>
+          <div className="w-12 h-12 border-3 border-gray-200 border-t-[#0078FF] rounded-full animate-spin mx-auto mb-4" style={{ borderWidth: 3 }}></div>
+          <p className="text-sm text-gray-500">Loading available tests...</p>
         </div>
       </div>
     );
@@ -527,228 +352,236 @@ const StudentTestPanel = () => {
 
   if (checkingAttempt) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center">
+      <div className="min-h-screen bg-dot-grid flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
-          <p className="text-gray-600">Checking test availability...</p>
+          <div className="w-10 h-10 border-3 border-gray-200 border-t-[#FB0500] rounded-full animate-spin mx-auto mb-4" style={{ borderWidth: 3 }}></div>
+          <p className="text-sm text-gray-500">Checking test availability...</p>
         </div>
       </div>
     );
   }
 
+  // ── Test List View ───────────────────────────────────────────────────────────
   if (!testStarted && !testCompleted) {
-    const totalDuration = availableTests.reduce((sum, test) => sum + (test.duration || 0), 0);
-    const totalQuestions = availableTests.reduce((sum, test) => sum + (test.totalQuestions || 0), 0);
-    
+    const totalDuration = availableTests.reduce((sum, t) => sum + (t.duration || 0), 0);
+    const totalQuestions = availableTests.reduce((sum, t) => sum + (t.totalQuestions || 0), 0);
+    const completedCount = availableTests.filter(t => t.isCompleted).length;
+
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-        <div className="bg-white/80 backdrop-blur-sm shadow-lg">
-          <div className="max-w-7xl mx-auto px-4 py-8">
-            <div className="text-center">
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-3">
-                📚 Available Assessments
-              </h1>
-              <p className="text-gray-600 text-lg">Choose a test to challenge yourself and track your progress</p>
-              
-              <div className="mt-2 text-xs text-gray-400">
-                Status: {isLoggedIn ? 'Logged In' : 'Not Logged In'} | Student ID: {studentId || 'None'}
+      <div className="bg-white min-h-screen">
+
+        {/* Hero */}
+        <div className="bg-dot-dark py-14 px-4 relative overflow-hidden">
+          <div className="absolute top-6 right-12 w-48 h-48 rounded-full opacity-10" style={{ background: 'radial-gradient(circle, #0078FF 0%, transparent 70%)' }}></div>
+          <div className="absolute bottom-0 left-8 w-36 h-36 rounded-full opacity-10" style={{ background: 'radial-gradient(circle, #FB0500 0%, transparent 70%)' }}></div>
+          <div className="max-w-7xl mx-auto relative z-10">
+            <p className="text-xs font-bold text-[#0078FF] uppercase tracking-widest mb-3">Assessment Center</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-white leading-tight mb-3">
+              Available <span className="text-[#FB0500]">Tests</span>
+            </h1>
+            <p className="text-sm text-gray-400 max-w-xl">
+              Challenge yourself with our assessments. Each test is timed and can only be attempted once.
+            </p>
+
+            {/* Login status */}
+            {!isLoggedIn && (
+              <div className="mt-5 inline-flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/30 rounded-xl px-4 py-2.5">
+                <span className="text-yellow-400 text-sm">⚠</span>
+                <p className="text-yellow-300 text-sm">Please login to take tests</p>
               </div>
-              
-              {!isLoggedIn && (
-                <div className="mt-4 p-4 bg-yellow-50 rounded-lg inline-block">
-                  <p className="text-yellow-700">⚠️ Please login to take tests</p>
-                </div>
-              )}
-              {isLoggedIn && (
-                <div className="mt-4 p-4 bg-green-50 rounded-lg inline-block">
-                  <p className="text-green-700">✅ Welcome {student?.name || student?.fullName || 'Student'}! You are logged in and ready to take tests</p>
-                </div>
-              )}
-              {availableTests.length === 0 && !loading && (
-                <div className="mt-4 p-4 bg-yellow-50 rounded-lg inline-block">
-                  <p className="text-yellow-700">No tests available at the moment. Please check back later.</p>
-                </div>
-              )}
-            </div>
+            )}
+            {isLoggedIn && (
+              <div className="mt-5 inline-flex items-center gap-2 bg-green-500/10 border border-green-500/30 rounded-xl px-4 py-2.5">
+                <span className="text-green-400 text-sm">✓</span>
+                <p className="text-green-300 text-sm">Welcome, {student?.name || student?.fullName || 'Student'}! Ready to test.</p>
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="bg-white rounded-xl shadow-md p-4 mb-8">
-            <div className="flex justify-around items-center">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">{availableTests.length}</div>
-                <div className="text-sm text-gray-500">Total Tests</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">{totalQuestions}</div>
-                <div className="text-sm text-gray-500">Total Questions</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">
-                  {Math.floor(totalDuration / 60)}h {totalDuration % 60}m
-                </div>
-                <div className="text-sm text-gray-500">Total Duration</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-orange-600">{completedTests.length}</div>
-                <div className="text-sm text-gray-500">Completed</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="max-w-7xl mx-auto px-4 pb-12">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {availableTests.map((test) => (
-              <div 
-                key={test.id} 
-                className={`group bg-white rounded-2xl shadow-lg transition-all duration-300 overflow-hidden ${
-                  test.isCompleted ? 'opacity-75 cursor-not-allowed' : 'hover:shadow-2xl transform hover:-translate-y-1'
-                }`}
-              >
-                <div className="relative">
-                  <div className="absolute top-0 right-0 m-4 flex gap-2">
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getDifficultyColor(test.difficulty)}`}>
-                      {test.difficulty}
-                    </span>
-                    {test.isCompleted && (
-                      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
-                        Completed ✓
-                      </span>
-                    )}
-                  </div>
-                  <div className={`h-32 ${test.isCompleted ? 'bg-gradient-to-r from-gray-400 to-gray-500' : 'bg-gradient-to-r from-blue-500 to-indigo-600'}`}></div>
-                </div>
-                
-                <div className="p-6">
-                  <h3 className="text-xl font-bold text-gray-800 mb-2">
-                    {test.title}
-                  </h3>
-                  
-                  <p className="text-gray-600 text-sm mb-4 line-clamp-2 min-h-[40px]">
-                    {test.description}
-                  </p>
-                  
-                  <div className="space-y-2 mb-6">
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center text-gray-500">
-                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        <span>{test.duration} minutes</span>
-                      </div>
-                      <div className="flex items-center text-gray-500">
-                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                        </svg>
-                        <span>{test.totalQuestions} Questions</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center text-gray-500">
-                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        <span>{test.totalMarks} Marks</span>
-                      </div>
-                      <div className="flex items-center text-gray-500">
-                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l5 5a2 2 0 01.586 1.414V19a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z"></path>
-                        </svg>
-                        <span>{test.category}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {test.isCompleted ? (
-                    <div className="space-y-2">
-                      <div className="w-full bg-gray-100 rounded-xl p-3 text-center">
-                        <p className="text-sm text-gray-600">Your Score</p>
-                        <p className="text-xl font-bold text-green-600">
-                          {test.completedResult?.percentage || test.completedResult?.score || 0}%
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => handleViewResult(test)}
-                        className="w-full py-3 px-4 rounded-xl font-semibold transition-all duration-200 bg-gradient-to-r from-green-500 to-teal-600 text-white hover:shadow-lg"
-                      >
-                        View Result →
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => handleStartTest(test)}
-                      className={`w-full py-3 px-4 rounded-xl font-semibold transition-all duration-200 ${
-                        isLoggedIn 
-                          ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:shadow-lg transform hover:scale-[1.02] cursor-pointer'
-                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                      }`}
-                      disabled={!isLoggedIn}
-                    >
-                      {isLoggedIn ? 'Start Test →' : 'Login to Start'}
-                    </button>
-                  )}
-                </div>
+        {/* Stats bar */}
+        <div className="bg-gray-900 border-b border-gray-800">
+          <div className="max-w-7xl mx-auto px-4 py-4 grid grid-cols-2 md:grid-cols-4 divide-x divide-gray-700">
+            {[
+              { label: 'Total Tests', value: availableTests.length, color: 'text-[#FB0500]' },
+              { label: 'Total Questions', value: totalQuestions, color: 'text-[#0078FF]' },
+              { label: 'Total Duration', value: `${Math.floor(totalDuration / 60)}h ${totalDuration % 60}m`, color: 'text-[#FB0500]' },
+              { label: 'Completed', value: completedCount, color: 'text-[#0078FF]' },
+            ].map((s, i) => (
+              <div key={i} className="text-center py-2 px-4">
+                <div className={`text-2xl font-bold ${s.color}`}>{s.value}</div>
+                <div className="text-xs text-gray-400 mt-0.5">{s.label}</div>
               </div>
             ))}
           </div>
         </div>
 
+        {/* Test Grid */}
+        <div className="bg-line-grid py-12 px-4">
+          <div className="max-w-7xl mx-auto">
+            {availableTests.length === 0 ? (
+              <div className="text-center py-16">
+                <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                </div>
+                <p className="text-gray-500 text-sm">No tests available at the moment. Check back later.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
+                {availableTests.map((test, i) => {
+                  const isDark = i % 7 === 2;
+                  const isWide = i % 5 === 0;
+                  const accentRed = i % 2 === 0;
+
+                  return (
+                    <div
+                      key={test.id}
+                      className={`rounded-2xl overflow-hidden border transition-all duration-200 flex flex-col ${
+                        isWide ? 'md:col-span-7' : 'md:col-span-5'
+                      } ${
+                        isDark
+                          ? 'bg-[#0a1628] border-[#1e3a5f]'
+                          : 'bg-white border-gray-100 hover:border-gray-200 hover:shadow-md'
+                      } ${test.isCompleted ? 'opacity-80' : ''}`}
+                    >
+                      {/* Card top bar */}
+                      <div className={`h-1.5 w-full ${accentRed ? 'bg-[#FB0500]' : 'bg-[#0078FF]'}`}></div>
+
+                      <div className="p-6 flex flex-col flex-1">
+                        {/* Header row */}
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className={`text-xs font-semibold px-2.5 py-1 rounded-lg ${getDifficultyColor(test.difficulty)}`}>
+                              {test.difficulty}
+                            </span>
+                            <span className={`text-xs px-2.5 py-1 rounded-lg ${isDark ? 'bg-white/10 text-gray-300' : 'bg-gray-100 text-gray-500'}`}>
+                              {test.category}
+                            </span>
+                          </div>
+                          {test.isCompleted && (
+                            <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-green-50 text-green-700 border border-green-200 flex-shrink-0">
+                              ✓ Done
+                            </span>
+                          )}
+                        </div>
+
+                        <h3 className={`text-lg font-bold mb-2 leading-snug ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                          {test.title}
+                        </h3>
+                        <p className={`text-sm mb-5 line-clamp-2 leading-relaxed flex-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                          {test.description}
+                        </p>
+
+                        {/* Meta row */}
+                        <div className={`grid grid-cols-2 gap-2 mb-5 text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                          <div className="flex items-center gap-1.5">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            {test.duration} min
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2" />
+                            </svg>
+                            {test.totalQuestions} Qs
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                            </svg>
+                            {test.totalMarks} Marks
+                          </div>
+                          {test.isCompleted && test.completedResult && (
+                            <div className="flex items-center gap-1.5 text-green-600 font-semibold">
+                              Score: {test.completedResult.percentage || 0}%
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Action */}
+                        {test.isCompleted ? (
+                          <button
+                            onClick={() => handleViewResult(test)}
+                            className="w-full py-2.5 rounded-xl font-semibold text-sm border-2 border-green-500 text-green-600 hover:bg-green-50 transition"
+                          >
+                            View Result →
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleStartTest(test)}
+                            disabled={!isLoggedIn}
+                            className={`w-full py-2.5 rounded-xl font-semibold text-sm transition ${
+                              isLoggedIn
+                                ? accentRed
+                                  ? 'bg-[#FB0500] text-white hover:opacity-90'
+                                  : 'bg-[#0078FF] text-white hover:opacity-90'
+                                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                            }`}
+                          >
+                            {isLoggedIn ? 'Start Test →' : 'Login to Start'}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Result Modal */}
         {showResultModal && viewingResult && (
-          <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-              <div className="bg-gradient-to-r from-green-500 to-teal-600 rounded-t-2xl p-6 text-white">
+          <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setShowResultModal(false)}>
+            <div className="bg-white rounded-2xl max-w-md w-full overflow-hidden" onClick={e => e.stopPropagation()}>
+              <div className="bg-[#0a1628] p-6">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h2 className="text-2xl font-bold">Test Result</h2>
-                    <p className="text-green-100 mt-1">{selectedTest?.title || viewingResult.testTitle}</p>
+                    <p className="text-xs font-bold text-[#0078FF] uppercase tracking-widest mb-1">Result</p>
+                    <h2 className="text-xl font-bold text-white">Test Completed</h2>
+                    <p className="text-gray-400 text-sm mt-0.5">{viewingResult.testTitle}</p>
                   </div>
-                  <button
-                    onClick={() => setShowResultModal(false)}
-                    className="text-white/80 hover:text-white"
-                  >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <button onClick={() => setShowResultModal(false)} className="text-gray-400 hover:text-white transition">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
                 </div>
               </div>
-              
               <div className="p-6 text-center">
-                <div className="text-5xl font-bold text-green-600 mb-2">
+                <div className="text-5xl font-bold text-[#FB0500] mb-1">
                   {viewingResult.percentage || viewingResult.score || 0}%
                 </div>
-                <p className="text-gray-600 mb-6">
-                  {(viewingResult.percentage || viewingResult.score || 0) >= 70 ? '🎉 Congratulations! You passed!' : '📚 Keep practicing to improve!'}
+                <p className="text-sm text-gray-500 mb-6">
+                  {(viewingResult.percentage || 0) >= 70 ? 'Great job! You passed.' : 'Keep practicing to improve.'}
                 </p>
-                
-                <div className="bg-gray-50 rounded-xl p-4 space-y-3 mb-6">
+                <div className="bg-gray-50 rounded-xl p-4 space-y-3 mb-5 text-sm text-left">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Obtained Marks:</span>
+                    <span className="text-gray-500">Obtained Marks</span>
                     <span className="font-semibold text-gray-800">{viewingResult.obtainedMarks || 0}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Total Marks:</span>
+                    <span className="text-gray-500">Total Marks</span>
                     <span className="font-semibold text-gray-800">{viewingResult.totalMarks || 0}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Completed On:</span>
+                    <span className="text-gray-500">Completed On</span>
                     <span className="font-semibold text-gray-800">
                       {viewingResult.completedAt ? new Date(viewingResult.completedAt).toLocaleDateString() : 'N/A'}
                     </span>
                   </div>
                   {viewingResult.isEligible && (
-                    <div className="mt-2 p-2 bg-green-100 rounded-lg">
-                      <span className="text-green-700 text-sm">🏆 You are eligible for certification!</span>
+                    <div className="pt-2 border-t border-gray-200">
+                      <span className="text-green-600 text-xs font-semibold">✓ Eligible for certification</span>
                     </div>
                   )}
                 </div>
-                
                 <button
                   onClick={() => setShowResultModal(false)}
-                  className="w-full py-3 bg-gradient-to-r from-green-500 to-teal-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+                  className="w-full py-2.5 bg-[#0078FF] text-white rounded-xl font-semibold text-sm hover:opacity-90 transition"
                 >
                   Close
                 </button>
@@ -760,14 +593,14 @@ const StudentTestPanel = () => {
     );
   }
 
-  // Test Taking View
+  // ── Test Taking View ─────────────────────────────────────────────────────────
   if (testStarted && !testCompleted) {
     if (loading) {
       return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="min-h-screen bg-dot-grid flex items-center justify-center">
           <div className="text-center">
-            <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mb-4"></div>
-            <p className="text-gray-600 text-lg">Loading test questions...</p>
+            <div className="w-12 h-12 rounded-full border-3 border-gray-200 border-t-[#0078FF] animate-spin mx-auto mb-4" style={{ borderWidth: 3 }}></div>
+            <p className="text-sm text-gray-500">Loading test questions...</p>
           </div>
         </div>
       );
@@ -780,14 +613,16 @@ const StudentTestPanel = () => {
 
     if (!currentQ || questions.length === 0) {
       return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="text-center max-w-md mx-auto p-8 bg-white rounded-xl shadow-lg">
-            <div className="text-red-500 text-6xl mb-4">⚠️</div>
-            <p className="text-red-600 text-lg mb-4">No questions available for this test.</p>
-            <button
-              onClick={handleBackToTests}
-              className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-            >
+        <div className="min-h-screen bg-dot-grid flex items-center justify-center p-4">
+          <div className="text-center max-w-sm bg-white rounded-2xl border border-gray-100 p-8 shadow-sm">
+            <div className="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center mx-auto mb-4">
+              <svg className="w-6 h-6 text-[#FB0500]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <p className="text-gray-700 font-semibold mb-1">No Questions Found</p>
+            <p className="text-sm text-gray-400 mb-5">This test has no questions available.</p>
+            <button onClick={handleBackToTests} className="px-5 py-2 bg-[#0078FF] text-white text-sm font-semibold rounded-xl hover:opacity-90 transition">
               Back to Tests
             </button>
           </div>
@@ -796,149 +631,151 @@ const StudentTestPanel = () => {
     }
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-        <div className="bg-white shadow-lg sticky top-0 z-10">
-          <div className="max-w-5xl mx-auto px-4 py-4">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 gap-2">
+      <div className="min-h-screen bg-gray-50">
+        {/* Sticky header */}
+        <div className="bg-white border-b border-gray-100 sticky top-0 z-10 shadow-sm">
+          <div className="max-w-4xl mx-auto px-4 py-3">
+            <div className="flex justify-between items-center mb-3">
               <div>
-                <h2 className="text-xl font-bold text-gray-800">{selectedTest.title}</h2>
-                <p className="text-sm text-gray-500">Question {currentQuestion + 1} of {questions.length}</p>
+                <p className="font-bold text-gray-900 text-sm">{selectedTest.title}</p>
+                <p className="text-xs text-gray-400">Question {currentQuestion + 1} of {questions.length}</p>
               </div>
-              <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+              <div className="flex items-center gap-3">
                 {timeRemaining !== null && (
-                  <div className={`px-3 py-1.5 rounded-lg font-mono font-bold text-sm ${timeRemaining < 300 ? 'bg-red-100 text-red-700 animate-pulse' : 'bg-blue-100 text-blue-700'}`}>
-                    <span className="text-xs mr-1">⏱️</span>
+                  <div className={`px-3 py-1.5 rounded-lg font-mono font-bold text-sm tabular-nums ${
+                    timeRemaining < 300 ? 'bg-red-50 text-[#FB0500] border border-red-200' : 'bg-blue-50 text-[#0078FF] border border-blue-100'
+                  }`}>
                     {formatTime(timeRemaining)}
                   </div>
                 )}
-                <button
-                  onClick={handleBackToTests}
-                  className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 font-medium hover:bg-gray-100 rounded-lg transition-colors"
-                >
+                <button onClick={handleBackToTests} className="text-xs text-gray-400 hover:text-gray-700 font-medium px-3 py-1.5 rounded-lg hover:bg-gray-100 transition">
                   ✕ Exit
                 </button>
               </div>
             </div>
-            
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs text-gray-500">
-                <span>Question Progress</span>
-                <span>{currentQuestion + 1}/{questions.length}</span>
+            {/* Progress bars */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <div className="flex justify-between text-xs text-gray-400 mb-1">
+                  <span>Navigation</span><span>{currentQuestion + 1}/{questions.length}</span>
+                </div>
+                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-[#0078FF] rounded-full transition-all" style={{ width: `${((currentQuestion + 1) / questions.length) * 100}%` }}></div>
+                </div>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div
-                  className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${((currentQuestion + 1) / questions.length) * 100}%` }}
-                ></div>
-              </div>
-              <div className="flex justify-between text-xs text-gray-500">
-                <span>Overall Completion</span>
-                <span>{Math.round(progress)}%</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div
-                  className="bg-green-500 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${progress}%` }}
-                ></div>
+              <div>
+                <div className="flex justify-between text-xs text-gray-400 mb-1">
+                  <span>Answered</span><span>{Math.round(progress)}%</span>
+                </div>
+                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-[#08B100] rounded-full transition-all" style={{ width: `${progress}%` }}></div>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="max-w-5xl mx-auto px-4 py-6 sm:py-8">
-          <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-8">
-            <div className="mb-6">
-              <div className="flex justify-between items-center mb-4">
-                <span className="text-sm font-semibold text-blue-600 bg-blue-100 px-3 py-1 rounded-full">
-                  Q{currentQuestion + 1}
-                </span>
-                <span className="text-sm text-gray-500">{currentQ.marks} mark{currentQ.marks > 1 ? 's' : ''}</span>
-              </div>
-              <h3 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-6">
-                {currentQ?.text}
-              </h3>
-            </div>
-            
-            <div className="space-y-3 sm:space-y-4">
-              {currentQ?.options.map((option, idx) => (
-                <label
-                  key={idx}
-                  className={`flex items-start p-3 sm:p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
-                    answers[currentQ.id] === idx
-                      ? 'border-blue-500 bg-blue-50 shadow-md'
-                      : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50/50'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name={`question-${currentQ.id}`}
-                    value={idx}
-                    checked={answers[currentQ.id] === idx}
-                    onChange={() => handleAnswerSelect(currentQ.id, idx)}
-                    className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500 focus:ring-blue-500 mt-0.5"
-                  />
-                  <span className="ml-3 text-gray-700 text-sm sm:text-lg">{option}</span>
-                </label>
-              ))}
-            </div>
-
-            <div className="flex flex-col sm:flex-row justify-between gap-3 mt-8 sm:mt-10">
-              <button
-                onClick={handlePreviousQuestion}
-                disabled={currentQuestion === 0}
-                className={`px-6 sm:px-8 py-2.5 sm:py-3 rounded-xl font-semibold transition-all ${
-                  currentQuestion === 0
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300 hover:shadow-md'
-                }`}
-              >
-                ← Previous
-              </button>
-              <button
-                onClick={handleNextQuestion}
-                disabled={!hasAnswered || submitting}
-                className={`px-6 sm:px-8 py-2.5 sm:py-3 rounded-xl font-semibold transition-all ${
-                  !hasAnswered || submitting
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:shadow-lg transform hover:scale-[1.02]'
-                }`}
-              >
-                {submitting ? (
-                  <span className="flex items-center gap-2">
-                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Submitting...
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {/* Question panel */}
+            <div className="md:col-span-2">
+              <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+                <div className="flex justify-between items-center mb-5">
+                  <span className="text-xs font-bold text-[#0078FF] bg-blue-50 border border-blue-100 px-3 py-1 rounded-lg">
+                    Q{currentQuestion + 1}
                   </span>
-                ) : (isLastQuestion ? '✓ Submit Test' : 'Next →')}
-              </button>
-            </div>
-          </div>
+                  <span className="text-xs text-gray-400">{currentQ.marks} mark{currentQ.marks > 1 ? 's' : ''}</span>
+                </div>
+                <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-6 leading-relaxed">
+                  {currentQ?.text}
+                </h3>
 
-          <div className="mt-6 bg-white rounded-xl shadow-md p-4">
-            <p className="text-sm font-semibold text-gray-700 mb-3">Question Palette</p>
-            <div className="flex flex-wrap gap-2">
-              {questions.map((q, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setCurrentQuestion(idx)}
-                  className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg font-semibold transition-all text-sm ${
-                    currentQuestion === idx
-                      ? 'bg-blue-500 text-white shadow-lg scale-110'
-                      : answers[q.id] !== undefined
-                      ? 'bg-green-500 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  {idx + 1}
-                </button>
-              ))}
+                <div className="space-y-2.5">
+                  {currentQ?.options.map((option, idx) => (
+                    <label
+                      key={idx}
+                      className={`flex items-start p-3.5 border-2 rounded-xl cursor-pointer transition-all ${
+                        answers[currentQ.id] === idx
+                          ? 'border-[#0078FF] bg-blue-50'
+                          : 'border-gray-100 hover:border-gray-200 bg-gray-50'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name={`question-${currentQ.id}`}
+                        value={idx}
+                        checked={answers[currentQ.id] === idx}
+                        onChange={() => handleAnswerSelect(currentQ.id, idx)}
+                        className="w-4 h-4 text-[#0078FF] focus:ring-[#0078FF] mt-0.5 accent-[#0078FF]"
+                      />
+                      <span className="ml-3 text-sm text-gray-700">{option}</span>
+                    </label>
+                  ))}
+                </div>
+
+                <div className="flex justify-between gap-3 mt-7">
+                  <button
+                    onClick={handlePreviousQuestion}
+                    disabled={currentQuestion === 0}
+                    className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition ${
+                      currentQuestion === 0 ? 'bg-gray-100 text-gray-300 cursor-not-allowed' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    ← Previous
+                  </button>
+                  <button
+                    onClick={handleNextQuestion}
+                    disabled={!hasAnswered || submitting}
+                    className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition ${
+                      !hasAnswered || submitting
+                        ? 'bg-gray-100 text-gray-300 cursor-not-allowed'
+                        : 'bg-[#FB0500] text-white hover:opacity-90'
+                    }`}
+                  >
+                    {submitting ? (
+                      <span className="flex items-center gap-2">
+                        <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Submitting...
+                      </span>
+                    ) : (isLastQuestion ? '✓ Submit Test' : 'Next →')}
+                  </button>
+                </div>
+              </div>
             </div>
-            <div className="flex flex-wrap gap-4 mt-3 text-xs">
-              <div className="flex items-center"><div className="w-3 h-3 bg-green-500 rounded mr-1"></div><span>Answered</span></div>
-              <div className="flex items-center"><div className="w-3 h-3 bg-blue-500 rounded mr-1"></div><span>Current</span></div>
-              <div className="flex items-center"><div className="w-3 h-3 bg-gray-200 rounded mr-1"></div><span>Not Answered</span></div>
+
+            {/* Question palette sidebar */}
+            <div className="md:col-span-1">
+              <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm sticky top-28">
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Question Palette</p>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {questions.map((q, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setCurrentQuestion(idx)}
+                      className={`w-9 h-9 rounded-lg font-semibold text-xs transition ${
+                        currentQuestion === idx
+                          ? 'bg-[#0078FF] text-white shadow-sm'
+                          : answers[q.id] !== undefined
+                          ? 'bg-[#08B100] text-white'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      {idx + 1}
+                    </button>
+                  ))}
+                </div>
+                <div className="space-y-1.5 text-xs text-gray-500">
+                  <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-[#08B100]"></div>Answered</div>
+                  <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-[#0078FF]"></div>Current</div>
+                  <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-gray-200"></div>Not Answered</div>
+                </div>
+                <div className="mt-4 pt-4 border-t border-gray-100 text-xs text-gray-400">
+                  {Object.keys(answers).length} of {questions.length} answered
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -946,81 +783,65 @@ const StudentTestPanel = () => {
     );
   }
 
-  // Results View
+  // ── Results View ─────────────────────────────────────────────────────────────
   if (testCompleted) {
     const percentage = Math.round(score || scoreDetails?.percentage || 0);
-    let resultMessage = "";
-    let resultColor = "";
-    
-    if (percentage >= 80) {
-      resultMessage = "Excellent! 🎉";
-      resultColor = "text-green-600";
-    } else if (percentage >= 60) {
-      resultMessage = "Good Job! 👍";
-      resultColor = "text-blue-600";
-    } else if (percentage >= 40) {
-      resultMessage = "Keep Practicing! 📚";
-      resultColor = "text-yellow-600";
-    } else {
-      resultMessage = "Need Improvement 💪";
-      resultColor = "text-red-600";
-    }
-
-    const eligibilityStatus = scoreDetails?.isEligible;
     const obtainedMarks = scoreDetails?.obtainedMarks || 0;
     const totalPossibleMarks = scoreDetails?.totalMarks || questions.reduce((sum, q) => sum + q.marks, 0);
+    const eligibilityStatus = scoreDetails?.isEligible;
+
+    let resultLabel = '';
+    let resultAccent = '';
+    if (percentage >= 80) { resultLabel = 'Excellent!'; resultAccent = 'text-[#08B100]'; }
+    else if (percentage >= 60) { resultLabel = 'Good Job!'; resultAccent = 'text-[#0078FF]'; }
+    else if (percentage >= 40) { resultLabel = 'Keep Practicing!'; resultAccent = 'text-yellow-500'; }
+    else { resultLabel = 'Need Improvement'; resultAccent = 'text-[#FB0500]'; }
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 flex items-center justify-center p-4">
-        <div className="max-w-2xl w-full bg-white rounded-2xl shadow-2xl p-6 sm:p-8 text-center transform transition-all">
-          <div className="mb-6">
-            <div className="inline-flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-green-400 to-blue-500 rounded-full mb-4 shadow-lg">
-              <svg className="w-10 h-10 sm:w-12 sm:h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+      <div className="min-h-screen bg-dot-grid flex items-center justify-center p-4">
+        <div className="max-w-lg w-full bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          {/* Header */}
+          <div className="bg-[#0a1628] px-8 py-7 text-center">
+            <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center mx-auto mb-4">
+              <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">Test Completed!</h2>
-            <p className="text-gray-600 text-sm sm:text-base">You've successfully completed {selectedTest.title}</p>
+            <p className="text-xs font-bold text-[#0078FF] uppercase tracking-widest mb-1">Test Complete</p>
+            <h2 className="text-xl font-bold text-white">{selectedTest.title}</h2>
           </div>
 
-          <div className={`text-5xl sm:text-6xl font-bold mb-2 ${resultColor}`}>
-            {percentage}%
-          </div>
-          <p className={`text-lg sm:text-xl font-semibold mb-6 ${resultColor}`}>
-            {resultMessage}
-          </p>
+          <div className="p-8 text-center">
+            {/* Score */}
+            <div className={`text-6xl font-bold mb-1 ${resultAccent}`}>{percentage}%</div>
+            <p className={`text-base font-semibold mb-6 ${resultAccent}`}>{resultLabel}</p>
 
-          {eligibilityStatus !== undefined && (
-            <div className={`mb-6 p-3 rounded-lg ${eligibilityStatus ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-              {eligibilityStatus ? '🎉 Congratulations! You are eligible for certification.' : '📚 Keep practicing to become eligible for certification (70% required)'}
+            {eligibilityStatus !== undefined && (
+              <div className={`mb-6 px-4 py-3 rounded-xl text-sm font-medium ${
+                eligibilityStatus ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-yellow-50 text-yellow-700 border border-yellow-200'
+              }`}>
+                {eligibilityStatus ? '✓ You are eligible for certification.' : 'Score 70%+ to become eligible for certification.'}
+              </div>
+            )}
+
+            {/* Stats grid */}
+            <div className="grid grid-cols-2 gap-3 mb-7">
+              {[
+                { label: 'Total Questions', value: questions.length, color: 'text-[#0078FF]' },
+                { label: 'Attempted', value: Object.keys(answers).length, color: 'text-[#FB0500]' },
+                { label: 'Score Obtained', value: obtainedMarks, color: 'text-[#08B100]' },
+                { label: 'Total Marks', value: totalPossibleMarks, color: 'text-gray-700' },
+              ].map((s, i) => (
+                <div key={i} className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                  <div className={`text-2xl font-bold ${s.color}`}>{s.value}</div>
+                  <div className="text-xs text-gray-400 mt-0.5">{s.label}</div>
+                </div>
+              ))}
             </div>
-          )}
 
-          <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-6 mb-6">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <div className="text-xl sm:text-2xl font-bold text-blue-600">{questions.length}</div>
-                <div className="text-xs sm:text-sm text-gray-500">Total Questions</div>
-              </div>
-              <div>
-                <div className="text-xl sm:text-2xl font-bold text-green-600">{Object.keys(answers).length}</div>
-                <div className="text-xs sm:text-sm text-gray-500">Attempted</div>
-              </div>
-              <div>
-                <div className="text-xl sm:text-2xl font-bold text-yellow-600">{obtainedMarks}</div>
-                <div className="text-xs sm:text-sm text-gray-500">Score Obtained</div>
-              </div>
-              <div>
-                <div className="text-xl sm:text-2xl font-bold text-purple-600">{totalPossibleMarks}</div>
-                <div className="text-xs sm:text-sm text-gray-500">Total Marks</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <button
               onClick={handleBackToTests}
-              className="px-4 py-2.5 sm:py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+              className="w-full py-3 bg-[#0078FF] text-white rounded-xl font-semibold text-sm hover:opacity-90 transition"
             >
               Take Another Test
             </button>

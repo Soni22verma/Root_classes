@@ -3,44 +3,39 @@ import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import useStudentStore from '../../../Store/studentstore';
 import api from '../../../services/endpoints';
+import {
+  ArrowLeft, BookOpen, Clock, ChevronDown, ChevronRight,
+  Play, FileText, Lock, Unlock, CheckCircle, X, CreditCard,
+  GraduationCap, Users,
+} from 'lucide-react';
 
-// YouTube URL to Embed URL converter utility
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 const getYouTubeEmbedUrl = (url) => {
   if (!url) return null;
-
   const patterns = [
     /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/|youtube\.com\/shorts\/)([^&\n?#]+)/,
-    /youtube\.com\/watch\?.*[?&]v=([^&]+)/
+    /youtube\.com\/watch\?.*[?&]v=([^&]+)/,
   ];
-
   let videoId = null;
-
-  for (const pattern of patterns) {
-    const match = url.match(pattern);
-    if (match && match[1]) {
-      videoId = match[1];
-      break;
-    }
+  for (const p of patterns) {
+    const m = url.match(p);
+    if (m?.[1]) { videoId = m[1].split('?')[0].split('&')[0]; break; }
   }
-
-  if (videoId) {
-    videoId = videoId.split('?')[0].split('&')[0];
-    return `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&showinfo=0`;
-  }
-
-  return url;
+  return videoId
+    ? `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&showinfo=0`
+    : url;
 };
 
-const loadRazorpayScript = () => {
-  return new Promise((resolve) => {
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.onload = () => resolve(true);
-    script.onerror = () => resolve(false);
-    document.body.appendChild(script);
+const loadRazorpayScript = () =>
+  new Promise((resolve) => {
+    const s = document.createElement('script');
+    s.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    s.onload = () => resolve(true);
+    s.onerror = () => resolve(false);
+    document.body.appendChild(s);
   });
-};
 
+// ─── Component ────────────────────────────────────────────────────────────────
 const CourseDetails = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -49,1192 +44,594 @@ const CourseDetails = () => {
 
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [enrollmentLoading, setEnrollmentLoading] = useState(false);
+  const [expandedModules, setExpandedModules] = useState({});
+  const [expandedChapters, setExpandedChapters] = useState({});
+  const [activeTab, setActiveTab] = useState('overview');
+  const [selectedTopic, setSelectedTopic] = useState(null);
   const [showVideoPlayer, setShowVideoPlayer] = useState(false);
   const [currentVideo, setCurrentVideo] = useState(null);
-  const [expandedModules, setExpandedModules] = useState({});
-  const [activeTab, setActiveTab] = useState('overview');
-  const [expandedChapters, setExpandedChapters] = useState({});
-  const [selectedTopic, setSelectedTopic] = useState(null);
-  const [showEnrollmentMessage, setShowEnrollmentMessage] = useState({ show: false, message: '', type: '' });
-  const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState('razorpay');
-  const [embedUrl, setEmbedUrl] = useState(null);
+  const [paymentProcessing, setPaymentProcessing] = useState(false);
+  const [toast, setToast] = useState({ show: false, message: '', type: '' });
 
+  // ── Load course ─────────────────────────────────────────────────────────────
   useEffect(() => {
     if (location.state?.course) {
       setCourse(location.state.course);
       setLoading(false);
-      return;
-    }
-    const fetchCourse = async () => {
+    } else {
       setLoading(false);
-    };
-    fetchCourse();
+    }
   }, [location.state]);
 
   useEffect(() => {
-    if (studentId && course?._id) {
-      checkEnrollmentStatus();
-    }
+    if (studentId && course?._id) checkEnrollment();
   }, [studentId, course]);
 
-  const checkEnrollmentStatus = async () => {
-    if (!studentId || !course?._id) return;
-
-    try {
-      console.log("Checking enrollment for student:", studentId, "course:", course._id);
-      const res = await axios.get(`${api.student.getStudentProfile}/${studentId}`);
-
-      if (res.data?.success && res.data?.data) {
-        const studentData = res.data.data;
-        const enrolled = studentData.enrolledCourses && studentData.enrolledCourses.includes(course._id);
-
-        console.log("Enrollment status:", enrolled);
-        setIsEnrolled(enrolled);
-
-        if (setStudent && enrolled !== (student?.enrolledCourses?.includes(course._id) || false)) {
-          setStudent(studentData);
-        }
-      }
-    } catch (error) {
-      console.error("Error checking enrollment status:", error);
-    }
+  const showToast = (message, type = 'info') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: '', type: '' }), 3000);
   };
 
-  const hasPaidContent = () => {
-    if (!course?.modules) return false;
-
-    for (const module of course.modules) {
-      for (const chapter of module.chapters || []) {
-        for (const topic of chapter.topics || []) {
-          if (topic.isPreviewFree === false) {
-            return true;
-          }
-        }
-      }
-    }
-    return false;
-  };
-
-  const hasPreviewContent = () => {
-    if (!course?.modules) return false;
-
-    for (const module of course.modules) {
-      for (const chapter of module.chapters || []) {
-        for (const topic of chapter.topics || []) {
-          if (topic.isPreviewFree === true) {
-            return true;
-          }
-        }
-      }
-    }
-    return false;
-  };
-
-  const isCompletelyFree = () => {
-    const isPriceZero = !course?.price || course?.price === 0;
-    const hasNoPaidContent = !hasPaidContent();
-
-    const result = isPriceZero && hasNoPaidContent;
-
-    console.log("🔍 isCompletelyFree check:", {
-      courseTitle: course?.title,
-      price: course?.price,
-      isPriceZero,
-      hasPaidContent: hasPaidContent(),
-      hasNoPaidContent,
-      result
-    });
-
-    return result;
-  };
-
-  const isPaidCourse = () => {
-    return (course?.price && course?.price > 0) || hasPaidContent();
-  };
-
-  const getEnrollmentRequirement = () => {
-    if (isEnrolled) {
-      return { type: 'enrolled', message: 'You are already enrolled in this course', action: 'Continue Learning' };
-    }
-    if (isCompletelyFree()) {
-      return { type: 'free', message: 'This course is completely free!', action: 'Start Learning' };
-    } else if (hasPaidContent() && hasPreviewContent()) {
-      return { type: 'mixed', message: 'This course has both free preview and paid content.', action: `Enroll Now - ₹${course?.price || 0}` };
-    } else if (hasPaidContent() && !hasPreviewContent()) {
-      return { type: 'paid', message: 'Full course access requires payment.', action: `Enroll Now - ₹${course?.price || 0}` };
-    } else if (course?.price > 0) {
-      return { type: 'paid', message: 'This is a premium course.', action: `Enroll Now - ₹${course?.price || 0}` };
-    } else {
-      return { type: 'preview', message: 'All topics are available as free preview!', action: 'Start Learning' };
-    }
-  };
-
-  const createRazorpayPayment = async () => {
-    try {
-      const response = await axios.post(api.payment.createPayment, {
-        courseId: course._id,
-        studentId: studentId,
-      });
-
-      if (response.data.success) {
-        return {
-          order: response.data.order,
-          enrollmentId: response.data.enrollmentId
-        };
-      } else {
-        throw new Error(response.data.message || 'Failed to create order');
-      }
-    } catch (error) {
-      console.error("Error creating order:", error);
-      throw error;
-    }
-  };
-
-  const verifyPayment = async (paymentData, enrollmentId) => {
-    try {
-      const verificationData = {
-        razorpay_order_id: paymentData.razorpay_order_id,
-        razorpay_payment_id: paymentData.razorpay_payment_id,
-        razorpay_signature: paymentData.razorpay_signature,
-        enrollmentId: enrollmentId
-      };
-
-      const response = await axios.post(api.payment.verifyPayment, verificationData);
-
-      if (response.data.success) {
-        console.log("Payment verified, enrollment status:", response.data.data?.status);
-      }
-
-      return response.data;
-    } catch (error) {
-      console.error("Error verifying payment:", error);
-      throw error;
-    }
-  };
-
-  const refreshStudentData = async () => {
-    if (!studentId) return null;
-
+  const checkEnrollment = async () => {
     try {
       const res = await axios.get(`${api.student.getStudentProfile}/${studentId}`);
-      if (res.data?.success && res.data?.data) {
-        const updatedStudent = res.data.data;
-        if (setStudent) {
-          setStudent(updatedStudent);
-        }
-        return updatedStudent;
+      if (res.data?.success) {
+        const enrolled = res.data.data?.enrolledCourses?.includes(course._id);
+        setIsEnrolled(!!enrolled);
       }
-    } catch (error) {
-      console.error("Error refreshing student data:", error);
-    }
-    return null;
+    } catch { /* silent */ }
   };
 
-  const processRazorpayPayment = async () => {
-    const isScriptLoaded = await loadRazorpayScript();
-    if (!isScriptLoaded) {
-      setShowEnrollmentMessage({
-        show: true,
-        message: "Failed to load payment gateway. Please try again.",
-        type: 'error'
-      });
-      setTimeout(() => setShowEnrollmentMessage({ show: false, message: '', type: '' }), 3000);
-      return;
-    }
+  // ── Course helpers ───────────────────────────────────────────────────────────
+  const hasPaidContent = () =>
+    course?.modules?.some(m => m.chapters?.some(c => c.topics?.some(t => t.isPreviewFree === false)));
 
+  const hasPreviewContent = () =>
+    course?.modules?.some(m => m.chapters?.some(c => c.topics?.some(t => t.isPreviewFree === true)));
+
+  const isCompletelyFree = () => (!course?.price || course.price === 0) && !hasPaidContent();
+
+  const isPaidCourse = () => (course?.price && course.price > 0) || hasPaidContent();
+
+  const totalTopics = () =>
+    course?.modules?.reduce((s, m) => s + (m.chapters?.reduce((cs, c) => cs + (c.topics?.length || 0), 0) || 0), 0) || 0;
+
+  const freeTopics = () =>
+    course?.modules?.reduce((s, m) => s + (m.chapters?.reduce((cs, c) => cs + c.topics?.filter(t => t.isPreviewFree).length, 0) || 0), 0) || 0;
+
+  const paidTopics = () =>
+    course?.modules?.reduce((s, m) => s + (m.chapters?.reduce((cs, c) => cs + c.topics?.filter(t => !t.isPreviewFree).length, 0) || 0), 0) || 0;
+
+  const enrollmentInfo = () => {
+    if (isEnrolled) return { action: 'Continue Learning', type: 'enrolled' };
+    if (isCompletelyFree()) return { action: 'Start Learning — Free', type: 'free' };
+    return { action: `Enroll Now — ₹${course?.price || 0}`, type: 'paid' };
+  };
+
+  // ── Payment ─────────────────────────────────────────────────────────────────
+  const handleEnrollClick = () => {
+    if (!studentId) return showToast('Please log in to enroll', 'error');
+    if (isEnrolled || isCompletelyFree()) return navigate(`/course-content/${course._id}`, { state: { course } });
+    if (isPaidCourse()) return setShowPaymentModal(true);
+    navigate(`/course-content/${course._id}`, { state: { course } });
+  };
+
+  const processPayment = async () => {
+    const loaded = await loadRazorpayScript();
+    if (!loaded) return showToast('Payment gateway failed to load', 'error');
     setPaymentProcessing(true);
-
     try {
-      const { order, enrollmentId } = await createRazorpayPayment();
-
+      const { data } = await axios.post(api.payment.createPayment, { courseId: course._id, studentId });
+      if (!data.success) throw new Error(data.message);
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-        amount: order.amount,
-        currency: order.currency,
+        amount: data.order.amount,
+        currency: data.order.currency,
         name: course.title,
-        description: `Enrollment for ${course.title}`,
-        order_id: order.id,
-        handler: async (response) => {
+        order_id: data.order.id,
+        handler: async (resp) => {
           try {
-            const paymentVerification = await verifyPayment({
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-            }, enrollmentId);
-
-            if (paymentVerification.success) {
-              await refreshStudentData();
+            const verify = await axios.post(api.payment.verifyPayment, {
+              razorpay_order_id: resp.razorpay_order_id,
+              razorpay_payment_id: resp.razorpay_payment_id,
+              razorpay_signature: resp.razorpay_signature,
+              enrollmentId: data.enrollmentId,
+            });
+            if (verify.data.success) {
               setIsEnrolled(true);
-
-              setShowEnrollmentMessage({
-                show: true,
-                message: "Payment successful! You are now enrolled in the course! 🎉",
-                type: 'success'
-              });
-
-              setTimeout(() => {
-                setShowEnrollmentMessage({ show: false, message: '', type: '' });
-              }, 3000);
-            } else {
-              setShowEnrollmentMessage({
-                show: true,
-                message: "Payment verification failed. Please contact support.",
-                type: 'error'
-              });
-              setTimeout(() => setShowEnrollmentMessage({ show: false, message: '', type: '' }), 3000);
+              showToast('Payment successful! You are now enrolled 🎉', 'success');
             }
-          } catch (error) {
-            console.error("Verification error:", error);
-            setShowEnrollmentMessage({
-              show: true,
-              message: error.response?.data?.message || "Payment verification failed. Please contact support.",
-              type: 'error'
-            });
-            setTimeout(() => setShowEnrollmentMessage({ show: false, message: '', type: '' }), 3000);
-          } finally {
-            setPaymentProcessing(false);
-          }
+          } catch { showToast('Payment verification failed. Contact support.', 'error'); }
+          finally { setPaymentProcessing(false); }
         },
-        prefill: {
-          name: student?.name || '',
-          email: student?.email || '',
-          contact: student?.phone || ''
-        },
-        notes: {
-          studentId: studentId,
-          courseId: course._id
-        },
-        theme: {
-          color: '#3B82F6'
-        },
-        modal: {
-          ondismiss: () => {
-            setPaymentProcessing(false);
-            setShowEnrollmentMessage({
-              show: true,
-              message: "Payment cancelled",
-              type: 'info'
-            });
-            setTimeout(() => setShowEnrollmentMessage({ show: false, message: '', type: '' }), 3000);
-          }
-        }
+        prefill: { name: student?.name || '', email: student?.email || '', contact: student?.phone || '' },
+        theme: { color: '#2563EB' },
+        modal: { ondismiss: () => { setPaymentProcessing(false); showToast('Payment cancelled', 'info'); } },
       };
-
-      const razorpay = new window.Razorpay(options);
-      razorpay.open();
-    } catch (error) {
-      console.error("Payment error:", error);
-      setShowEnrollmentMessage({
-        show: true,
-        message: error.response?.data?.message || error.message || "Failed to process payment. Please try again.",
-        type: 'error'
-      });
-      setTimeout(() => setShowEnrollmentMessage({ show: false, message: '', type: '' }), 3000);
+      new window.Razorpay(options).open();
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Payment failed. Try again.', 'error');
       setPaymentProcessing(false);
     }
   };
 
   const handlePayment = async () => {
     setShowPaymentModal(false);
-    await processRazorpayPayment();
+    await processPayment();
   };
 
-  const handleEnrollClick = () => {
-    if (!studentId) {
-      setShowEnrollmentMessage({
-        show: true,
-        message: "Please login to enroll in this course",
-        type: 'error'
-      });
-      setTimeout(() => setShowEnrollmentMessage({ show: false, message: '', type: '' }), 3000);
-      return;
-    }
-
-    if (isEnrolled) {
-      handleViewCourse();
-      return;
-    }
-
-    if (isCompletelyFree()) {
-      handleViewCourse();
-      return;
-    }
-
-    if (isPaidCourse()) {
-      setShowPaymentModal(true);
-      return;
-    }
-
-    handleViewCourse();
-  };
-
-  const handleViewCourse = () => {
-    if (isEnrolled || isCompletelyFree()) {
-      navigate(`/course-content/${course._id}`, { state: { course } });
-    }
-  };
-
-  // FIXED: Video play handler - now supports YouTube and uploaded videos
-  const handlePlayVideo = (videoUrl, topicTitle, isPreviewFree, videoType) => {
-    console.log("🎬 handlePlayVideo called:", { videoUrl, topicTitle, isPreviewFree, videoType });
-
-    // CRITICAL FIX: फ्री कोर्स के लिए हमेशा access दो
-    const isFreeCourse = isCompletelyFree();
-    const hasAccess = isEnrolled || isPreviewFree || isFreeCourse;
-
-    console.log("🔐 Access check:", {
-      isEnrolled,
-      isPreviewFree,
-      isFreeCourse,
-      hasAccess
+  // ── Video ────────────────────────────────────────────────────────────────────
+  const playVideo = (topic) => {
+    const hasAccess = isEnrolled || topic.isPreviewFree || isCompletelyFree();
+    if (!hasAccess) return showToast('Enroll to access this lesson', 'error');
+    if (!topic.videoUrl) return showToast('No video available for this lesson', 'error');
+    const isYT = topic.videoUrl.includes('youtube.com') || topic.videoUrl.includes('youtu.be');
+    setCurrentVideo({
+      url: isYT ? getYouTubeEmbedUrl(topic.videoUrl) : topic.videoUrl,
+      title: topic.title,
+      type: isYT ? 'youtube' : 'upload',
     });
-
-    if (!videoUrl) {
-      console.error("❌ No video URL!");
-      setShowEnrollmentMessage({
-        show: true,
-        message: "Video URL is missing for this topic!",
-        type: 'error'
-      });
-      setTimeout(() => setShowEnrollmentMessage({ show: false, message: '', type: '' }), 3000);
-      return;
-    }
-
-    if (!hasAccess) {
-      setShowEnrollmentMessage({
-        show: true,
-        message: "You need to enroll in this course to access this video!",
-        type: 'error'
-      });
-      setTimeout(() => setShowEnrollmentMessage({ show: false, message: '', type: '' }), 3000);
-      return;
-    }
-
-    // Check if it's a YouTube video
-    let finalUrl = videoUrl;
-    let finalType = videoType || 'upload';
-
-    if (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')) {
-      finalType = 'youtube';
-      finalUrl = getYouTubeEmbedUrl(videoUrl);
-      console.log("🎥 YouTube video converted to embed URL:", finalUrl);
-    }
-
-    console.log("✅ Playing video:", finalUrl, "Type:", finalType);
-    setCurrentVideo({ url: finalUrl, title: topicTitle, type: finalType });
     setShowVideoPlayer(true);
   };
 
-  const handleViewNotes = (notesUrl, topicTitle, isPreviewFree) => {
-    const isFreeCourse = isCompletelyFree();
-    const hasAccess = isEnrolled || isPreviewFree || isFreeCourse;
-
-    if (!hasAccess) {
-      setShowEnrollmentMessage({
-        show: true,
-        message: "You need to enroll in this course to access these notes!",
-        type: 'error'
-      });
-      setTimeout(() => setShowEnrollmentMessage({ show: false, message: '', type: '' }), 3000);
-      return;
-    }
-
-    window.open(notesUrl, '_blank');
+  const openNotes = (topic) => {
+    const hasAccess = isEnrolled || topic.isPreviewFree || isCompletelyFree();
+    if (!hasAccess) return showToast('Enroll to access notes', 'error');
+    window.open(topic.notesUrl, '_blank');
   };
 
-  const toggleModule = (moduleIndex) => {
-    setExpandedModules(prev => ({
-      ...prev,
-      [moduleIndex]: !prev[moduleIndex]
-    }));
+  // ── Expand toggles ───────────────────────────────────────────────────────────
+  const toggleModule = (idx) => setExpandedModules(p => ({ ...p, [idx]: !p[idx] }));
+  const toggleChapter = (mIdx, cIdx) => {
+    const k = `${mIdx}-${cIdx}`;
+    setExpandedChapters(p => ({ ...p, [k]: !p[k] }));
   };
 
-  const toggleChapter = (moduleIndex, chapterIndex) => {
-    const key = `${moduleIndex}-${chapterIndex}`;
-    setExpandedChapters(prev => ({
-      ...prev,
-      [key]: !prev[key]
-    }));
-  };
-
-  const showTopicDetails = (topic) => {
-    setSelectedTopic(selectedTopic?._id === topic._id ? null : topic);
-  };
-
-  const calculateTotalDuration = () => {
-    if (!course?.modules) return 0;
-    let totalMinutes = 0;
-    course.modules.forEach(module => {
-      module.chapters?.forEach(chapter => {
-        chapter.topics?.forEach(topic => {
-          totalMinutes += topic.duration || 10;
-        });
-      });
-    });
-    return totalMinutes;
-  };
-
-  const calculateTotalTopics = () => {
-    if (!course?.modules) return 0;
-    let totalTopics = 0;
-    course.modules.forEach(module => {
-      module.chapters?.forEach(chapter => {
-        totalTopics += chapter.topics?.length || 0;
-      });
-    });
-    return totalTopics;
-  };
-
-  const calculateFreeTopics = () => {
-    if (!course?.modules) return 0;
-    let freeTopics = 0;
-    course.modules.forEach(module => {
-      module.chapters?.forEach(chapter => {
-        chapter.topics?.forEach(topic => {
-          if (topic.isPreviewFree === true) freeTopics++;
-        });
-      });
-    });
-    return freeTopics;
-  };
-
-  const calculatePaidTopics = () => {
-    if (!course?.modules) return 0;
-    let paidTopics = 0;
-    course.modules.forEach(module => {
-      module.chapters?.forEach(chapter => {
-        chapter.topics?.forEach(topic => {
-          if (topic.isPreviewFree === false) paidTopics++;
-        });
-      });
-    });
-    return paidTopics;
-  };
-
+  // ── Loading / error ──────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">Loading course details...</p>
+          <div className="w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-sm text-gray-500">Loading course...</p>
         </div>
       </div>
     );
   }
 
-  if (error || !course) {
+  if (!course) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
-        <div className="text-center bg-white rounded-2xl shadow-xl p-8 max-w-md">
-          <div className="text-6xl mb-4">📚</div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Course not found</h2>
-          <p className="text-gray-600 mb-6">{error || "The course you're looking for doesn't exist."}</p>
-          <button
-            onClick={() => navigate('/course')}
-            className="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-md"
-          >
-            Back to Courses
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center bg-white p-10 rounded-2xl border border-gray-100 shadow max-w-sm">
+          <BookOpen size={40} className="mx-auto text-gray-200 mb-3" />
+          <p className="font-semibold text-gray-800 mb-4">Course not found</p>
+          <button onClick={() => navigate('/course')} className="text-sm text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-1">
+            <ArrowLeft size={14} /> Back to Courses
           </button>
         </div>
       </div>
     );
   }
 
-  const totalDuration = calculateTotalDuration();
-  const totalTopics = calculateTotalTopics();
-  const freeTopics = calculateFreeTopics();
-  const paidTopics = calculatePaidTopics();
-  const enrollmentInfo = getEnrollmentRequirement();
-  const isFree = isCompletelyFree();
-  const isPaid = isPaidCourse();
+  const info = enrollmentInfo();
+  const tt = totalTopics();
+  const ft = freeTopics();
+  const pt = paidTopics();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      {/* Toast Message */}
-      {showEnrollmentMessage.show && (
-        <div className={`fixed top-20 right-4 z-50 animate-slide-in ${showEnrollmentMessage.type === 'success' ? 'bg-green-500' :
-          showEnrollmentMessage.type === 'error' ? 'bg-red-500' : 'bg-blue-500'
-          } text-white px-6 py-3 rounded-lg shadow-lg backdrop-blur-sm`}>
-          <div className="flex items-center gap-2">
-            {showEnrollmentMessage.type === 'success' && <span>✅</span>}
-            {showEnrollmentMessage.type === 'error' && <span>❌</span>}
-            {showEnrollmentMessage.type === 'info' && <span>ℹ️</span>}
-            {showEnrollmentMessage.message}
-          </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* Toast */}
+      {toast.show && (
+        <div className={`fixed top-5 right-4 z-50 px-5 py-3 rounded-xl shadow-lg text-sm font-medium text-white flex items-center gap-2 transition-all ${
+          toast.type === 'success' ? 'bg-green-500' : toast.type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+        }`}>
+          {toast.type === 'success' && <CheckCircle size={15} />}
+          {toast.type === 'error' && <X size={15} />}
+          {toast.message}
         </div>
       )}
 
-      {showPaymentModal && isPaid && !isEnrolled && (
-        <div className="fixed inset-0 bg-black/60 bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => !paymentProcessing && setShowPaymentModal(false)}>
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl transform transition-all" onClick={(e) => e.stopPropagation()}>
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold text-gray-900">Complete Your Enrollment</h3>
-              <p className="text-gray-600 mt-2">Course: {course.title}</p>
-              <p className="text-2xl font-bold text-blue-600 mt-3">₹{course.price?.toLocaleString('en-IN')}</p>
+      {/* Payment Modal */}
+      {showPaymentModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" onClick={() => !paymentProcessing && setShowPaymentModal(false)}>
+          <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <h3 className="text-base font-bold text-gray-900">Complete Enrollment</h3>
+              <button onClick={() => setShowPaymentModal(false)} className="p-1 hover:bg-gray-100 rounded-lg"><X size={16} className="text-gray-400" /></button>
             </div>
-
-            <div className="bg-gray-50 rounded-lg p-4 mb-6">
-              <div className="flex justify-between mb-2">
-                <span className="text-gray-600">Total Topics:</span>
-                <span className="font-semibold">{totalTopics}</span>
+            <div className="p-6">
+              <div className="text-center mb-5">
+                <p className="text-sm text-gray-500 mb-1">{course.title}</p>
+                <p className="text-3xl font-bold text-gray-900">₹{course.price?.toLocaleString('en-IN')}</p>
               </div>
-              <div className="flex justify-between mb-2">
-                <span className="text-gray-600">Free Preview Topics:</span>
-                <span className="font-semibold text-green-600">{freeTopics}</span>
+              <div className="bg-gray-50 rounded-xl p-4 mb-5 space-y-2 text-sm">
+                <div className="flex justify-between text-gray-600"><span>Total lessons</span><span className="font-medium text-gray-900">{tt}</span></div>
+                <div className="flex justify-between text-gray-600"><span>Free preview</span><span className="font-medium text-green-600">{ft} lessons</span></div>
+                {pt > 0 && <div className="flex justify-between text-gray-600"><span>Premium lessons</span><span className="font-medium text-blue-600">{pt}</span></div>}
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Premium Topics:</span>
-                <span className="font-semibold text-orange-600">{paidTopics}</span>
+              <div className="flex items-center gap-2 px-4 py-3 border border-gray-200 rounded-xl mb-5">
+                <CreditCard size={16} className="text-gray-400" />
+                <span className="text-sm font-medium text-gray-700">Razorpay — Secure Payment</span>
               </div>
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
-              <div className="space-y-2">
-                <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="razorpay"
-                    checked={paymentMethod === 'razorpay'}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="mr-3"
-                  />
-                  <div className="flex items-center justify-between flex-1">
-                    <span className="font-medium">Razorpay</span>
-                    <img
-                      src="https://razorpay.com/assets/razorpay-glyph.svg"
-                      alt="Razorpay"
-                      className="h-6"
-                      onError={(e) => e.target.style.display = 'none'}
-                    />
-                  </div>
-                </label>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <button
-                onClick={handlePayment}
-                disabled={paymentProcessing}
-                className="w-full py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-semibold hover:from-blue-600 hover:to-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
-              >
-                {paymentProcessing ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Processing...
-                  </span>
-                ) : (
-                  `Pay ₹${course.price} & Enroll`
-                )}
+              <button onClick={handlePayment} disabled={paymentProcessing} className="w-full py-3 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-60 transition-colors">
+                {paymentProcessing ? 'Processing...' : `Pay ₹${course.price} & Enroll`}
               </button>
-              <button
-                onClick={() => setShowPaymentModal(false)}
-                disabled={paymentProcessing}
-                className="w-full py-3 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-all duration-200 disabled:opacity-50"
-              >
+              <button onClick={() => setShowPaymentModal(false)} disabled={paymentProcessing} className="w-full mt-2 py-2.5 text-sm text-gray-500 hover:text-gray-700 transition-colors">
                 Cancel
               </button>
+              <p className="text-xs text-gray-400 text-center mt-3">Payments are secured by Razorpay</p>
             </div>
-
-            <p className="text-xs text-gray-500 text-center mt-4">
-              Secure payment powered by Razorpay
-            </p>
           </div>
         </div>
       )}
 
-      {/* Main Content Wrapper - Two Column Layout */}
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <div className="flex flex-col lg:flex-row gap-8">
+      {/* Main layout */}
+      <div className="max-w-6xl mx-auto px-4 py-6">
+        {/* Back */}
+        <button onClick={() => navigate('/course')} className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 mb-5 transition-colors">
+          <ArrowLeft size={14} /> Back to Courses
+        </button>
 
-          {/* LEFT COLUMN - Scrollable Content */}
-          <div className="flex-1 min-w-0 overflow-y-auto">
-            {/* Back Button */}
-            <button
-              onClick={() => navigate('/course')}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-6 transition-colors group"
-            >
-              <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-              Back to Courses
-            </button>
-
-            {/* Course Header Info */}
-            <div className="mb-6">
-              <div className="flex items-center gap-3 mb-3 flex-wrap">
-                <span className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-3 py-1 rounded-full text-sm font-medium">
-                  {course.category?.name || 'General'}
-                </span>
-                <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">
-                  {course.level || 'Beginner'}
-                </span>
-                {isFree ? (
-                  <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium">
-                    Free Course
-                  </span>
-                ) : (
-                  <>
-                    {isEnrolled && (
-                      <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium">
-                        Enrolled ✓
-                      </span>
-                    )}
-                    {!isEnrolled && (
-                      <span className="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-sm font-medium">
-                        Premium Course
-                      </span>
-                    )}
-                    {!isEnrolled && hasPreviewContent() && (
-                      <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">
-                        Free Preview Available
-                      </span>
-                    )}
-                  </>
+        <div className="flex flex-col lg:flex-row gap-6 items-start">
+          {/* ── LEFT COLUMN ────────────────────────────────────────────────── */}
+          <div className="flex-1 min-w-0">
+            {/* Course header */}
+            <div className="bg-white rounded-xl border border-gray-100 p-6 mb-5">
+              <div className="flex flex-wrap gap-2 mb-3">
+                {course.category?.name && (
+                  <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md">{course.category.name}</span>
                 )}
+                <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2.5 py-1 rounded-md capitalize">{course.level || 'Beginner'}</span>
+                {isEnrolled && <span className="text-xs font-medium text-green-700 bg-green-50 px-2.5 py-1 rounded-md flex items-center gap-1"><CheckCircle size={11} /> Enrolled</span>}
+                {!isEnrolled && isCompletelyFree() && <span className="text-xs font-medium text-green-700 bg-green-50 px-2.5 py-1 rounded-md">Free</span>}
+                {!isEnrolled && !isCompletelyFree() && hasPreviewContent() && <span className="text-xs font-medium text-blue-700 bg-blue-50 px-2.5 py-1 rounded-md">Free Preview Available</span>}
               </div>
-              <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">{course.title}</h1>
-              {course.description ? (
-                <div
-                  className="text-gray-600 text-lg mb-4"
-                  dangerouslySetInnerHTML={{ __html: course.description }}
-                />
-              ) : (
-                <p className="text-gray-600 text-lg mb-4">
-                  No description available
-                </p>
+              <h1 className="text-2xl font-bold text-gray-900 mb-3">{course.title}</h1>
+              {course.description && (
+                <div className="text-gray-600 text-sm leading-relaxed mb-4" dangerouslySetInnerHTML={{ __html: course.description }} />
               )}
-
-              <div className="flex flex-wrap gap-3">
-                <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 shadow-sm">
-                  <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                  </svg>
-                  <span className="text-sm text-gray-700">{course.modules?.length || 0} Modules</span>
+              {/* Quick stats */}
+              <div className="flex flex-wrap gap-4 pt-3 border-t border-gray-100">
+                <div className="flex items-center gap-1.5 text-sm text-gray-500">
+                  <BookOpen size={15} className="text-blue-500" />
+                  {course.modules?.length || 0} Modules
                 </div>
-                <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 shadow-sm">
-                  <svg className="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                  </svg>
-                  <span className="text-sm text-gray-700">{totalTopics} Topics</span>
+                <div className="flex items-center gap-1.5 text-sm text-gray-500">
+                  <Play size={15} className="text-purple-500" />
+                  {tt} Lessons
                 </div>
-                <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 shadow-sm">
-                  <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span className="text-sm text-gray-700">{Math.floor(totalDuration / 60)}h {totalDuration % 60}min</span>
+                <div className="flex items-center gap-1.5 text-sm text-gray-500">
+                  <GraduationCap size={15} className="text-green-500" />
+                  {course.instructor?.name || 'Expert Instructor'}
                 </div>
               </div>
             </div>
 
             {/* Tabs */}
-            <div className="border-b border-gray-200 bg-white/80 sticky top-0 z-10">
-              <div className="flex gap-8">
+            <div className="flex gap-1 bg-gray-100 p-1 rounded-xl mb-5 w-fit">
+              {['overview', 'curriculum'].map(tab => (
                 <button
-                  onClick={() => setActiveTab('overview')}
-                  className={`py-4 px-1 font-medium transition-all duration-200 border-b-2 ${activeTab === 'overview'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-600 hover:text-gray-800'
-                    }`}
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-5 py-2 text-sm font-medium rounded-lg transition-colors capitalize ${
+                    activeTab === tab ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                  }`}
                 >
-                  Overview
+                  {tab}
                 </button>
-                <button
-                  onClick={() => setActiveTab('curriculum')}
-                  className={`py-4 px-1 font-medium transition-all duration-200 border-b-2 ${activeTab === 'curriculum'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-600 hover:text-gray-800'
-                    }`}
-                >
-                  Curriculum
-                </button>
-              </div>
+              ))}
             </div>
 
-            {/* Tab Content */}
-            <div className="py-6">
-              {activeTab === 'overview' ? (
-                <div className="space-y-6">
-                  {/* About Section */}
-                  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
-                    <h2 className="text-xl font-bold text-gray-900 mb-4">About this course</h2>
-                    <p className="text-gray-700 leading-relaxed">{course.description || 'No description available'}</p>
-                  </div>
-
-                  {/* What you'll learn */}
-                  {course.whatYouWillLearn && course.whatYouWillLearn.length > 0 && (
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
-                      <h2 className="text-xl font-bold text-gray-900 mb-4">What you'll learn</h2>
-                      <div className="grid md:grid-cols-2 gap-3">
-                        {course.whatYouWillLearn.map((item, idx) => (
-                          <div key={idx} className="flex items-start gap-2 group">
-                            <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-green-200 transition-colors">
-                              <svg className="w-3 h-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                              </svg>
-                            </div>
-                            <span className="text-gray-700">{item}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Requirements */}
-                  {course.requirements && course.requirements.length > 0 && (
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
-                      <h2 className="text-xl font-bold text-gray-900 mb-4">Requirements</h2>
-                      <ul className="space-y-2">
-                        {course.requirements.map((req, idx) => (
-                          <li key={idx} className="flex items-start gap-2 group">
-                            <div className="w-5 h-5 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-orange-200 transition-colors">
-                              <svg className="w-3 h-3 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                              </svg>
-                            </div>
-                            <span className="text-gray-700">{req}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {/* Instructor Info */}
-                  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
-                    <h3 className="font-bold text-gray-900 mb-4">Instructor</h3>
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                        {course.instructor?.name?.charAt(0) || 'T'}
-                      </div>
-                      <div>
-                        <p className="font-semibold text-gray-900">{course.instructor?.name || 'Expert Instructor'}</p>
-                        <p className="text-sm text-gray-500">{course.instructor?.title || 'Professional Trainer'}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Course Stats */}
-                  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
-                    <h3 className="font-bold text-gray-900 mb-4">Course Statistics</h3>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                        <span className="text-gray-600">Total Modules</span>
-                        <span className="font-semibold text-gray-900 bg-blue-50 px-3 py-1 rounded-full">{course.modules?.length || 0}</span>
-                      </div>
-                      <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                        <span className="text-gray-600">Total Topics</span>
-                        <span className="font-semibold text-gray-900 bg-purple-50 px-3 py-1 rounded-full">{totalTopics}</span>
-                      </div>
-                      <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                        <span className="text-gray-600">Free Topics</span>
-                        <span className="font-semibold text-green-600 bg-green-50 px-3 py-1 rounded-full">{freeTopics}</span>
-                      </div>
-                      {paidTopics > 0 && (
-                        <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                          <span className="text-gray-600">Premium Topics</span>
-                          <span className="font-semibold text-orange-600 bg-orange-50 px-3 py-1 rounded-full">{paidTopics}</span>
-                        </div>
-                      )}
-                      <div className="flex justify-between items-center py-2">
-                        <span className="text-gray-600">Total Duration</span>
-                        <span className="font-semibold text-gray-900 bg-green-50 px-3 py-1 rounded-full">{Math.floor(totalDuration / 60)}h {totalDuration % 60}min</span>
-                      </div>
-                    </div>
-                  </div>
+            {/* Overview Tab */}
+            {activeTab === 'overview' && (
+              <div className="space-y-4">
+                {/* About */}
+                <div className="bg-white rounded-xl border border-gray-100 p-5">
+                  <h2 className="text-base font-bold text-gray-900 mb-3">About this course</h2>
+                  <p className="text-sm text-gray-600 leading-relaxed">{course.description || 'No description available.'}</p>
                 </div>
-              ) : (
-                /* Curriculum Tab */
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                  <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
-                    <h2 className="text-xl font-bold text-gray-900">Course Curriculum</h2>
-                    <p className="text-gray-600 mt-1">{course.modules?.length || 0} modules • {totalTopics} topics • {freeTopics} free previews</p>
-                  </div>
 
-                  {course.modules && course.modules.length > 0 ? (
-                    <div className="divide-y divide-gray-200">
-                      {course.modules.map((module, moduleIndex) => (
-                        <div key={module._id || moduleIndex} className="bg-white">
-                          {/* Module Header */}
-                          <button
-                            onClick={() => toggleModule(moduleIndex)}
-                            className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors text-left group"
-                          >
-                            <div className="flex items-center gap-3 flex-1">
-                              <svg className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${expandedModules[moduleIndex] ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                              </svg>
-                              <div>
-                                <h3 className="font-semibold text-gray-900">
-                                  Module {moduleIndex + 1}: {module.title}
-                                </h3>
-                                {module.description && (
-                                  <p className="text-sm text-gray-500 mt-0.5">{module.description}</p>
-                                )}
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-3 text-sm text-gray-500">
-                              <span>{module.chapters?.reduce((acc, ch) => acc + (ch.topics?.length || 0), 0)} topics</span>
-                            </div>
-                          </button>
-
-                          {/* Module Content */}
-                          {expandedModules[moduleIndex] && (
-                            <div className="border-t border-gray-100 bg-gray-50">
-                              {module.chapters?.map((chapter, chapterIndex) => (
-                                <div key={chapter._id || chapterIndex} className="border-b border-gray-100 last:border-b-0">
-                                  {/* Chapter Header */}
-                                  <button
-                                    onClick={() => toggleChapter(moduleIndex, chapterIndex)}
-                                    className="w-full px-6 py-3 flex items-center justify-between hover:bg-gray-100 transition-colors text-left"
-                                  >
-                                    <div className="flex items-center gap-2">
-                                      <svg className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${expandedChapters[`${moduleIndex}-${chapterIndex}`] ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                      </svg>
-                                      <span className="font-medium text-gray-800">
-                                        Chapter {chapterIndex + 1}: {chapter.title}
-                                      </span>
-                                    </div>
-                                    <span className="text-xs text-gray-500">{chapter.topics?.length || 0} topics</span>
-                                  </button>
-
-                                  {/* Topics List */}
-                                  {expandedChapters[`${moduleIndex}-${chapterIndex}`] && (
-                                    <div className="px-6 pb-4 space-y-2">
-                                      {chapter.topics?.map((topic, topicIndex) => {
-                                        const isPreviewFree = topic.isPreviewFree === true;
-                                        // FIXED: फ्री कोर्स के लिए हमेशा true
-                                        const isFreeCourse = isCompletelyFree();
-                                        const hasAccess = isEnrolled || isPreviewFree || isFreeCourse;
-
-                                        return (
-                                          <div key={topic._id || topicIndex} className="ml-6 border border-gray-200 rounded-xl bg-white overflow-hidden hover:shadow-md transition-shadow">
-                                            <div className="p-4 flex items-center justify-between flex-wrap gap-3">
-                                              <div className="flex items-center gap-3 flex-1">
-                                                <div className="flex-shrink-0">
-                                                  {hasAccess ? (
-                                                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                                                      <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                                                      </svg>
-                                                    </div>
-                                                  ) : (
-                                                    <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                                                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                                                      </svg>
-                                                    </div>
-                                                  )}
-                                                </div>
-                                                <div>
-                                                  <span className="font-medium text-gray-900">
-                                                    {topicIndex + 1}. {topic.title}
-                                                  </span>
-                                                  {topic.duration && (
-                                                    <span className="ml-2 text-xs text-gray-500">⏱️ {topic.duration} min</span>
-                                                  )}
-                                                  <div className="flex gap-2 mt-1">
-                                                    {isEnrolled && (
-                                                      <span className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
-                                                        Enrolled Access ✓
-                                                      </span>
-                                                    )}
-                                                    {!isEnrolled && isPreviewFree && (
-                                                      <span className="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full">Free Preview</span>
-                                                    )}
-                                                    {!isEnrolled && !isPreviewFree && !isFreeCourse && (
-                                                      <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">Premium Content</span>
-                                                    )}
-                                                    {isFreeCourse && !isEnrolled && (
-                                                      <span className="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full">Free Access</span>
-                                                    )}
-                                                  </div>
-                                                </div>
-                                              </div>
-
-                                              <div className="flex gap-2">
-                                                {topic.videoUrl && (
-                                                  <button
-                                                    onClick={() => handlePlayVideo(topic.videoUrl, topic.title, isPreviewFree, topic.videoType)}
-                                                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-1 ${hasAccess
-                                                      ? 'bg-red-500 hover:bg-red-600 text-white shadow-sm'
-                                                      : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                                      }`}
-                                                    disabled={!hasAccess}
-                                                  >
-                                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                                                      <path d="M8 5v14l11-7z" />
-                                                    </svg>
-                                                    Watch
-                                                  </button>
-                                                )}
-                                                {topic.notesUrl && (
-                                                  <button
-                                                    onClick={() => handleViewNotes(topic.notesUrl, topic.title, isPreviewFree)}
-                                                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-1 ${hasAccess
-                                                      ? 'bg-blue-500 hover:bg-blue-600 text-white shadow-sm'
-                                                      : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                                      }`}
-                                                    disabled={!hasAccess}
-                                                  >
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                    </svg>
-                                                    Notes
-                                                  </button>
-                                                )}
-                                                <button
-                                                  onClick={() => showTopicDetails(topic)}
-                                                  className="px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 transition-all duration-200 flex items-center gap-1"
-                                                >
-                                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                  </svg>
-                                                  Details
-                                                </button>
-                                              </div>
-                                            </div>
-
-                                            {selectedTopic?._id === topic._id && (
-                                              <div className="border-t border-gray-100 p-4 bg-gray-50">
-                                                <div className="space-y-3 text-sm">
-                                                  {topic.description && (
-                                                    <div>
-                                                      <span className="font-semibold text-gray-700">Description:</span>
-
-                                                      {topic.description ? (
-                                                        <div
-                                                          className="text-gray-600 mt-1"
-                                                          dangerouslySetInnerHTML={{ __html: topic.description }}
-                                                        />
-                                                      ) : (
-                                                        <p className="text-gray-600 mt-1">No description</p>
-                                                      )}
-                                                    </div>
-                                                  )}
-                                                  {topic.resources && topic.resources.length > 0 && (
-                                                    <div>
-                                                      <span className="font-semibold text-gray-700">Resources:</span>
-                                                      <ul className="mt-2 space-y-1">
-                                                        {topic.resources.map((resource, idx) => (
-                                                          <li key={idx}>
-                                                            <a href={resource.fileUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 text-sm flex items-center gap-1">
-                                                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-                                                              </svg>
-                                                              {resource.title || `Resource ${idx + 1}`}
-                                                            </a>
-                                                          </li>
-                                                        ))}
-                                                      </ul>
-                                                    </div>
-                                                  )}
-                                                  <button
-                                                    onClick={() => setSelectedTopic(null)}
-                                                    className="text-xs text-gray-500 hover:text-gray-700 mt-2"
-                                                  >
-                                                    Hide details
-                                                  </button>
-                                                </div>
-                                              </div>
-                                            )}
-                                          </div>
-                                        );
-                                      })}
-                                      {(!chapter.topics || chapter.topics.length === 0) && (
-                                        <div className="ml-6 p-4 text-gray-500 text-sm italic bg-white rounded-lg">
-                                          No topics in this chapter yet.
-                                        </div>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-                              ))}
-                              {(!module.chapters || module.chapters.length === 0) && (
-                                <div className="px-6 py-4 text-gray-500 text-sm italic">
-                                  No chapters in this module yet.
-                                </div>
-                              )}
-                            </div>
-                          )}
+                {/* What you'll learn */}
+                {course.whatYouWillLearn?.length > 0 && (
+                  <div className="bg-white rounded-xl border border-gray-100 p-5">
+                    <h2 className="text-base font-bold text-gray-900 mb-3">What you'll learn</h2>
+                    <div className="grid sm:grid-cols-2 gap-2.5">
+                      {course.whatYouWillLearn.map((item, i) => (
+                        <div key={i} className="flex items-start gap-2">
+                          <CheckCircle size={15} className="text-green-500 mt-0.5 flex-shrink-0" />
+                          <span className="text-sm text-gray-700">{item}</span>
                         </div>
                       ))}
                     </div>
-                  ) : (
-                    <div className="p-8 text-center">
-                      <p className="text-gray-500">No content available for this course yet.</p>
+                  </div>
+                )}
+
+                {/* Requirements */}
+                {course.requirements?.length > 0 && (
+                  <div className="bg-white rounded-xl border border-gray-100 p-5">
+                    <h2 className="text-base font-bold text-gray-900 mb-3">Requirements</h2>
+                    <ul className="space-y-2">
+                      {course.requirements.map((r, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
+                          <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-gray-400 flex-shrink-0" />
+                          {r}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Instructor */}
+                <div className="bg-white rounded-xl border border-gray-100 p-5">
+                  <h2 className="text-base font-bold text-gray-900 mb-3">Instructor</h2>
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-base font-bold flex-shrink-0">
+                      {(course.instructor?.name || course.instructor?.fullName || 'I')[0].toUpperCase()}
                     </div>
-                  )}
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">{course.instructor?.name || course.instructor?.fullName || 'Expert Instructor'}</p>
+                      <p className="text-xs text-gray-500">{course.instructor?.email || 'Professional Trainer'}</p>
+                    </div>
+                  </div>
                 </div>
-              )}
-            </div>
-          </div>
 
-          <div className="lg:w-80 flex-shrink-0">
-            <div className="lg:sticky lg:top-24">
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                {!isEnrolled ? (
-                  <>
-                    <div className="text-center mb-4">
-                      <div className="text-3xl font-bold text-gray-900">
-                        {isFree ? (
-                          'Free'
-                        ) : (
-                          <>₹{course.price?.toLocaleString('en-IN') || 'Premium'}</>
-                        )}
+                {/* Stats */}
+                <div className="bg-white rounded-xl border border-gray-100 p-5">
+                  <h2 className="text-base font-bold text-gray-900 mb-3">Course Details</h2>
+                  <div className="divide-y divide-gray-50 text-sm">
+                    {[
+                      ['Modules', course.modules?.length || 0, 'text-blue-600'],
+                      ['Total Lessons', tt, 'text-purple-600'],
+                      ['Free Lessons', ft, 'text-green-600'],
+                      ...(pt > 0 ? [['Premium Lessons', pt, 'text-orange-600']] : []),
+                      ['Level', <span className="capitalize">{course.level || 'Beginner'}</span>, 'text-gray-800'],
+                    ].map(([label, val, cls], i) => (
+                      <div key={i} className="flex justify-between py-2.5">
+                        <span className="text-gray-500">{label}</span>
+                        <span className={`font-semibold ${cls}`}>{val}</span>
                       </div>
-                      <p className="text-gray-500 text-sm mt-1">{enrollmentInfo.message}</p>
-                    </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
 
-                    <button
-                      onClick={handleEnrollClick}
-                      disabled={enrollmentLoading || paymentProcessing}
-                      className="w-full py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
-                    >
-                      {(enrollmentLoading || paymentProcessing) ? (
-                        <span className="flex items-center justify-center gap-2">
-                          <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                          {paymentProcessing ? 'Processing...' : 'Loading...'}
-                        </span>
-                      ) : (
-                        enrollmentInfo.action
-                      )}
-                    </button>
+            {/* Curriculum Tab */}
+            {activeTab === 'curriculum' && (
+              <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+                <div className="px-5 py-4 border-b border-gray-100">
+                  <h2 className="text-base font-bold text-gray-900">Course Curriculum</h2>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {course.modules?.length || 0} modules · {tt} lessons · {ft} free previews
+                  </p>
+                </div>
 
-                    {!isFree && (
-                      <div className="mt-4 space-y-2 text-xs text-gray-500">
-                        <div className="flex justify-between">
-                          <span>Free Topics:</span>
-                          <span className="font-semibold text-green-600">{freeTopics} topics</span>
-                        </div>
-                        {paidTopics > 0 && (
-                          <div className="flex justify-between">
-                            <span>Premium Topics:</span>
-                            <span className="font-semibold text-orange-600">{paidTopics} topics</span>
+                {course.modules?.length > 0 ? (
+                  <div className="divide-y divide-gray-50">
+                    {course.modules.map((mod, mIdx) => (
+                      <div key={mod._id || mIdx}>
+                        {/* Module row */}
+                        <button
+                          onClick={() => toggleModule(mIdx)}
+                          className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 transition-colors text-left"
+                        >
+                          <div className="flex items-center gap-3">
+                            {expandedModules[mIdx] ? <ChevronDown size={15} className="text-gray-400" /> : <ChevronRight size={15} className="text-gray-400" />}
+                            <div>
+                              <p className="text-sm font-semibold text-gray-900">Module {mIdx + 1}: {mod.title}</p>
+                            </div>
+                          </div>
+                          <span className="text-xs text-gray-400 flex-shrink-0 ml-4">
+                            {mod.chapters?.reduce((s, c) => s + (c.topics?.length || 0), 0)} lessons
+                          </span>
+                        </button>
+
+                        {/* Chapters */}
+                        {expandedModules[mIdx] && (
+                          <div className="bg-gray-50 border-t border-gray-100">
+                            {mod.chapters?.map((ch, cIdx) => (
+                              <div key={ch._id || cIdx} className="border-b border-gray-100 last:border-0">
+                                {/* Chapter row */}
+                                <button
+                                  onClick={() => toggleChapter(mIdx, cIdx)}
+                                  className="w-full flex items-center justify-between pl-10 pr-5 py-3 hover:bg-gray-100 transition-colors text-left"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    {expandedChapters[`${mIdx}-${cIdx}`] ? <ChevronDown size={13} className="text-gray-400" /> : <ChevronRight size={13} className="text-gray-400" />}
+                                    <span className="text-sm text-gray-700 font-medium">{ch.title}</span>
+                                  </div>
+                                  <span className="text-xs text-gray-400 ml-4">{ch.topics?.length || 0} lessons</span>
+                                </button>
+
+                                {/* Topics */}
+                                {expandedChapters[`${mIdx}-${cIdx}`] && (
+                                  <div className="pb-2 space-y-1">
+                                    {ch.topics?.map((topic, tIdx) => {
+                                      const hasAccess = isEnrolled || topic.isPreviewFree || isCompletelyFree();
+                                      const isSelected = selectedTopic?._id === topic._id;
+
+                                      return (
+                                        <div key={topic._id || tIdx} className="mx-4 rounded-xl bg-white border border-gray-100 overflow-hidden">
+                                          <div className="flex items-center justify-between px-4 py-3 gap-3">
+                                            <div className="flex items-center gap-3 min-w-0">
+                                              <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${hasAccess ? 'bg-green-50' : 'bg-gray-100'}`}>
+                                                {hasAccess
+                                                  ? <Play size={13} className="text-green-600 ml-0.5" />
+                                                  : <Lock size={12} className="text-gray-400" />
+                                                }
+                                              </div>
+                                              <div className="min-w-0">
+                                                <p className="text-sm text-gray-800 truncate">{tIdx + 1}. {topic.title}</p>
+                                                <div className="flex gap-1.5 mt-0.5">
+                                                  {(isEnrolled || (isCompletelyFree() && !isEnrolled)) && (
+                                                    <span className="text-xs text-blue-600">Full access</span>
+                                                  )}
+                                                  {!isEnrolled && !isCompletelyFree() && topic.isPreviewFree && (
+                                                    <span className="text-xs text-green-600">Free preview</span>
+                                                  )}
+                                                  {!isEnrolled && !isCompletelyFree() && !topic.isPreviewFree && (
+                                                    <span className="text-xs text-gray-400">Premium</span>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            </div>
+                                            <div className="flex items-center gap-1.5 flex-shrink-0">
+                                              {topic.videoUrl && (
+                                                <button
+                                                  onClick={() => playVideo(topic)}
+                                                  disabled={!hasAccess}
+                                                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                                                    hasAccess
+                                                      ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                                      : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                  }`}
+                                                >
+                                                  <Play size={11} /> Watch
+                                                </button>
+                                              )}
+                                              {topic.notesUrl && (
+                                                <button
+                                                  onClick={() => openNotes(topic)}
+                                                  disabled={!hasAccess}
+                                                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                                                    hasAccess
+                                                      ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                                      : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                  }`}
+                                                >
+                                                  <FileText size={11} /> Notes
+                                                </button>
+                                              )}
+                                              {topic.description && (
+                                                <button
+                                                  onClick={() => setSelectedTopic(isSelected ? null : topic)}
+                                                  className="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+                                                >
+                                                  {isSelected ? 'Hide' : 'Info'}
+                                                </button>
+                                              )}
+                                            </div>
+                                          </div>
+
+                                          {/* Topic description */}
+                                          {isSelected && topic.description && (
+                                            <div className="px-4 pb-4 border-t border-gray-50 bg-gray-50">
+                                              <div
+                                                className="text-sm text-gray-600 leading-relaxed pt-3 prose prose-sm max-w-none"
+                                                dangerouslySetInnerHTML={{ __html: topic.description }}
+                                              />
+                                            </div>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                    {ch.topics?.length === 0 && (
+                                      <p className="text-xs text-gray-400 pl-14 py-2">No lessons added yet.</p>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
                           </div>
                         )}
                       </div>
-                    )}
-                  </>
+                    ))}
+                  </div>
                 ) : (
-                  <div className="text-center">
-                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                    <p className="font-semibold text-gray-900 text-lg">You're enrolled!</p>
-                    <p className="text-sm text-gray-600 mt-1">Full access to all content</p>
-                    <button
-                      onClick={handleViewCourse}
-                      className="mt-4 text-blue-600 hover:text-blue-700 font-medium text-sm inline-flex items-center gap-1"
-                    >
-                      Start Learning
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
+                  <div className="p-10 text-center">
+                    <BookOpen size={36} className="mx-auto text-gray-200 mb-3" />
+                    <p className="text-sm text-gray-400">No content added yet.</p>
                   </div>
                 )}
               </div>
+            )}
+          </div>
+
+          {/* ── RIGHT COLUMN — Enrollment card ─────────────────────────────── */}
+          <div className="w-full lg:w-72 flex-shrink-0">
+            <div className="sticky top-5 bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm">
+              {!isEnrolled ? (
+                <>
+                  <div className="p-5 text-center border-b border-gray-100">
+                    <p className="text-3xl font-bold text-gray-900">
+                      {isCompletelyFree() ? 'Free' : `₹${course.price?.toLocaleString('en-IN') || '0'}`}
+                    </p>
+                    {!isCompletelyFree() && <p className="text-xs text-gray-400 mt-1">One-time payment · Full access</p>}
+                  </div>
+
+                  <div className="p-5 space-y-4">
+                    <button
+                      onClick={handleEnrollClick}
+                      disabled={enrollmentLoading || paymentProcessing}
+                      className="w-full py-3 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-60 transition-colors"
+                    >
+                      {(enrollmentLoading || paymentProcessing) ? 'Processing...' : info.action}
+                    </button>
+
+                    {/* Included */}
+                    <div className="space-y-2.5 text-sm text-gray-600">
+                      <div className="flex items-center gap-2"><BookOpen size={14} className="text-blue-500" /> {course.modules?.length || 0} modules</div>
+                      <div className="flex items-center gap-2"><Play size={14} className="text-blue-500" /> {tt} lessons total</div>
+                      {ft > 0 && <div className="flex items-center gap-2"><Unlock size={14} className="text-green-500" /> {ft} free previews</div>}
+                      {pt > 0 && !isCompletelyFree() && <div className="flex items-center gap-2"><Lock size={14} className="text-gray-400" /> {pt} premium lessons</div>}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="p-6 text-center">
+                  <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <CheckCircle size={26} className="text-green-600" />
+                  </div>
+                  <p className="font-bold text-gray-900 mb-1">You're enrolled!</p>
+                  <p className="text-xs text-gray-500 mb-4">Full access to all lessons</p>
+                  <button
+                    onClick={() => navigate(`/course-content/${course._id}`, { state: { course } })}
+                    className="w-full py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors"
+                  >
+                    Continue Learning
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Video Player Modal - Updated to support both YouTube and uploaded videos */}
+      {/* Video Player */}
       {showVideoPlayer && currentVideo && (
-        <div className="fixed inset-0 bg-black bg-opacity-95 flex items-center justify-center z-50 p-4" onClick={() => {
-          setShowVideoPlayer(false);
-          setCurrentVideo(null);
-        }}>
-          <div className="bg-white rounded-2xl w-full max-w-5xl overflow-hidden shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-between items-center p-4 bg-gradient-to-r from-gray-800 to-gray-900">
-              <h3 className="font-semibold text-white truncate">{currentVideo.title}</h3>
+        <div
+          className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4"
+          onClick={() => { setShowVideoPlayer(false); setCurrentVideo(null); }}
+        >
+          <div className="w-full max-w-4xl bg-black rounded-2xl overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-3 bg-gray-900">
+              <p className="text-sm font-medium text-white truncate">{currentVideo.title}</p>
               <button
-                onClick={() => {
-                  setShowVideoPlayer(false);
-                  setCurrentVideo(null);
-                }}
-                className="text-gray-400 hover:text-white text-2xl leading-none w-8 h-8 flex items-center justify-center rounded hover:bg-gray-700 transition-colors"
+                onClick={() => { setShowVideoPlayer(false); setCurrentVideo(null); }}
+                className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
               >
-                ×
+                <X size={16} />
               </button>
             </div>
-            <div className="bg-black">
-              {currentVideo.url ? (
-                currentVideo.type === 'youtube' ? (
-                  <iframe
-                    className="w-full"
-                    style={{ aspectRatio: '16/9', maxHeight: '75vh' }}
-                    src={currentVideo.url}
-                    title={currentVideo.title}
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                    allowFullScreen
-                  ></iframe>
-                ) : (
-                  <video
-                    key={currentVideo.url}
-                    controls
-                    autoPlay
-                    className="w-full"
-                    style={{ maxHeight: '75vh' }}
-                    onError={(e) => {
-                      console.error("Video playback error:", e);
-                      setShowEnrollmentMessage({
-                        show: true,
-                        message: "Failed to load video. Please check the video URL or try again later.",
-                        type: 'error'
-                      });
-                    }}
-                  >
-                    <source src={currentVideo.url} type="video/mp4" />
-                    Your browser does not support the video tag.
-                  </video>
-                )
-              ) : (
-                <div className="text-white text-center p-8">
-                  <p>No video URL available</p>
-                </div>
-              )}
-            </div>
+            {currentVideo.type === 'youtube' ? (
+              <iframe
+                className="w-full aspect-video"
+                src={currentVideo.url}
+                title={currentVideo.title}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            ) : (
+              <video key={currentVideo.url} controls autoPlay className="w-full max-h-[75vh]">
+                <source src={currentVideo.url} type="video/mp4" />
+              </video>
+            )}
           </div>
         </div>
       )}
-
-      <style jsx>{`
-        @keyframes slideIn {
-          from {
-            transform: translateX(100%);
-            opacity: 0;
-          }
-          to {
-            transform: translateX(0);
-            opacity: 1;
-          }
-        }
-        .animate-slide-in {
-          animation: slideIn 0.3s ease-out;
-        }
-      `}</style>
     </div>
   );
 };
