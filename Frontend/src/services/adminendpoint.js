@@ -73,6 +73,9 @@ const api ={
          get: Base_Url + "/success-story/get",
          update: Base_Url + "/success-story/update",
          delete: Base_Url + "/success-story/delete"
+     },
+     schollership:{
+        schollershipResult:Base_Url+"/result/get-all-results"
      }
 
     

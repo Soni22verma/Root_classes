@@ -68,6 +68,11 @@ const api = {
      callback: {
        request: Base_Url + "/callback/request",
        contact: Base_Url + "/callback/contact"
+     },
+     progress:{
+      topicProgress:Base_Url+"/progress/mark-topic-complete",
+      getProgress:Base_Url+"/progress/fatch-progress",
+      getAllProgress:Base_Url+"/progress/fatch-all-progress"
      }
 }
 

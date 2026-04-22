@@ -2,7 +2,58 @@ import axios from 'axios';
 import React, { useState, useMemo, useEffect } from 'react';
 import api from '../../services/endpoints';
 import useStudentStore from '../../Store/studentstore';
+import { useCourseStore } from '../../Store/courseStore';
+import { toast } from 'react-toastify';
 
+// ========== LOCALSTORAGE HELPERS ==========
+const STORAGE_KEY = 'video_completed_topics';
+const PROGRESS_STORAGE_KEY = 'course_progress_data';
+
+// Load topic completion from localStorage
+const loadCompletedTopicsFromStorage = (studentId, courseId) => {
+    if (!studentId || !courseId) return {};
+    try {
+        const stored = localStorage.getItem(`${STORAGE_KEY}_${studentId}_${courseId}`);
+        return stored ? JSON.parse(stored) : {};
+    } catch (error) {
+        console.error('Error loading from localStorage:', error);
+        return {};
+    }
+};
+
+// Save topic completion to localStorage
+const saveCompletedTopicsToStorage = (studentId, courseId, completedTopics) => {
+    if (!studentId || !courseId) return;
+    try {
+        localStorage.setItem(`${STORAGE_KEY}_${studentId}_${courseId}`, JSON.stringify(completedTopics));
+    } catch (error) {
+        console.error('Error saving to localStorage:', error);
+    }
+};
+
+// Load course progress from localStorage
+const loadCourseProgressFromStorage = (studentId, courseId) => {
+    if (!studentId || !courseId) return null;
+    try {
+        const stored = localStorage.getItem(`${PROGRESS_STORAGE_KEY}_${studentId}_${courseId}`);
+        return stored ? JSON.parse(stored) : null;
+    } catch (error) {
+        console.error('Error loading progress from localStorage:', error);
+        return null;
+    }
+};
+
+// Save course progress to localStorage
+const saveCourseProgressToStorage = (studentId, courseId, progressData) => {
+    if (!studentId || !courseId) return;
+    try {
+        localStorage.setItem(`${PROGRESS_STORAGE_KEY}_${studentId}_${courseId}`, JSON.stringify(progressData));
+    } catch (error) {
+        console.error('Error saving progress to localStorage:', error);
+    }
+};
+
+// ========== YOUTUBE URL HELPER ==========
 const getYouTubeEmbedUrl = (url) => {
     if (!url) return null;
     const patterns = [
@@ -31,7 +82,7 @@ const getDummyImage = (courseTitle) => {
         'English': 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=400&h=240&fit=crop',
         'Science': 'https://images.unsplash.com/photo-1581091226033-d5c48150dbaa?w=400&h=240&fit=crop',
     };
-    
+
     if (courseTitle?.toLowerCase().includes('social')) return images.Social;
     if (courseTitle?.toLowerCase().includes('chemistry')) return images.Chemistry;
     if (courseTitle?.toLowerCase().includes('physics')) return images.Physics;
@@ -53,6 +104,63 @@ const PurchasedCourse = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [embedUrl, setEmbedUrl] = useState(null);
+    const [markingProgress, setMarkingProgress] = useState(false);
+    const [courseProgress, setCourseProgress] = useState({});
+
+    // Calculate total topics for current course
+    const totalTopics = useMemo(() => {
+        if (!selectedCourse?.course?.modules) return 0;
+        let count = 0;
+        selectedCourse.course.modules.forEach(m => m?.chapters?.forEach(c => { count += c?.topics?.length || 0; }));
+        return count;
+    }, [selectedCourse]);
+
+    // Calculate completed topics count from videoCompleted state
+    const completedTopicsCount = useMemo(() =>
+        Object.keys(videoCompleted).filter(id => videoCompleted[id]).length,
+        [videoCompleted]);
+
+    // Calculate progress percentage
+    const progressPercentage = totalTopics > 0 ? (completedTopicsCount / totalTopics) * 100 : 0;
+
+    // Save course progress to localStorage whenever it changes
+    useEffect(() => {
+        const courseId = selectedCourse?.course?._id || selectedCourse?._id;
+        if (studentId && courseId && totalTopics > 0) {
+            const progressData = {
+                percentage: progressPercentage,
+                completedCount: completedTopicsCount,
+                totalTopics: totalTopics,
+                lastUpdated: new Date().toISOString()
+            };
+            saveCourseProgressToStorage(studentId, courseId, progressData);
+            
+            // Also update courseProgress state for consistency
+            setCourseProgress(prev => ({
+                ...prev,
+                [courseId]: progressData
+            }));
+        }
+    }, [completedTopicsCount, totalTopics, selectedCourse, studentId]);
+
+    // Load video completion and course progress from localStorage when course changes
+    useEffect(() => {
+        const courseId = selectedCourse?.course?._id || selectedCourse?._id;
+        if (studentId && courseId) {
+            // Load topic completion
+            const savedTopics = loadCompletedTopicsFromStorage(studentId, courseId);
+            setVideoCompleted(savedTopics);
+            
+            // Load course progress
+            const savedProgress = loadCourseProgressFromStorage(studentId, courseId);
+            if (savedProgress) {
+                setCourseProgress(prev => ({
+                    ...prev,
+                    [courseId]: savedProgress
+                }));
+            }
+        }
+    }, [selectedCourse, studentId]);
 
     useEffect(() => {
         if (selectedTopic?.videoUrl && selectedTopic?.videoType === 'youtube') {
@@ -63,47 +171,271 @@ const PurchasedCourse = () => {
     }, [selectedTopic]);
 
     const handlePurchasedCourses = async () => {
-        if (!studentId) { setError("Student information not loaded"); return; }
+        if (!studentId) { 
+            setError("Student information not loaded"); 
+            return; 
+        }
         try {
             setLoading(true);
             const res = await axios.post(api.payment.getPurchesCourse, { studentId });
-            if (res.data?.success && res.data?.data) {
-                const coursesWithModules = res.data.data.map(courseItem => ({
-                    ...courseItem,
-                    course: { ...courseItem.course, modules: courseItem.course?.modules || [] }
-                }));
-                setCourses(coursesWithModules);
+            console.log("Purchased courses response:", res);
+            
+            if (res.data?.success) {
+                let coursesData = [];
+                
+                if (res.data?.data && Array.isArray(res.data.data)) {
+                    coursesData = res.data.data;
+                } else if (res.data?.courses && Array.isArray(res.data.courses)) {
+                    coursesData = res.data.courses;
+                } else if (res.data?.purchasedCourses && Array.isArray(res.data.purchasedCourses)) {
+                    coursesData = res.data.purchasedCourses;
+                } else if (res.data?.enrolledCourses && Array.isArray(res.data.enrolledCourses)) {
+                    coursesData = res.data.enrolledCourses;
+                }
+                
+                if (coursesData.length > 0) {
+                    const coursesWithModules = coursesData.map(courseItem => ({
+                        ...courseItem,
+                        course: { 
+                            ...(courseItem.course || courseItem), 
+                            modules: courseItem.course?.modules || courseItem.modules || [] 
+                        }
+                    }));
+                    setCourses(coursesWithModules);
+                    await fetchAllCoursesProgress(coursesWithModules);
+                } else {
+                    setCourses([]);
+                }
+            } else {
+                setCourses([]);
             }
         } catch (err) {
+            console.error("Error fetching purchased courses:", err);
             setError(err.response?.data?.message || err.message || "Failed to fetch courses");
+            setCourses([]);
         } finally {
             setLoading(false);
         }
     };
 
+    const fetchAllCoursesProgress = async (coursesList) => {
+        if (!studentId || !coursesList?.length) return;
+        
+        try {
+            const progressPromises = coursesList.map(async (courseItem) => {
+                const courseId = courseItem.course?._id || courseItem._id;
+                if (!courseId) return null;
+                
+                // First check localStorage for cached progress
+                const cachedProgress = loadCourseProgressFromStorage(studentId, courseId);
+                if (cachedProgress) {
+                    return {
+                        courseId: courseId,
+                        progress: cachedProgress
+                    };
+                }
+                
+                // If not in cache, fetch from API
+                try {
+                    const res = await axios.post(api.progress.getProgress, {
+                        studentId: studentId,
+                        courseId: courseId
+                    });
+                    
+                    if (res.data?.success && res.data?.data) {
+                        const progressData = res.data.data;
+                        // Cache the API response
+                        saveCourseProgressToStorage(studentId, courseId, {
+                            percentage: progressData.percentage || 0,
+                            completedCount: progressData.completedCount || 0,
+                            totalTopics: progressData.totalTopics || 0
+                        });
+                        return {
+                            courseId: courseId,
+                            progress: {
+                                percentage: progressData.percentage || 0,
+                                completedCount: progressData.completedCount || 0,
+                                totalTopics: progressData.totalTopics || 0
+                            }
+                        };
+                    }
+                } catch (err) {
+                    console.error(`Error fetching progress for course ${courseId}:`, err);
+                }
+                return null;
+            });
+            
+            const results = await Promise.all(progressPromises);
+            const progressMap = {};
+            results.forEach(result => {
+                if (result) {
+                    progressMap[result.courseId] = result.progress;
+                }
+            });
+            setCourseProgress(progressMap);
+        } catch (error) {
+            console.error("Error fetching all courses progress:", error);
+        }
+    };
+
+    const FetchProgress = async () => {
+        const courseId = selectedCourse?._id || selectedCourse?.course?._id;
+        
+        if (!studentId) {
+            console.error("Student ID not found");
+            toast.error("Student information not found");
+            return false;
+        }
+
+        if (!courseId) {
+            console.error("Course ID not found");
+            toast.error("Course information not found");
+            return false;
+        }
+        
+        try {
+            const res = await axios.post(api.progress.getProgress, {
+                studentId: studentId,
+                courseId: courseId
+            });
+            
+            console.log("Progress response:", res);
+            
+            if (res.data?.success && res.data?.data) {
+                const progressData = res.data.data;
+                
+                setCourseProgress(prev => ({
+                    ...prev,
+                    [courseId]: {
+                        percentage: progressData.percentage || 0,
+                        completedCount: progressData.completedCount || 0,
+                        totalTopics: progressData.totalTopics || 0
+                    }
+                }));
+                
+                // Cache to localStorage
+                saveCourseProgressToStorage(studentId, courseId, {
+                    percentage: progressData.percentage || 0,
+                    completedCount: progressData.completedCount || 0,
+                    totalTopics: progressData.totalTopics || 0
+                });
+                
+                return true;
+            } else {
+                console.log("No progress data found");
+                setCourseProgress(prev => ({
+                    ...prev,
+                    [courseId]: {
+                        percentage: 0,
+                        completedCount: 0,
+                        totalTopics: 0
+                    }
+                }));
+                return false;
+            }
+        } catch (error) {
+            console.error("Error fetching progress:", error);
+            if (error.response?.data?.message) {
+                toast.error(error.response.data.message);
+            }
+            return false;
+        }
+    };
+
+    const handleTopicProgress = async (topicId) => {
+        const courseId = selectedCourse?._id || selectedCourse?.course?._id;
+        if (!studentId) {
+            console.error("Student ID not found");
+            toast.error("Student information not found");
+            return false;
+        }
+
+        if (!courseId) {
+            console.error("Course ID not found");
+            toast.error("Course information not found");
+            return false;
+        }
+
+        if (videoCompleted[topicId]) {
+            toast.info("Topic already marked as complete");
+            return true;
+        }
+
+        try {
+            setMarkingProgress(true);
+            const res = await axios.post(api.progress.topicProgress, {
+                studentId: studentId,
+                courseId: courseId,
+                topicId: topicId
+            });
+            console.log("Topic progress response:", res);
+            
+            if (res.data?.success) {
+                // Update local state
+                const newCompleted = { ...videoCompleted, [topicId]: true };
+                setVideoCompleted(newCompleted);
+                
+                // Save topic completion to localStorage
+                const courseIdForStorage = selectedCourse?.course?._id || selectedCourse?._id;
+                saveCompletedTopicsToStorage(studentId, courseIdForStorage, newCompleted);
+                
+                // Progress will automatically be saved via the useEffect that watches completedTopicsCount
+                
+                toast.success("Topic marked as complete!");
+                await FetchProgress();
+                return true;
+            } else {
+                console.error("Failed to mark topic:", res.data?.message);
+                const msg = typeof res.data?.message === 'string' ? res.data.message : "Failed to mark topic as complete";
+                toast.error(msg);
+                return false;
+            }
+        } catch (error) {
+            console.error("Error marking topic progress:", error);
+            let errorMessage = "Failed to mark topic";
+            if (error.response?.data?.message) {
+                errorMessage = typeof error.response.data.message === 'string' ? error.response.data.message : "Server error occurred";
+            } else if (error.message) {
+                errorMessage = typeof error.message === 'string' ? error.message : "Error occurred";
+            }
+            toast.error(errorMessage);
+            return false;
+        } finally {
+            setMarkingProgress(false);
+        }
+    };
+
     useEffect(() => {
-        if (studentId) handlePurchasedCourses();
-    }, [studentId]);
+        if (selectedCourse && studentId) {
+            FetchProgress();
+        }
+    }, [selectedCourse, studentId]);
 
-    const totalTopics = useMemo(() => {
-        if (!selectedCourse?.course?.modules) return 0;
-        let count = 0;
-        selectedCourse.course.modules.forEach(m => m?.chapters?.forEach(c => { count += c?.topics?.length || 0; }));
-        return count;
-    }, [selectedCourse]);
-
-    const completedTopicsCount = useMemo(() =>
-        Object.keys(videoCompleted).filter(id => videoCompleted[id]).length,
-    [videoCompleted]);
-
-    const progressPercentage = totalTopics > 0 ? (completedTopicsCount / totalTopics) * 100 : 0;
+    useEffect(() => {
+        if (studentId) {
+            handlePurchasedCourses();
+        } else {
+            const timer = setTimeout(() => {
+                if (student?.id || student?._id) {
+                    handlePurchasedCourses();
+                }
+            }, 1000);
+            return () => clearTimeout(timer);
+        }
+    }, [studentId, student]);
 
     const getAllTopics = () => {
         if (!selectedCourse?.course?.modules) return [];
         const topics = [];
         selectedCourse.course.modules.forEach(m => {
             m?.chapters?.forEach(c => {
-                c?.topics?.forEach(t => topics.push({ ...t, moduleId: m._id || m.id, moduleTitle: m.title, chapterTitle: c.title }));
+                c?.topics?.forEach(t => topics.push({
+                    ...t,
+                    moduleId: m._id || m.id,
+                    moduleTitle: m.title,
+                    chapterTitle: c.title,
+                    courseId: selectedCourse._id
+                }));
             });
         });
         return topics;
@@ -115,28 +447,44 @@ const PurchasedCourse = () => {
     const prevTopic = currentTopicIndex > 0 ? allTopics[currentTopicIndex - 1] : null;
 
     const handleCourseSelect = (courseItem) => {
-        const c = { ...courseItem, course: { ...courseItem.course, modules: courseItem.course?.modules || [] } };
+        const c = {
+            ...courseItem,
+            _id: courseItem.course._id,
+            course: {
+                ...courseItem.course,
+                modules: courseItem.course?.modules || []
+            }
+        };
         setSelectedCourse(c);
         setSelectedTopic(null);
         if (c.course.modules?.length > 0) setExpandedModuleId(c.course.modules[0]._id || c.course.modules[0].id || null);
-        setVideoCompleted({});
     };
 
-    const handleTopicClick = (topic) => { setSelectedTopic(topic); };
-    const handleModuleClick = (id) => { setExpandedModuleId(expandedModuleId === id ? null : id); };
-    const handleVideoComplete = (id) => { setVideoCompleted(p => ({ ...p, [id]: true })); };
+    const handleTopicClick = (topic) => {
+        setSelectedTopic(topic);
+    };
+
+    const handleModuleClick = (id) => {
+        setExpandedModuleId(expandedModuleId === id ? null : id);
+    };
 
     const handleNextTopic = () => {
-        if (nextTopic) { handleTopicClick(nextTopic); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+        if (nextTopic) {
+            handleTopicClick(nextTopic);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
     };
+
     const handlePrevTopic = () => {
-        if (prevTopic) { handleTopicClick(prevTopic); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+        if (prevTopic) {
+            handleTopicClick(prevTopic);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
     };
 
     const handleDownloadNotes = async (e, url, title) => {
         e.preventDefault();
         try {
-            // Attempting to fetch the file to bypass cross-origin browser open behavior
             const response = await fetch(url);
             if (!response.ok) throw new Error('Network response was not ok');
             const blob = await response.blob();
@@ -150,7 +498,6 @@ const PurchasedCourse = () => {
             window.URL.revokeObjectURL(downloadUrl);
         } catch (error) {
             console.error('Error downloading the file:', error);
-            // Fallback: open in new tab if CORS prevents fetch
             window.open(url, '_blank', 'noopener,noreferrer');
         }
     };
@@ -188,7 +535,6 @@ const PurchasedCourse = () => {
         </div>
     );
 
-    
     if (!selectedCourse) {
         return (
             <div className="min-h-screen bg-white">
@@ -214,38 +560,50 @@ const PurchasedCourse = () => {
                             const totalCourseTopics = (courseItem.course.modules || []).reduce((acc, m) =>
                                 acc + ((m.chapters || []).reduce((a, c) => a + (c.topics?.length || 0), 0)), 0);
                             const dummyImage = getDummyImage(courseItem.course.title);
+                            const courseId = courseItem.course._id;
+                            const progress = courseProgress[courseId];
+                            const progressPercent = progress?.percentage || 0;
+                            const completedCount = progress?.completedCount || 0;
 
                             return (
-                                <div 
-                                    key={courseItem.course._id} 
+                                <div
+                                    key={courseItem.course._id}
                                     onClick={() => handleCourseSelect(courseItem)}
                                     className="group relative bg-white border border-gray-200 rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer"
                                 >
                                     <div className="relative h-52 overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200">
-                                        <img 
-                                            src={dummyImage} 
-                                            alt={courseItem.course.title} 
+                                        <img
+                                            src={dummyImage}
+                                            alt={courseItem.course.title}
                                             className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
                                         />
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
-                                        
+
                                         <div className="absolute top-3 left-3">
                                             <span className="px-2.5 py-1 text-xs font-bold rounded-lg bg-black/80 text-white shadow-sm backdrop-blur-sm">
                                                 {courseItem.course.level || 'Beginner'}
                                             </span>
                                         </div>
-                                        
+
                                         {courseItem.price && (
                                             <div className="absolute top-3 right-3 px-2.5 py-1 text-sm font-bold rounded-lg bg-white/95 backdrop-blur-sm text-gray-800 border border-gray-200 shadow-sm">
                                                 ₹{courseItem.price}
                                             </div>
                                         )}
-                                        
+
                                         {courseItem.course.category?.name && (
                                             <div className="absolute bottom-3 left-3">
                                                 <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-white/90 text-gray-700 backdrop-blur-sm border border-gray-200">
                                                     {courseItem.course.category.name}
                                                 </span>
+                                            </div>
+                                        )}
+
+                                        {progressPercent > 0 && (
+                                            <div className="absolute bottom-3 right-3">
+                                                <div className="px-2 py-1 rounded-lg bg-black/80 backdrop-blur-sm text-white text-xs font-medium">
+                                                    {Math.round(progressPercent)}% Complete
+                                                </div>
                                             </div>
                                         )}
                                     </div>
@@ -257,7 +615,7 @@ const PurchasedCourse = () => {
                                         <p className="text-gray-500 text-sm mt-2 line-clamp-2 leading-relaxed">
                                             {courseItem.course.description || 'No description available'}
                                         </p>
-                                        
+
                                         <div className="flex items-center gap-4 mt-4 pt-3 border-t border-gray-100">
                                             <div className="flex items-center gap-1.5 text-gray-500 text-sm">
                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -273,6 +631,21 @@ const PurchasedCourse = () => {
                                             </div>
                                         </div>
 
+                                        {progressPercent > 0 && (
+                                            <div className="mt-4">
+                                                <div className="flex justify-between text-xs text-gray-500 mb-1">
+                                                    <span>Progress</span>
+                                                    <span>{completedCount}/{totalCourseTopics} topics</span>
+                                                </div>
+                                                <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                                                    <div 
+                                                        className="h-full bg-gray-600 rounded-full transition-all duration-300" 
+                                                        style={{ width: `${progressPercent}%` }}
+                                                    ></div>
+                                                </div>
+                                            </div>
+                                        )}
+
                                         {courseItem.course.instructor && (
                                             <div className="flex items-center gap-2 mt-3 text-gray-500 text-sm">
                                                 <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
@@ -285,7 +658,7 @@ const PurchasedCourse = () => {
                                         )}
 
                                         <button className="mt-5 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-black text-white font-medium hover:bg-gray-800 transition-all group/btn">
-                                            View Details
+                                            {progressPercent === 100 ? 'Review Course' : progressPercent > 0 ? 'Continue Learning' : 'Start Learning'}
                                             <svg className="w-4 h-4 group-hover/btn:translate-x-1 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                             </svg>
@@ -300,8 +673,11 @@ const PurchasedCourse = () => {
         );
     }
 
-    // DETAIL VIEW - Video with proper side spacing
+    // DETAIL VIEW
     const hasModules = selectedCourse?.course?.modules?.length > 0;
+    const currentCourseProgress = courseProgress[selectedCourse?.course?._id] || {};
+    const courseProgressPercent = currentCourseProgress.percentage || progressPercentage;
+    const courseCompletedCount = currentCourseProgress.completedCount || completedTopicsCount;
 
     return (
         <div className="min-h-screen bg-white">
@@ -316,11 +692,11 @@ const PurchasedCourse = () => {
                     </button>
                     <div className="font-semibold text-gray-800 truncate max-w-[150px] sm:max-w-[200px] md:max-w-md">{selectedCourse.course.title}</div>
                     <div className="flex items-center gap-3">
-                        <span className="text-xs text-gray-400 hidden sm:inline">{completedTopicsCount}/{totalTopics}</span>
+                        <span className="text-xs text-gray-400 hidden sm:inline">{courseCompletedCount}/{totalTopics}</span>
                         <div className="w-24 md:w-32 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                            <div className="h-full bg-gray-600 rounded-full transition-all duration-300" style={{ width: `${progressPercentage}%` }}></div>
+                            <div className="h-full bg-gray-600 rounded-full transition-all duration-300" style={{ width: `${courseProgressPercent}%` }}></div>
                         </div>
-                        <span className="text-xs font-mono text-gray-500">{Math.round(progressPercentage)}%</span>
+                        <span className="text-xs font-mono text-gray-500">{Math.round(courseProgressPercent)}%</span>
                     </div>
                 </div>
             </div>
@@ -334,9 +710,9 @@ const PurchasedCourse = () => {
                                 {selectedCourse.course.image ? (
                                     <img src={selectedCourse.course.image} className="w-full h-full object-cover rounded-xl" alt="" />
                                 ) : (
-                                    <img 
-                                        src={getDummyImage(selectedCourse.course.title)} 
-                                        className="w-full h-full object-cover rounded-xl" 
+                                    <img
+                                        src={getDummyImage(selectedCourse.course.title)}
+                                        className="w-full h-full object-cover rounded-xl"
                                         alt=""
                                     />
                                 )}
@@ -351,10 +727,10 @@ const PurchasedCourse = () => {
                         </div>
                         <div className="flex justify-between text-xs text-gray-400 mb-1">
                             <span>Course Progress</span>
-                            <span>{Math.round(progressPercentage)}%</span>
+                            <span>{Math.round(courseProgressPercent)}%</span>
                         </div>
                         <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                            <div className="h-full bg-gray-600 rounded-full transition-all" style={{ width: `${progressPercentage}%` }}></div>
+                            <div className="h-full bg-gray-600 rounded-full transition-all" style={{ width: `${courseProgressPercent}%` }}></div>
                         </div>
                     </div>
 
@@ -401,20 +777,19 @@ const PurchasedCourse = () => {
                                             <div className="mt-2 ml-4 space-y-2 border-l-2 border-gray-300 pl-3">
                                                 {(module.chapters || []).map((chapter, cIdx) => (
                                                     <div key={chapter._id || chapter.id} className="mb-3">
-                                                        <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">CH {cIdx+1} — {chapter.title}</div>
+                                                        <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">CH {cIdx + 1} — {chapter.title}</div>
                                                         <div className="space-y-1">
                                                             {(chapter.topics || []).map((topic, tIdx) => (
                                                                 <button
                                                                     key={topic._id}
                                                                     onClick={() => handleTopicClick(topic)}
-                                                                    className={`w-full flex items-center justify-between p-2 rounded-lg text-left transition-all ${
-                                                                        selectedTopic?._id === topic._id 
-                                                                        ? 'bg-gray-100 border border-gray-300 shadow-sm' 
+                                                                    className={`w-full flex items-center justify-between p-2 rounded-lg text-left transition-all ${selectedTopic?._id === topic._id
+                                                                        ? 'bg-gray-100 border border-gray-300 shadow-sm'
                                                                         : 'hover:bg-gray-50'
-                                                                    }`}
+                                                                        }`}
                                                                 >
                                                                     <div className="flex items-center gap-2">
-                                                                        <span className="text-xs text-gray-400 font-mono w-6">{String(tIdx+1).padStart(2,'0')}</span>
+                                                                        <span className="text-xs text-gray-400 font-mono w-6">{String(tIdx + 1).padStart(2, '0')}</span>
                                                                         <span className="text-sm text-gray-600">{topic.title}</span>
                                                                     </div>
                                                                     {videoCompleted[topic._id] && (
@@ -439,31 +814,29 @@ const PurchasedCourse = () => {
                     </div>
                 </aside>
 
-                {/* MAIN CONTENT - Video with balanced side spacing */}
+                {/* MAIN CONTENT */}
                 <main className="order-1 lg:order-2 flex-1 overflow-y-auto h-auto lg:h-[calc(100vh-3.5rem)] bg-white">
-                    {/* Balanced padding: comfortable space on sides */}
                     <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6">
                         {selectedTopic ? (
                             <div>
-                                {/* Video Player Container - Centered with good proportions */}
                                 <div className="max-w-5xl mx-auto">
                                     <div className="bg-black rounded-xl overflow-hidden shadow-lg">
                                         <div className="aspect-video bg-black">
                                             {selectedTopic.videoType === 'youtube' && embedUrl ? (
-                                                <iframe 
-                                                    src={embedUrl} 
-                                                    title={selectedTopic.title} 
-                                                    className="w-full h-full" 
-                                                    frameBorder="0" 
+                                                <iframe
+                                                    src={embedUrl}
+                                                    title={selectedTopic.title}
+                                                    className="w-full h-full"
+                                                    frameBorder="0"
                                                     allowFullScreen
                                                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                                 ></iframe>
                                             ) : selectedTopic.videoUrl && selectedTopic.videoType === 'upload' ? (
-                                                <video 
-                                                    src={selectedTopic.videoUrl} 
-                                                    controls 
-                                                    className="w-full h-full" 
-                                                    onEnded={() => handleVideoComplete(selectedTopic._id)} 
+                                                <video
+                                                    src={selectedTopic.videoUrl}
+                                                    controls
+                                                    className="w-full h-full"
+                                                    onEnded={() => handleTopicProgress(selectedTopic._id)}
                                                 />
                                             ) : (
                                                 <div className="w-full h-full flex flex-col items-center justify-center bg-gray-900">
@@ -481,11 +854,16 @@ const PurchasedCourse = () => {
                                         {!videoCompleted[selectedTopic._id] ? (
                                             <>
                                                 <span className="text-sm text-gray-500">📺 Watch and mark as complete</span>
-                                                <button 
-                                                    onClick={() => handleVideoComplete(selectedTopic._id)} 
-                                                    className="px-4 py-1.5 bg-black hover:bg-gray-800 rounded-lg text-white text-sm font-medium transition"
+                                                <button
+                                                    onClick={() => handleTopicProgress(selectedTopic._id)}
+                                                    disabled={markingProgress || videoCompleted[selectedTopic._id]}
+                                                    className="px-4 py-1.5 bg-black hover:bg-gray-800 rounded-lg text-white text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
                                                 >
-                                                    Mark Complete
+                                                    {videoCompleted[selectedTopic._id]
+                                                        ? "Completed"
+                                                        : markingProgress
+                                                            ? "Marking..."
+                                                            : "Mark Complete"}
                                                 </button>
                                             </>
                                         ) : (
@@ -502,14 +880,14 @@ const PurchasedCourse = () => {
                                     <div className="mt-6 space-y-5">
                                         <div>
                                             <div className="flex items-center gap-2 text-gray-400 text-xs font-semibold uppercase tracking-wide">
-                                                <span>Topic</span> <span className="text-gray-300">•</span> 
+                                                <span>Topic</span> <span className="text-gray-300">•</span>
                                                 <span className="text-gray-600">{selectedTopic.title}</span>
                                             </div>
                                             <h1 className="text-xl md:text-2xl font-bold text-gray-800 mt-2">{selectedTopic.title}</h1>
                                             {selectedTopic.description && (
-                                                <div 
-                                                    className="mt-3 text-gray-600 prose prose-gray max-w-none text-sm" 
-                                                    dangerouslySetInnerHTML={{ __html: selectedTopic.description }} 
+                                                <div
+                                                    className="mt-3 text-gray-600 prose prose-gray max-w-none text-sm"
+                                                    dangerouslySetInnerHTML={{ __html: selectedTopic.description }}
                                                 />
                                             )}
                                         </div>
@@ -523,7 +901,7 @@ const PurchasedCourse = () => {
                                                     <h3 className="font-semibold text-gray-700">Study Notes</h3>
                                                 </div>
                                                 <p className="text-gray-500 text-sm">{selectedTopic.notes || 'No notes available for this topic.'}</p>
-                                                <button 
+                                                <button
                                                     onClick={(e) => handleDownloadNotes(e, selectedTopic.notesUrl, selectedTopic.title)}
                                                     className="inline-flex items-center gap-2 mt-3 text-sm text-gray-600 hover:text-gray-800 transition cursor-pointer"
                                                 >
@@ -537,14 +915,13 @@ const PurchasedCourse = () => {
 
                                         {/* Navigation Buttons */}
                                         <div className="flex items-center justify-between pt-5 border-t border-gray-200">
-                                            <button 
-                                                onClick={handlePrevTopic} 
-                                                disabled={!prevTopic} 
-                                                className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-lg transition ${
-                                                    prevTopic 
-                                                        ? 'bg-gray-100 hover:bg-gray-200 text-gray-700' 
-                                                        : 'opacity-30 cursor-not-allowed text-gray-300'
-                                                }`}
+                                            <button
+                                                onClick={handlePrevTopic}
+                                                disabled={!prevTopic}
+                                                className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-lg transition ${prevTopic
+                                                    ? 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                                                    : 'opacity-30 cursor-not-allowed text-gray-300'
+                                                    }`}
                                             >
                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -553,14 +930,13 @@ const PurchasedCourse = () => {
                                                 <span className="sm:hidden">Prev</span>
                                             </button>
                                             <span className="text-sm text-gray-400">{currentTopicIndex + 1} / {allTopics.length}</span>
-                                            <button 
-                                                onClick={handleNextTopic} 
-                                                disabled={!nextTopic} 
-                                                className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-lg transition ${
-                                                    nextTopic 
-                                                        ? 'bg-black hover:bg-gray-800 text-white' 
-                                                        : 'opacity-30 cursor-not-allowed bg-gray-100 text-gray-400'
-                                                }`}
+                                            <button
+                                                onClick={handleNextTopic}
+                                                disabled={!nextTopic}
+                                                className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-lg transition ${nextTopic
+                                                    ? 'bg-black hover:bg-gray-800 text-white'
+                                                    : 'opacity-30 cursor-not-allowed bg-gray-100 text-gray-400'
+                                                    }`}
                                             >
                                                 <span>Next</span>
                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

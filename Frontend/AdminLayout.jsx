@@ -1,5 +1,4 @@
-// components/AdminLayout.jsx
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import Sidebar from '../Frontend/src/components/AdminComponent/Sidebar'
 import socketService from "./src/services/socket";
@@ -8,6 +7,7 @@ import useNotificationStore from "./src/Store/notificationStore";
 
 const AdminLayout = () => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const location = useLocation();
   const addNotification = useNotificationStore((state) => state.addNotification);
 
   useEffect(() => {
@@ -16,7 +16,6 @@ const AdminLayout = () => {
     socketService.joinAdmin();
 
     socketService.on("new_student_registered", (data) => {
-      // ✅ Add to Global Store
       addNotification({
         title: "New Student Registered",
         message: `${data.fullName} joined the platform.`,
@@ -30,17 +29,28 @@ const AdminLayout = () => {
       });
     });
 
-
     return () => {
       socketService.off("new_student_registered");
     };
   }, []);
 
+  const hideSidebar = location.pathname.startsWith("/instructor/courses/");
+
   return (
-    <div className="min-h-screen bg-white">
-      <Sidebar isMobileOpen={isMobileOpen} setIsMobileOpen={setIsMobileOpen} />
+    <div className="min-h-screen bg-white flex">
       
-      <div className="lg:ml-64 transition-all duration-300">
+      {!hideSidebar && (
+        <Sidebar
+          isMobileOpen={isMobileOpen}
+          setIsMobileOpen={setIsMobileOpen}
+        />
+      )}
+
+      <div
+        className={`transition-all duration-300 w-full ${
+          !hideSidebar ? "lg:ml-64" : ""
+        }`}
+      >
         <main className="p-0">
           <Outlet />
         </main>
@@ -49,4 +59,4 @@ const AdminLayout = () => {
   );
 };
 
-export default AdminLayout;
+export default AdminLayout;

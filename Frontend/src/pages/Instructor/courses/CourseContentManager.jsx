@@ -93,7 +93,7 @@ const CourseContentManager = () => {
   const [expandedModules, setExpandedModules] = useState({});
   const [expandedChapters, setExpandedChapters] = useState({});
   const [isExplorerCollapsed, setIsExplorerCollapsed] = useState(false);
-  const [studioMode, setStudioMode] = useState('edit'); // 'edit' or 'preview'
+  const [studioMode, setStudioMode] = useState('edit');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Modal states
@@ -114,7 +114,7 @@ const CourseContentManager = () => {
     order: 0,
     videoType: 'upload',
     youtubeUrl: '',
-    removeNotes: false // Flag to remove existing notes
+    removeNotes: false
   });
 
   // File states
@@ -336,12 +336,10 @@ const CourseContentManager = () => {
       formData.append('video', videoFile);
     }
 
-    // Handle notes: if there's a new notes file, upload it
     if (notesFile) {
       formData.append('notes', notesFile);
     }
 
-    // If editing and we want to remove existing notes
     if (editingItem?.type === 'topic' && topicData.removeNotes) {
       formData.append('removeNotes', 'true');
     }
@@ -414,7 +412,6 @@ const CourseContentManager = () => {
       }
       setNotesFile(file);
       setNotesPreview(file.name);
-      // Reset remove flag if we're uploading a new file
       if (topicData.removeNotes) {
         setTopicData({ ...topicData, removeNotes: false });
       }
@@ -573,10 +570,10 @@ const CourseContentManager = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8faff] bg-line-grid font-poppins">
-      {/* Header - Compact Pro */}
-      <div className="bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+    <div className="min-h-screen bg-[#f8faff] font-poppins">
+      {/* Header - Full width, no side margins */}
+      <div className="bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-30 w-full">
+        <div className="w-full px-4 sm:px-6 py-3 sm:py-4">
           <button
             onClick={() => navigate(-1)}
             className="text-[9px] font-black text-gray-300 hover:text-[#0078FF] mb-2 inline-flex items-center gap-2 uppercase tracking-widest transition-all"
@@ -584,16 +581,15 @@ const CourseContentManager = () => {
             <ArrowLeft size={12} /> Dashboard
           </button>
 
-          <div className="flex flex-col lg:flex-row justify-between items-center gap-4">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3 sm:gap-4">
             <div className="flex-1 w-full">
               <div className="flex items-center gap-2 mb-1">
                 <div className="w-1.5 h-1.5 rounded-full bg-[#FB0500]" />
                 <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em]">Curriculum Manager</p>
               </div>
-              <h1 className="text-xl font-black text-gray-900 tracking-tight leading-none mb-2">
+              <h1 className="text-lg sm:text-xl font-black text-gray-900 tracking-tight leading-none mb-2">
                 {course.title}
               </h1>
-
               <div className="flex gap-2">
                 <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-blue-50 border border-blue-100 text-[9px] font-black text-[#0078FF] rounded-md uppercase">
                   {course.category?.name || 'Curriculum'}
@@ -604,33 +600,33 @@ const CourseContentManager = () => {
               </div>
             </div>
 
-            {/* High-End Compact Stats */}
-            <div className="grid grid-cols-3 gap-2 w-full lg:w-auto">
-              <div className="bg-white px-2 sm:px-4 py-2 rounded-xl border border-gray-100 flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-1 sm:gap-3 shadow-sm">
+            {/* Stats - Compact and inline */}
+            <div className="flex gap-2 sm:gap-3 w-full lg:w-auto">
+              <div className="bg-white px-3 sm:px-4 py-2 rounded-xl border border-gray-100 flex items-center gap-2 sm:gap-3 shadow-sm flex-1 lg:flex-initial justify-center lg:justify-start">
                 <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-blue-50 flex items-center justify-center text-[#0078FF]">
                   <FolderTree className="w-3 h-3 sm:w-4 sm:h-4" />
                 </div>
-                <div className="text-center sm:text-left">
+                <div>
                   <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Modules</p>
-                  <p className="text-[12px] sm:text-[14px] font-black text-gray-900 leading-none mt-0.5">{totalModules}</p>
+                  <p className="text-sm sm:text-base font-black text-gray-900 leading-none mt-0.5">{totalModules}</p>
                 </div>
               </div>
-              <div className="bg-white px-2 sm:px-4 py-2 rounded-xl border border-gray-100 flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-1 sm:gap-3 shadow-sm">
+              <div className="bg-white px-3 sm:px-4 py-2 rounded-xl border border-gray-100 flex items-center gap-2 sm:gap-3 shadow-sm flex-1 lg:flex-initial justify-center lg:justify-start">
                 <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-green-50 flex items-center justify-center text-green-600">
                   <Grid3x3 className="w-3 h-3 sm:w-4 sm:h-4" />
                 </div>
-                <div className="text-center sm:text-left">
+                <div>
                   <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Units</p>
-                  <p className="text-[12px] sm:text-[14px] font-black text-gray-900 leading-none mt-0.5">{totalChapters}</p>
+                  <p className="text-sm sm:text-base font-black text-gray-900 leading-none mt-0.5">{totalChapters}</p>
                 </div>
               </div>
-              <div className="bg-white px-2 sm:px-4 py-2 rounded-xl border border-gray-100 flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-1 sm:gap-3 shadow-sm">
+              <div className="bg-white px-3 sm:px-4 py-2 rounded-xl border border-gray-100 flex items-center gap-2 sm:gap-3 shadow-sm flex-1 lg:flex-initial justify-center lg:justify-start">
                 <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600">
                   <Sparkles className="w-3 h-3 sm:w-4 sm:h-4" />
                 </div>
-                <div className="text-center sm:text-left">
+                <div>
                   <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Lessons</p>
-                  <p className="text-[12px] sm:text-[14px] font-black text-gray-900 leading-none mt-0.5">{totalTopics}</p>
+                  <p className="text-sm sm:text-base font-black text-gray-900 leading-none mt-0.5">{totalTopics}</p>
                 </div>
               </div>
             </div>
@@ -638,13 +634,13 @@ const CourseContentManager = () => {
         </div>
       </div>
 
-      {/* Main Studio Workspace - Standard Industrial Layout */}
-      <div className="max-w-full mx-auto px-4 py-4">
-        <div className="flex flex-col md:flex-row gap-0 items-start relative bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm h-[calc(100vh-160px)]">
+      {/* Main Workspace - Full width layout */}
+      <div className="w-full px-4 py-4">
+        <div className="flex flex-col md:flex-row gap-0 items-start relative bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm" style={{ height: 'calc(100vh - 160px)' }}>
 
-          {/* LEFT: The Curriculum Explorer (Integrated Pane) */}
-          {(!isExplorerCollapsed) && (
-            <div className={`${isModalOpen ? 'hidden md:flex' : 'flex'} w-full md:w-[350px] flex-col border-r border-gray-200 h-full bg-gray-50/20 flex-shrink-0`}>
+          {/* LEFT: The Curriculum Explorer */}
+          {!isExplorerCollapsed && (
+            <div className={`${isModalOpen ? 'hidden md:flex' : 'flex'} w-full md:w-[350px] flex-col border-r border-gray-200 h-full bg-gray-50/20 flex-shrink-0 overflow-hidden`}>
               <div className="p-4 border-b border-gray-200 bg-white flex items-center justify-between">
                 <h3 className="text-[11px] font-black text-gray-900 uppercase tracking-widest">Explorer</h3>
                 <button
@@ -727,8 +723,8 @@ const CourseContentManager = () => {
             </div>
           )}
 
-          {/* RIGHT: The Editorial Studio (Integrated Workspace) */}
-          <div className={`${!isModalOpen ? 'hidden md:flex' : 'flex'} flex-1 flex-col h-full w-full bg-white relative overflow-hidden`}>
+          {/* RIGHT: The Editorial Studio */}
+          <div className={`flex-1 flex-col h-full w-full bg-white relative overflow-hidden ${!isModalOpen ? 'flex' : 'flex'}`}>
             {isModalOpen ? (
               <div className="flex flex-col h-full animate-fadeIn">
                 {/* Studio Header - Integrated Controls */}
@@ -738,7 +734,7 @@ const CourseContentManager = () => {
                       onClick={() => setIsExplorerCollapsed(!isExplorerCollapsed)}
                       className={`p-1.5 rounded-md transition-all ${isExplorerCollapsed ? 'bg-gray-900 text-white shadow-sm' : 'text-gray-400 hover:text-gray-900 hover:bg-gray-50'}`}
                     >
-                      {isExplorerCollapsed ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+                      {isExplorerCollapsed ? <Maximize2 size={14} /> : <Minimize2 size={14} />}
                     </button>
                     <div className="h-4 w-px bg-gray-200" />
                     <div>
@@ -1000,7 +996,6 @@ const CourseContentManager = () => {
                                   </div>
                                 )}
 
-                                {/* Optional: Add note about existing file replacement */}
                                 {editingItem && selectedTopic?.notesUrl && !notesFile && !topicData.removeNotes && (
                                   <p className="text-[7px] text-amber-600 mt-2 flex items-center gap-1">
                                     <AlertCircle size={10} />
@@ -1160,6 +1155,22 @@ const CourseContentManager = () => {
           .scrollbar-thin {
             scrollbar-width: thin;
           }
+        }
+        
+        /* Custom scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #94a3b8;
         }
       `}</style>
     </div>

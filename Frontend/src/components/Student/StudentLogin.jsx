@@ -40,7 +40,7 @@ const LoginPage = () => {
       localStorage.setItem("token", token);
 
       toast.success("Welcome back!");
-      navigate(user.role === "admin" || user.role === "instructor" ? "/admin" : "/");
+      navigate(user.role === "admin" || user.role === "instructor" ? "/instructor/dashboard" : "/");
     } catch (error) {
       toast.error(error.response?.data?.message || "Login failed");
     } finally {
@@ -392,7 +392,7 @@ const LoginPage = () => {
                     <button
                       type="button"
                       onClick={() => setShowForgotPassword(true)}
-                      className="text-xs text-[#0078FF] hover:text-[#FB0500] transition-colors font-medium"
+                      className="text-xs text-gray-900 hover:text-[#FB0500] transition-colors font-medium"
                     >
                       Forgot Password?
                     </button>

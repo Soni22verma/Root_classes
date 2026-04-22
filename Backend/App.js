@@ -22,24 +22,19 @@ import enrollRouter from "./modules/Student/enrollStudent/enrollStudent.routes.j
 import successStoryRouter from "./modules/Admin/SuccessStory/successStory.routes.js";
 import callbackRouter from "./modules/Admin/Callback/callback.routes.js";
 import facultyRouter from "./modules/Admin/Faculty/faculty.routes.js";
+import progressRouter from "./modules/Student/progress/progress.routes.js";
 
 dotenv.config();
-
-
-
 const app = express();
 
-// DB connect
 connectdb();
 
-// Middleware
 app.use(cors({
   origin: "*",
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Routes
 app.use("/student", studentRouter);
 app.use("/admin", adminRouter);
 app.use("/instructor",instructorRouter)
@@ -58,10 +53,7 @@ app.use("/scholarship" ,scholarshipRouter)
 app.use("/success-story", successStoryRouter);
 app.use("/callback", callbackRouter);
 app.use("/faculty", facultyRouter);
-
-// Test route
-
-
+app.use("/progress",progressRouter)
 
 
 app.get("/", (req, res) => {

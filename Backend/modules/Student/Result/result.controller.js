@@ -30,14 +30,14 @@ export const submitTest = async (req, res) => {
 
     test.questions.forEach((q) => {
       totalMarks += q.marks;
-      
+
       const questionIdStr = q._id.toString();
       const userAnswer = answers[questionIdStr];
-      
-    const isCorrect =
-  userAnswer !== undefined &&
-  q.options[Number(userAnswer)]?.trim() === q.correctAnswer.trim();
-      
+
+      const isCorrect =
+        userAnswer !== undefined &&
+        q.options[Number(userAnswer)]?.trim() === q.correctAnswer.trim();
+
       if (isCorrect) {
         obtainedMarks += q.marks;
       }
@@ -61,7 +61,7 @@ export const submitTest = async (req, res) => {
       totalMarks,
       percentage,
       isEligible,
-      isCompleted: true,  
+      isCompleted: true,
       answers: formattedAnswers,
     });
 
@@ -80,17 +80,17 @@ export const submitTest = async (req, res) => {
   }
 };
 
-export const checkTestAttempt = async(req,res,next)=>{
+export const checkTestAttempt = async (req, res, next) => {
   try {
-    const{studentId,testId} = req.body;
-    const existing = await Result.findOne({studentId, testId})
+    const { studentId, testId } = req.body;
+    const existing = await Result.findOne({ studentId, testId })
 
     return res.status(200).json({
       attempted: !!existing,
       success: true,
       data: existing
     })
-    
+
   } catch (error) {
     next(error)
   }
@@ -120,5 +120,20 @@ export const getStudentResults = async (req, res) => {
       success: false,
       message: error.message
     });
+  }
+};
+
+export const getAllResults = async (req, res) => {
+  try {
+    const results = await Result.find()
+      .populate("studentId", "fullName email")
+      .populate("testId", "title");
+
+    res.status(200).json({
+      success: true,
+      data: results,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };

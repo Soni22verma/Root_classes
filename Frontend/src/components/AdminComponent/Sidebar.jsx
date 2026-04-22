@@ -20,6 +20,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { LuSlidersHorizontal } from "react-icons/lu";
+import { FaGoogleScholar } from "react-icons/fa6";
 import { PiChalkboard, PiStudentBold } from "react-icons/pi";
 import { SiTestcafe } from "react-icons/si";
 import { toast } from 'react-toastify';
@@ -46,6 +47,24 @@ const AdminSidebar = ({ isMobileOpen, setIsMobileOpen }) => {
     }
   }, [student]);
 
+  // 🔥 AUTO-REDIRECT BASED ON ROLE (when on wrong dashboard)
+  useEffect(() => {
+    const currentPath = location.pathname;
+    const userRole = userData.role;
+    
+    if (!userRole) return; // Wait for role to load
+    
+    // If admin is on instructor dashboard -> redirect to admin dashboard
+    if (userRole === 'admin' && currentPath.startsWith('/instructor')) {
+      navigate('/admin');
+    }
+    // If instructor is on admin dashboard -> redirect to instructor dashboard
+    else if (userRole === 'instructor' && currentPath.startsWith('/admin')) {
+      navigate('/instructor/dashboard');
+      toast.info("Redirected to Instructor Dashboard");
+    }
+  }, [location.pathname, userData.role, navigate]);
+
   const toggleSubmenu = (menuName) => setOpenSubmenus(prev => ({ ...prev, [menuName]: !prev[menuName] }));
   const toggleCollapse = () => setIsCollapsed(!isCollapsed);
   const isActive = (path) => (path === '/admin' || path === '/instructor/dashboard') ? location.pathname === path : location.pathname.startsWith(path);
@@ -60,13 +79,17 @@ const AdminSidebar = ({ isMobileOpen, setIsMobileOpen }) => {
     { name: 'Testimonials', path: '/admin/testimonial', icon: PiStudentBold },
     { name: 'UI Controls', path: '/admin/slider', icon: LuSlidersHorizontal },
     { name: 'Blogs', path: '/admin/blog', icon: FileText },
-    { name: 'Admissions', path: '/admin/createtest', icon: SiTestcafe },
+    { name: 'Scholarship test', path: '/admin/createtest', icon: SiTestcafe },
+    { name: "Scholarship Reaults", path: '/admin/schollershipresult', icon: FaGoogleScholar },
     { name: 'Settings', path: '/admin/settings', icon: Settings },
-  ] : [
+  ] : userData.role === 'instructor' ? [
     { name: 'Dashboard', path: '/instructor/dashboard', icon: LayoutDashboard },
     { name: 'My Courses', path: '/instructor/courses', icon: BookOpen },
     { name: 'Students', path: '/instructor/students', icon: Users },
     { name: 'Settings', path: '/instructor/settings', icon: Settings },
+  ] : [
+    // Default/fallback menu (if role not recognized)
+    { name: 'Dashboard', path: '/', icon: LayoutDashboard },
   ];
 
   const handleLogout = () => {
@@ -74,6 +97,13 @@ const AdminSidebar = ({ isMobileOpen, setIsMobileOpen }) => {
     logout();
     navigate("/stdlogin");
     toast.success("Logged out Successfully");
+  };
+
+  // Get dashboard title based on role
+  const getDashboardTitle = () => {
+    if (userData.role === 'admin') return 'Admin Panel';
+    if (userData.role === 'instructor') return 'Instructor Panel';
+    return 'Dashboard';
   };
 
   return (
@@ -96,12 +126,12 @@ const AdminSidebar = ({ isMobileOpen, setIsMobileOpen }) => {
         
         {/* Brand Header */}
         <div className="p-6 border-b border-gray-50">
-          <Link to="/" onClick={() => setIsMobileOpen(false)} className="flex items-center gap-3">
+          <Link to={userData.role === 'admin' ? '/admin' : userData.role === 'instructor' ? '/instructor/dashboard' : '/'} onClick={() => setIsMobileOpen(false)} className="flex items-center gap-3">
              <img src="/logo.svg" alt="Roots" className="h-8 w-auto flex-shrink-0" />
              {!isCollapsed && (
                <div className="animate-fadeIn">
                   <h1 className="text-sm font-black text-gray-900 leading-none">Roots Classes</h1>
-                  <p className="text-[9px] font-bold text-[#FB0500] uppercase tracking-widest mt-1">{userData.role}</p>
+                  <p className="text-[9px] font-bold text-[#FB0500] uppercase tracking-widest mt-1">{getDashboardTitle()}</p>
                </div>
              )}
           </Link>
