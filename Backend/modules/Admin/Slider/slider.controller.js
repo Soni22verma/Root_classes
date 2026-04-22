@@ -1,6 +1,15 @@
 import cloudinary from "../../../config/cloudinary.js";
 import { Slider } from "./slider.model.js";
 
+const uploadSliderImage = async (file) => {
+    if (!file?.path) {
+        return null;
+    }
+
+    const result = await cloudinary.uploader.upload(file.path);
+    return result.secure_url;
+};
+
 export const CreateSlider = async (req, res, next) => {
     try {
         const { title, subtitle, buttonText, classText, isDefault } = req.body;
@@ -13,16 +22,21 @@ export const CreateSlider = async (req, res, next) => {
             })
         }
 
-        if (!req.file) {
+        const desktopFile = req.files?.desktopImage?.[0];
+        const tabletFile = req.files?.tabletImage?.[0];
+        const mobileFile = req.files?.mobileImage?.[0];
+
+        if (!desktopFile || !tabletFile || !mobileFile) {
             return res.status(400).json({
-                message: "image is required",
+                message: "desktop, tablet and mobile images are required",
             });
         }
 
-
-        const result = await cloudinary.uploader.upload(req.file.path);
-
-        console.log("Cloudinary URL:", result.secure_url);
+        const [desktopImage, tabletImage, mobileImage] = await Promise.all([
+            uploadSliderImage(desktopFile),
+            uploadSliderImage(tabletFile),
+            uploadSliderImage(mobileFile)
+        ]);
 
         if (isDefault === 'true' || isDefault === true) {
             await Slider.updateMany({}, { isDefault: false });
@@ -33,7 +47,10 @@ export const CreateSlider = async (req, res, next) => {
             subtitle,
             buttonText,
             classText,
-            image:result.secure_url,
+            image: desktopImage,
+            desktopImage,
+            tabletImage,
+            mobileImage,
             isDefault: isDefault === 'true' || isDefault === true
         })
 
@@ -85,11 +102,21 @@ export const UpdateSlider = async(req,res,next)=>{
 
             })
         }
-        let imageUrl = existingSlider.image;
-                if (req.file) {
-                    const result = await cloudinary.uploader.upload(req.file.path);
-                    imageUrl = result.secure_url;
-                }
+        let desktopImage = existingSlider.desktopImage || existingSlider.image;
+        let tabletImage = existingSlider.tabletImage || existingSlider.desktopImage || existingSlider.image;
+        let mobileImage = existingSlider.mobileImage || existingSlider.tabletImage || existingSlider.desktopImage || existingSlider.image;
+
+        if (req.files?.desktopImage?.[0]) {
+            desktopImage = await uploadSliderImage(req.files.desktopImage[0]);
+        }
+
+        if (req.files?.tabletImage?.[0]) {
+            tabletImage = await uploadSliderImage(req.files.tabletImage[0]);
+        }
+
+        if (req.files?.mobileImage?.[0]) {
+            mobileImage = await uploadSliderImage(req.files.mobileImage[0]);
+        }
 
         if (isDefault === 'true' || isDefault === true) {
             await Slider.updateMany({ _id: { $ne: sliderId } }, { isDefault: false });
@@ -100,7 +127,10 @@ export const UpdateSlider = async(req,res,next)=>{
             subtitle: subtitle || existingSlider.subtitle,
              buttonText: buttonText || existingSlider.buttonText, 
              classText: classText || existingSlider.classText,
-             image:imageUrl,
+             image: desktopImage,
+             desktopImage,
+             tabletImage,
+             mobileImage,
              isDefault: isDefault !== undefined ? (isDefault === 'true' || isDefault === true) : existingSlider.isDefault
         },{new:true})
 
@@ -112,7 +142,7 @@ export const UpdateSlider = async(req,res,next)=>{
         })
         
     } catch (error) {
-        
+        next(error)
     }
 }
 
