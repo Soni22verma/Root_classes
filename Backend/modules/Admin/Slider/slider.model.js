@@ -14,6 +14,15 @@ const sliderSchema = new mongoose.Schema(
         image: {
             type: String
         },
+        desktopImage: {
+            type: String
+        },
+        tabletImage: {
+            type: String
+        },
+        mobileImage: {
+            type: String
+        },
         classText: {
             type: String
         },

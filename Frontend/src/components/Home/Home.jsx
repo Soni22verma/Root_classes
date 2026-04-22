@@ -16,7 +16,10 @@ const SliderPage = () => {
   const [slides, setSlides] = useState([
     {
       _id: 'default',
-      image: fallbackImage, // fallback
+      image: fallbackImage,
+      desktopImage: fallbackImage,
+      tabletImage: fallbackImage,
+      mobileImage: fallbackImage,
       title: "Roots Classes",
       subtitle: "Empowering Your Future with Quality Education",
       buttonText: "Explore Courses",
@@ -69,27 +72,42 @@ const SliderPage = () => {
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}
         >
+<<<<<<< HEAD
           <div className="relative aspect-[16/9] sm:aspect-[2.5/1] md:aspect-[3.2/1] lg:aspect-[3.5/1] w-full overflow-hidden sm:rounded-2xl shadow-lg border border-gray-100">
+=======
+          <div className="relative aspect-[2/1] md:aspect-[3.5/1] lg:aspect-[4.5/1] w-full overflow-hidden border border-gray-100 bg-slate-50 shadow-lg">
+>>>>>>> 16cd5793212576a360a8f68aa312f1593af827e4
             {slides.map((slide, idx) => (
               <div
                 key={slide._id || idx}
-                className={`absolute inset-0 w-full h-full transition-all duration-700 ease-in-out transform ${currentSlide === idx ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}`}
+                className={`absolute inset-0 flex h-full w-full items-center justify-center transition-all duration-700 ease-in-out transform ${currentSlide === idx ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}`}
               >
-                {/* 1. Main Image (Premium cover look) */}
-                <img
-                  src={slide.image}
-                  alt={slide.title || `Slide ${idx + 1}`}
-                  className="w-full h-full object-cover"
-                />
+                {/* Preserve the full banner image without cropping or stretching. */}
+                <picture className="block h-full w-full">
+                  <source
+                    media="(max-width: 639px)"
+                    srcSet={slide.mobileImage || slide.tabletImage || slide.desktopImage || slide.image}
+                  />
+                  <source
+                    media="(max-width: 1023px)"
+                    srcSet={slide.tabletImage || slide.desktopImage || slide.image}
+                  />
+                  <img
+                    src={slide.desktopImage || slide.image}
+                    alt={slide.title || `Slide ${idx + 1}`}
+                    className="h-full w-full object-contain object-center"
+                  />
+                </picture>
 
                 {/* 2. Optional Gradient Overlay (PW style for readability) */}
-                <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-transparent z-10" />
+                <div className="absolute inset-0 z-10 bg-gradient-to-r from-black/10 via-transparent to-transparent" />
               </div>
             ))}
 
             {/* Navigation Arrows (PW Style) */}
             <button
               onClick={prevSlide}
+<<<<<<< HEAD
               className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-30 p-1.5 sm:p-2 rounded-full bg-white/80 backdrop-blur-sm text-gray-800 shadow-lg opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all hover:bg-white"
             >
               <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -103,11 +121,33 @@ const SliderPage = () => {
 
             {/* Pagination Dots (Modern Pill Style) */}
             <div className="absolute bottom-2 sm:bottom-4 left-0 right-0 z-30 flex justify-center gap-1.5 sm:gap-2">
+=======
+              aria-label="Previous slide"
+              className="absolute left-2 top-1/2 z-30 -translate-y-1/2 rounded-full bg-white/80 p-1.5 text-gray-800 shadow-lg backdrop-blur-sm transition-all hover:bg-white sm:left-4 sm:p-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+            >
+              <ChevronLeft size={22} />
+            </button>
+            <button
+              onClick={nextSlide}
+              aria-label="Next slide"
+              className="absolute right-2 top-1/2 z-30 -translate-y-1/2 rounded-full bg-white/80 p-1.5 text-gray-800 shadow-lg backdrop-blur-sm transition-all hover:bg-white sm:right-4 sm:p-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+            >
+              <ChevronRight size={22} />
+            </button>
+
+            {/* Pagination Dots (Modern Pill Style) */}
+            <div className="absolute bottom-2 left-0 right-0 z-30 flex justify-center gap-2 sm:bottom-4">
+>>>>>>> 16cd5793212576a360a8f68aa312f1593af827e4
               {slides.map((_, idx) => (
                 <button
                   key={idx}
                   onClick={() => setCurrentSlide(idx)}
+<<<<<<< HEAD
                   className={`transition-all duration-300 rounded-full h-1.5 ${currentSlide === idx ? 'w-6 sm:w-8 bg-indigo-600' : 'w-1.5 sm:w-2 bg-gray-300'}`}
+=======
+                  aria-label={`Go to slide ${idx + 1}`}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${currentSlide === idx ? 'w-8 bg-indigo-600' : 'w-2 bg-gray-300'}`}
+>>>>>>> 16cd5793212576a360a8f68aa312f1593af827e4
                 />
               ))}
             </div>

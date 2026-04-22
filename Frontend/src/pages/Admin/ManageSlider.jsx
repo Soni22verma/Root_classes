@@ -16,10 +16,34 @@ const ManageSlider = () => {
     buttonText: '',
     classText: '',
     isDefault: false,
-    image: null
+    desktopImage: null,
+    tabletImage: null,
+    mobileImage: null
   });
 
-  const [imagePreview, setImagePreview] = useState('');
+  const [imagePreviews, setImagePreviews] = useState({
+    desktopImage: '',
+    tabletImage: '',
+    mobileImage: ''
+  });
+
+  const imageFields = [
+    {
+      key: 'desktopImage',
+      label: 'Desktop Banner',
+      hint: 'Recommended size: 2250 x 500 px (ratio 4.5:1)'
+    },
+    {
+      key: 'tabletImage',
+      label: 'Tablet Banner',
+      hint: 'Recommended size: 1750 x 500 px (ratio 3.5:1)'
+    },
+    {
+      key: 'mobileImage',
+      label: 'Mobile Banner',
+      hint: 'Recommended size: 1200 x 600 px (ratio 2:1)'
+    }
+  ];
 
   const fetchSliders = async () => {
     setLoading(true);
@@ -48,15 +72,15 @@ const ManageSlider = () => {
     }));
   };
 
-  const handleImageChange = (e) => {
+  const handleImageChange = (e, imageKey) => {
     const file = e.target.files[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
         toast.error('Image size should be less than 5MB');
         return;
       }
-      setFormData(prev => ({ ...prev, image: file }));
-      setImagePreview(URL.createObjectURL(file));
+      setFormData(prev => ({ ...prev, [imageKey]: file }));
+      setImagePreviews(prev => ({ ...prev, [imageKey]: URL.createObjectURL(file) }));
     }
   };
 
@@ -67,10 +91,16 @@ const ManageSlider = () => {
       buttonText: '',
       classText: '',
       isDefault: false,
-      image: null
+      desktopImage: null,
+      tabletImage: null,
+      mobileImage: null
     });
 
-    setImagePreview('');
+    setImagePreviews({
+      desktopImage: '',
+      tabletImage: '',
+      mobileImage: ''
+    });
     setIsEditing(false);
     setSelectedSlider(null);
   };
@@ -89,10 +119,16 @@ const ManageSlider = () => {
       buttonText: slider.buttonText || '',
       classText: slider.classText || '',
       isDefault: slider.isDefault || false,
-      image: null
+      desktopImage: null,
+      tabletImage: null,
+      mobileImage: null
     });
 
-    setImagePreview(slider.image);
+    setImagePreviews({
+      desktopImage: slider.desktopImage || slider.image || '',
+      tabletImage: slider.tabletImage || slider.desktopImage || slider.image || '',
+      mobileImage: slider.mobileImage || slider.tabletImage || slider.desktopImage || slider.image || ''
+    });
     setShowModal(true);
   };
 
@@ -111,10 +147,20 @@ const ManageSlider = () => {
       formDataToSend.append('classText', formData.classText);
       formDataToSend.append('isDefault', formData.isDefault);
 
-      if (formData.image) {
-        formDataToSend.append('image', formData.image);
-      } else if (!isEditing) {
-        toast.error('Image is required for new slider');
+      if (formData.desktopImage) {
+        formDataToSend.append('desktopImage', formData.desktopImage);
+      }
+
+      if (formData.tabletImage) {
+        formDataToSend.append('tabletImage', formData.tabletImage);
+      }
+
+      if (formData.mobileImage) {
+        formDataToSend.append('mobileImage', formData.mobileImage);
+      }
+
+      if (!isEditing && (!formData.desktopImage || !formData.tabletImage || !formData.mobileImage)) {
+        toast.error('Desktop, tablet and mobile images are required');
         setLoading(false);
         return;
       }
@@ -312,9 +358,9 @@ const ManageSlider = () => {
                     {/* Image */}
                     <div className="flex-shrink-0">
                       <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden bg-gray-100">
-                        {slider.image ? (
+                        {slider.desktopImage || slider.image ? (
                           <img
-                            src={slider.image}
+                            src={slider.desktopImage || slider.image}
                             alt={slider.title}
                             className="w-full h-full object-cover"
                             onError={(e) => {
@@ -411,9 +457,9 @@ const ManageSlider = () => {
                     <tr key={slider._id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3 whitespace-nowrap">
                         <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg overflow-hidden bg-gray-100">
-                          {slider.image ? (
+                          {slider.desktopImage || slider.image ? (
                             <img
-                              src={slider.image}
+                              src={slider.desktopImage || slider.image}
                               alt={slider.title}
                               className="w-full h-full object-cover"
                               onError={(e) => {
@@ -667,72 +713,91 @@ const ManageSlider = () => {
                 </label>
               </div>
 
-              {/* Image Upload */}
+              {/* Image Uploads */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">
-                  Slider Image {!isEditing && <span className="text-red-500">*</span>}
-                </label>
-                <div className="mt-1 flex justify-center px-4 sm:px-6 pt-4 pb-5 border-2 border-gray-300 border-dashed rounded-lg hover:border-blue-500 transition-colors">
-                  <div className="space-y-1 text-center">
-                    {imagePreview ? (
-                      <div className="relative inline-block">
-                        <img
-                          src={imagePreview}
-                          alt="Preview"
-                          className="mx-auto h-28 sm:h-32 w-auto object-cover rounded-lg"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setImagePreview('');
-                            setFormData(prev => ({ ...prev, image: null }));
-                          }}
-                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
-                        >
-                          <X size={14} />
-                        </button>
-                      </div>
-                    ) : (
-                      <>
-                        <svg
-                          className="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-gray-400"
-                          stroke="currentColor"
-                          fill="none"
-                          viewBox="0 0 48 48"
-                          aria-hidden="true"
-                        >
-                          <path
-                            d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
-                            strokeWidth={2}
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                        <div className="flex justify-center text-xs sm:text-sm text-gray-600">
-
-                          <label
-                            htmlFor="image-upload"
-                            className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500"
-                          >
-                            <span>Upload a file (1920 x 600px)</span>
-                            <input
-                              id="image-upload"
-                              name="image"
-                              type="file"
-                              className="sr-only"
-                              accept="image/*"
-                              onChange={handleImageChange}
-                            />
-                          </label>
-                        </div>
-                        <p className="text-xs text-gray-500">PNG, JPG, GIF up to 5MB</p>
-                      </>
-                    )}
-                  </div>
+                <div className="mb-3">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Responsive Banner Images {!isEditing && <span className="text-red-500">*</span>}
+                  </label>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Upload all three sizes so the homepage can show the best banner on desktop, tablet, and mobile without cropping.
+                  </p>
                 </div>
+
+                <div className="grid grid-cols-1 gap-4">
+                  {imageFields.map(({ key, label, hint }) => (
+                    <div key={key} className="rounded-xl border border-gray-200 p-4">
+                      <div className="mb-2 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                        <label className="text-sm font-semibold text-gray-700">
+                          {label} {!isEditing && <span className="text-red-500">*</span>}
+                        </label>
+                        <span className="text-xs font-medium text-blue-600">{hint}</span>
+                      </div>
+
+                      <div className="mt-1 flex justify-center rounded-lg border-2 border-dashed border-gray-300 px-4 pt-4 pb-5 transition-colors hover:border-blue-500">
+                        <div className="space-y-1 text-center">
+                          {imagePreviews[key] ? (
+                            <div className="relative inline-block">
+                              <img
+                                src={imagePreviews[key]}
+                                alt={`${label} preview`}
+                                className="mx-auto h-28 w-auto rounded-lg object-contain sm:h-32"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setImagePreviews(prev => ({ ...prev, [key]: '' }));
+                                  setFormData(prev => ({ ...prev, [key]: null }));
+                                }}
+                                className="absolute -top-2 -right-2 rounded-full bg-red-500 p-1 text-white transition-colors hover:bg-red-600"
+                              >
+                                <X size={14} />
+                              </button>
+                            </div>
+                          ) : (
+                            <>
+                              <svg
+                                className="mx-auto h-10 w-10 text-gray-400 sm:h-12 sm:w-12"
+                                stroke="currentColor"
+                                fill="none"
+                                viewBox="0 0 48 48"
+                                aria-hidden="true"
+                              >
+                                <path
+                                  d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                                  strokeWidth={2}
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
+                              </svg>
+                              <div className="flex justify-center text-xs text-gray-600 sm:text-sm">
+                                <label
+                                  htmlFor={`${key}-upload`}
+                                  className="relative cursor-pointer rounded-md bg-white font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2"
+                                >
+                                  <span>Upload {label.toLowerCase()}</span>
+                                  <input
+                                    id={`${key}-upload`}
+                                    name={key}
+                                    type="file"
+                                    className="sr-only"
+                                    accept="image/*"
+                                    onChange={(e) => handleImageChange(e, key)}
+                                  />
+                                </label>
+                              </div>
+                              <p className="text-xs text-gray-500">PNG, JPG, GIF or WebP up to 5MB</p>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
                 {isEditing && (
                   <p className="mt-2 text-xs text-gray-500">
-                    Leave empty to keep the current image
+                    Leave any image unchanged if you want to keep the current uploaded version for that device size.
                   </p>
                 )}
               </div>
