@@ -83,12 +83,20 @@ const AdminSidebar = ({ isMobileOpen, setIsMobileOpen }) => {
         <Menu size={20} />
       </button>
 
+      {/* Mobile Overlay */}
+      {isMobileOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden" 
+          onClick={() => setIsMobileOpen(false)}
+        />
+      )}
+
       {/* Sidebar Shell */}
-      <aside className={`fixed inset-y-0 left-0 z-30 bg-white border-r border-gray-100 flex flex-col transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'} hidden lg:flex`}>
+      <aside className={`fixed inset-y-0 left-0 z-50 bg-white border-r border-gray-100 flex flex-col transition-transform duration-300 ${isCollapsed ? 'w-20' : 'w-64'} ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
         
         {/* Brand Header */}
         <div className="p-6 border-b border-gray-50">
-          <Link to="/" className="flex items-center gap-3">
+          <Link to="/" onClick={() => setIsMobileOpen(false)} className="flex items-center gap-3">
              <img src="/logo.svg" alt="Roots" className="h-8 w-auto flex-shrink-0" />
              {!isCollapsed && (
                <div className="animate-fadeIn">
@@ -115,7 +123,7 @@ const AdminSidebar = ({ isMobileOpen, setIsMobileOpen }) => {
                    {!isCollapsed && openSubmenus[item.name] && (
                      <div className="mt-1 ml-4 border-l border-gray-100 pl-4 space-y-1 animate-fadeIn">
                         {item.submenu.map((sub, sIdx) => (
-                          <Link key={sIdx} to={sub.path} className={`flex items-center gap-3 p-2.5 rounded-lg text-xs font-bold transition-all ${location.pathname === sub.path ? 'text-[#0078FF] bg-blue-50/50' : 'text-gray-400 hover:text-gray-900'}`}>
+                          <Link key={sIdx} to={sub.path} onClick={() => setIsMobileOpen(false)} className={`flex items-center gap-3 p-2.5 rounded-lg text-xs font-bold transition-all ${location.pathname === sub.path ? 'text-[#0078FF] bg-blue-50/50' : 'text-gray-400 hover:text-gray-900'}`}>
                              <sub.icon size={14} />
                              {sub.name}
                           </Link>
@@ -124,7 +132,7 @@ const AdminSidebar = ({ isMobileOpen, setIsMobileOpen }) => {
                    )}
                 </div>
               ) : (
-                <Link to={item.path} className={`flex items-center gap-3 p-3 rounded-xl transition-all ${isActive(item.path) ? 'bg-[#0078FF]/5 text-[#0078FF]' : 'text-gray-500 hover:bg-gray-50'}`}>
+                <Link to={item.path} onClick={() => setIsMobileOpen(false)} className={`flex items-center gap-3 p-3 rounded-xl transition-all ${isActive(item.path) ? 'bg-[#0078FF]/5 text-[#0078FF]' : 'text-gray-500 hover:bg-gray-50'}`}>
                    <item.icon size={18} />
                    {!isCollapsed && <span className="text-[13px] font-bold tracking-tight">{item.name}</span>}
                 </Link>

@@ -45,7 +45,7 @@ const InstructorStudents = () => {
       </div>
 
       {/* Search */}
-      <div className="relative mb-5 max-w-sm">
+      <div className="relative mb-5 w-full sm:max-w-sm">
         <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
         <input
           type="text"
@@ -67,9 +67,63 @@ const InstructorStudents = () => {
           <p className="text-gray-500 font-medium">No students found</p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
+        <>
+          {/* Mobile Card View */}
+          <div className="block md:hidden space-y-4">
+            {filtered.map((student, idx) => (
+              <div key={student._id} className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm relative flex flex-col gap-3">
+                <span className="absolute top-4 right-4 text-xs font-semibold text-gray-400">#{idx + 1}</span>
+                
+                <div className="flex items-center gap-3 pr-8">
+                  {student.profileImage ? (
+                    <img src={student.profileImage} alt="" className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-bold flex-shrink-0">
+                      {initials(student)}
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-sm font-bold text-gray-900">{student.fullName || student.name}</p>
+                    {student.class && <p className="text-xs text-gray-400 mt-0.5">Class {student.class}</p>}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 mt-1">
+                  {student.email && (
+                    <div className="flex items-center gap-1.5 text-xs text-gray-600 bg-gray-50 p-2 rounded-lg col-span-2 sm:col-span-1">
+                      <Mail size={12} className="text-gray-400 flex-shrink-0" />
+                      <span className="truncate">{student.email}</span>
+                    </div>
+                  )}
+                  {student.phone && (
+                    <div className="flex items-center gap-1.5 text-xs text-gray-600 bg-gray-50 p-2 rounded-lg col-span-2 sm:col-span-1">
+                      <Phone size={12} className="text-gray-400 flex-shrink-0" />
+                      <span>{student.phone}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between border-t border-gray-50 pt-3 mt-1">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 bg-gray-50 px-2 py-1 rounded-md">
+                    <BookOpen size={12} className="text-gray-400" />
+                    {student.enrolledCourses?.length || 0} Courses
+                  </span>
+                  
+                  <button
+                    onClick={() => setSelected(student)}
+                    className="text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors"
+                  >
+                    View Details
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden md:block bg-white rounded-xl border border-gray-100 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50">
                   <th className="px-5 py-3 text-xs font-semibold text-gray-500">#</th>
@@ -118,16 +172,17 @@ const InstructorStudents = () => {
                   </tr>
                 ))}
               </tbody>
-            </table>
+              </table>
+            </div>
           </div>
-        </div>
+        </>
       )}
 
       {/* Detail Modal */}
       {selected && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30">
-          <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl overflow-hidden">
-            <div className="bg-blue-50 p-6 text-center">
+          <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[95vh]">
+            <div className="bg-blue-50 p-6 text-center flex-shrink-0">
               {selected.profileImage ? (
                 <img src={selected.profileImage} alt="" className="w-16 h-16 rounded-full object-cover mx-auto mb-3" />
               ) : (
@@ -139,7 +194,7 @@ const InstructorStudents = () => {
               {selected.class && <p className="text-sm text-gray-500 mt-0.5">Class {selected.class}</p>}
             </div>
 
-            <div className="p-5 space-y-3">
+            <div className="p-5 space-y-3 overflow-y-auto">
               {selected.email && (
                 <div className="flex items-center gap-3 text-sm text-gray-700">
                   <Mail size={15} className="text-gray-400" />

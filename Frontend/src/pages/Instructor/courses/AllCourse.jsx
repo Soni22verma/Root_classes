@@ -118,14 +118,14 @@ const AllCourse = () => {
         </div>
         <button
           onClick={openCreate}
-          className="inline-flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors"
+          className="inline-flex justify-center items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors w-full sm:w-auto"
         >
           <Plus size={16} /> New Course
         </button>
       </div>
 
       {/* Search */}
-      <div className="relative mb-5 max-w-sm">
+      <div className="relative mb-5 w-full sm:max-w-sm">
         <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
         <input
           type="text"
@@ -148,9 +148,68 @@ const AllCourse = () => {
           <p className="text-sm text-gray-400 mt-1">Click "New Course" to get started</p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
+        <>
+          {/* Mobile Card View (Small Screens) */}
+          <div className="block md:hidden space-y-4">
+            {filtered.map((course, idx) => (
+              <div key={course._id} className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm relative">
+                <span className="absolute top-4 right-4 text-xs font-semibold text-gray-400">#{idx + 1}</span>
+                <div className="pr-8 mb-3">
+                  <p className="text-sm font-semibold text-gray-900">{course.title}</p>
+                  <p className="text-xs text-gray-400 mt-0.5 line-clamp-2">{course.description}</p>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div className="bg-gray-50 p-2.5 rounded-lg">
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Category</p>
+                    <span className="text-xs font-medium text-gray-700 truncate block">
+                      {categories.find(c => c._id === (course.category?._id || course.category))?.name || '—'}
+                    </span>
+                  </div>
+                  <div className="bg-gray-50 p-2.5 rounded-lg">
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Price</p>
+                    <span className="text-xs font-medium text-gray-900 block">
+                      {course.price ? `₹${course.price}` : 'Free'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between border-t border-gray-50 pt-3">
+                  <span className={`px-2 py-1 rounded-md text-[10px] font-medium capitalize ${levelColor(course.level)}`}>
+                    {course.level || 'Beginner'}
+                  </span>
+                  
+                  <div className="flex gap-1.5">
+                    <button
+                      onClick={() => openEdit(course)}
+                      className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                      title="Edit"
+                    >
+                      <Edit2 size={14} />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(course._id)}
+                      className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Delete"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                    <button
+                      onClick={() => navigate(`/instructor/courses/${course._id}`)}
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors ml-1"
+                    >
+                      Manage <ChevronRight size={12} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden md:block bg-white rounded-xl border border-gray-100 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50">
                   <th className="px-5 py-3 text-xs font-semibold text-gray-500">#</th>
@@ -207,16 +266,17 @@ const AllCourse = () => {
                   </tr>
                 ))}
               </tbody>
-            </table>
+              </table>
+            </div>
           </div>
-        </div>
+        </>
       )}
 
       {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30">
-          <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[95vh]">
+            <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-100 flex-shrink-0">
               <h2 className="text-base font-bold text-gray-900">
                 {editingCourse ? 'Edit Course' : 'Create New Course'}
               </h2>
@@ -225,7 +285,7 @@ const AllCourse = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 overflow-y-auto">
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1.5">Course Title *</label>
                 <input
@@ -252,7 +312,7 @@ const AllCourse = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 mb-1.5">Category *</label>
                   <select

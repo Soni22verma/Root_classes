@@ -484,7 +484,51 @@ const ManageSlider = () => {
           </button>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-20 border border-gray-100">
+        {/* Mobile Card View for Video Stories - For screens below 768px */}
+        <div className="block md:hidden space-y-3 sm:space-y-4 mb-20">
+          {vLoading && videoStories.length === 0 ? (
+            <div className="flex justify-center py-12">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#FB0500]"></div>
+            </div>
+          ) : videoStories.length === 0 ? (
+            <div className="bg-white rounded-xl shadow-sm p-8 text-center text-gray-500">
+              <Video size={48} className="mx-auto mb-4 text-gray-400" />
+              <p>No video stories found.</p>
+            </div>
+          ) : (
+            videoStories.map((v) => (
+              <div key={v._id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div className="p-3 sm:p-4 flex gap-3">
+                  <div className="flex-shrink-0 w-24 sm:w-32 aspect-video rounded-lg overflow-hidden bg-gray-100 border border-gray-100">
+                    <img src={v.thumbnailUrl} alt={v.title} className="w-full h-full object-cover" />
+                  </div>
+                  <div className="flex-1 min-w-0 flex flex-col justify-center">
+                    <div className="text-sm font-bold text-gray-900 line-clamp-2 leading-tight">{v.title}</div>
+                    <div className="text-[10px] text-gray-500 mt-1.5 flex flex-wrap gap-2 items-center">
+                      <span className="bg-gray-100 px-1.5 py-0.5 rounded">⏱ {v.duration}</span>
+                      <span className="bg-gray-100 px-1.5 py-0.5 rounded">Order: {v.order}</span>
+                    </div>
+                    <div className="mt-2">
+                      {v.isActive ? <span className="text-[10px] font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded-full border border-green-200">ACTIVE</span> : <span className="text-[10px] font-bold text-gray-600 bg-gray-200 px-2 py-0.5 rounded-full border border-gray-300">INACTIVE</span>}
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-1 justify-start">
+                    <button onClick={() => {
+                      setVIsEditing(true);
+                      setSelectedV(v);
+                      setVFormData({ title: v.title, youtubeUrl: v.youtubeUrl, duration: v.duration, order: v.order, isActive: v.isActive });
+                      setVShowModal(true);
+                    }} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><Pencil size={16} /></button>
+                    <button onClick={() => handleVDelete(v._id)} className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"><Trash2 size={16} /></button>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Desktop Table View for Video Stories - For screens 768px and above */}
+        <div className="hidden md:block bg-white rounded-xl shadow-sm overflow-hidden mb-20 border border-gray-100">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -739,7 +783,7 @@ const ManageSlider = () => {
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">YouTube URL</label>
                 <input type="url" name="youtubeUrl" value={vFormData.youtubeUrl} onChange={handleVInputChange} className="w-full px-4 py-2 bg-gray-50 border rounded-xl" placeholder="https://www.youtube.com/watch?v=..." required />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Duration</label>
                   <input type="text" name="duration" value={vFormData.duration} onChange={handleVInputChange} className="w-full px-4 py-2 bg-gray-50 border rounded-xl" placeholder="e.g. 12:45" />

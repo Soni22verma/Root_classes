@@ -65,11 +65,11 @@ const SliderPage = () => {
       {/* Slider */}
       {slides.length > 0 && (
         <div
-          className="relative w-full group overflow-hidden bg-white sm:px-4 lg:px-6 mt-2"
+          className="relative w-full group bg-white sm:px-4 lg:px-6 mt-2"
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}
         >
-          <div className="relative aspect-[2/1] md:aspect-[3.5/1] lg:aspect-[4.5/1] w-full overflow-hidden shadow-lg border border-gray-100">
+          <div className="relative aspect-[16/9] sm:aspect-[2.5/1] md:aspect-[3.2/1] lg:aspect-[3.5/1] w-full overflow-hidden sm:rounded-2xl shadow-lg border border-gray-100">
             {slides.map((slide, idx) => (
               <div
                 key={slide._id || idx}
@@ -90,24 +90,24 @@ const SliderPage = () => {
             {/* Navigation Arrows (PW Style) */}
             <button
               onClick={prevSlide}
-              className="absolute left-4 top-1/2 -translate-y-1/2 z-30 p-2 rounded-full bg-white/80 backdrop-blur-sm text-gray-800 shadow-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-white"
+              className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-30 p-1.5 sm:p-2 rounded-full bg-white/80 backdrop-blur-sm text-gray-800 shadow-lg opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all hover:bg-white"
             >
-              <ChevronLeft size={24} />
+              <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
             <button
               onClick={nextSlide}
-              className="absolute right-4 top-1/2 -translate-y-1/2 z-30 p-2 rounded-full bg-white/80 backdrop-blur-sm text-gray-800 shadow-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-white"
+              className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-30 p-1.5 sm:p-2 rounded-full bg-white/80 backdrop-blur-sm text-gray-800 shadow-lg opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all hover:bg-white"
             >
-              <ChevronRight size={24} />
+              <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
 
             {/* Pagination Dots (Modern Pill Style) */}
-            <div className="absolute bottom-4 left-0 right-0 z-30 flex justify-center gap-2">
+            <div className="absolute bottom-2 sm:bottom-4 left-0 right-0 z-30 flex justify-center gap-1.5 sm:gap-2">
               {slides.map((_, idx) => (
                 <button
                   key={idx}
                   onClick={() => setCurrentSlide(idx)}
-                  className={`transition-all duration-300 rounded-full h-1.5 ${currentSlide === idx ? 'w-8 bg-indigo-600' : 'w-2 bg-gray-300'}`}
+                  className={`transition-all duration-300 rounded-full h-1.5 ${currentSlide === idx ? 'w-6 sm:w-8 bg-indigo-600' : 'w-1.5 sm:w-2 bg-gray-300'}`}
                 />
               ))}
             </div>

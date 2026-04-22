@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { Plus } from 'lucide-react';
 import api from '../../../services/adminendpoint';
 
 const AllStudent = () => {
@@ -98,8 +99,8 @@ const AllStudent = () => {
     <div className="min-h-screen bg-[#f8faff] bg-line-grid font-poppins">
       {/* Header Section - Pro & Minimal */}
       <div className="bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-20">
-        <div className="max-w-7xl mx-auto px-8 py-8">
-           <div className="flex flex-col md:flex-row justify-between items-center gap-8">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-8">
+           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 md:gap-8">
               <div>
                  <div className="flex items-center gap-2 mb-2">
                     <div className="w-2 h-2 rounded-full bg-[#FB0500]" />
@@ -130,9 +131,9 @@ const AllStudent = () => {
       </div>
 
       {/* Students Content Area */}
-      <div className="max-w-7xl mx-auto px-8 py-12">
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-12">
         {filteredStudents.length === 0 ? (
-          <div className="bg-white rounded-[40px] border border-gray-100 p-24 text-center">
+          <div className="bg-white rounded-[24px] md:rounded-[40px] border border-gray-100 p-8 md:p-24 text-center">
             <div className="w-20 h-20 bg-gray-50 rounded-[32px] flex items-center justify-center mx-auto mb-8 text-gray-300">
                <svg className="h-10 w-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
@@ -143,8 +144,57 @@ const AllStudent = () => {
           </div>
         ) : (
           <div className="space-y-8">
-            {/* High-End Pro Data Grid */}
-            <div className="bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-2xl shadow-blue-900/5">
+            {/* Mobile Card View (Small Screens) */}
+            <div className="block md:hidden space-y-4">
+              {currentStudents.map((student, idx) => (
+                <div key={student._id} className="bg-white rounded-[24px] border border-gray-100 p-5 shadow-lg shadow-blue-900/5 relative">
+                  <span className="absolute top-5 right-5 text-[10px] font-black text-gray-300">#{(indexOfFirstItem + idx + 1).toString().padStart(2, '0')}</span>
+                  <div className="flex items-center gap-4 mb-4">
+                     <div className="relative">
+                        <img
+                           className="h-14 w-14 rounded-2xl object-cover ring-2 ring-gray-50 shadow-sm"
+                           src={getAvatar(student)}
+                           alt={student.fullName}
+                        />
+                        <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-green-500 border-2 border-white" />
+                     </div>
+                     <div className="pr-8">
+                        <h3 className="text-[15px] font-black text-gray-900 tracking-tight leading-none mb-1.5">{student.fullName}</h3>
+                        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-tight line-clamp-1">{student.email}</p>
+                     </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                     <div className="bg-gray-50 p-3 rounded-xl">
+                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Sector</p>
+                        <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest ${getClassColor(student.currentClass)}`}>
+                           {student.currentClass}
+                        </span>
+                     </div>
+                     <div className="bg-gray-50 p-3 rounded-xl">
+                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Interest</p>
+                        <span className="text-[11px] font-black text-[#0078FF] uppercase tracking-tight truncate block">{student.interestedCourse || 'General'}</span>
+                     </div>
+                  </div>
+
+                  <div className="flex items-center justify-between border-t border-gray-50 pt-4">
+                     <div className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                        <span className="text-[10px] font-black text-gray-900 uppercase tracking-widest">Active</span>
+                     </div>
+                     <button 
+                       onClick={() => handleViewDetails(student)}
+                       className="px-4 py-2 bg-gray-50 hover:bg-blue-50 text-[#0078FF] rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors"
+                     >
+                        View Profile
+                     </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* High-End Pro Data Grid (Tablet/Desktop) */}
+            <div className="hidden md:block bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-2xl shadow-blue-900/5">
                <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                      <thead>
@@ -191,12 +241,20 @@ const AllStudent = () => {
                               <td className="px-8 py-6">
                                  <span className="text-[11px] font-black text-[#0078FF] uppercase tracking-tight">{student.interestedCourse || 'General'}</span>
                               </td>
-                              <td className="px-8 py-6">
-                                 <div className="flex items-center gap-2">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                                    <span className="text-[10px] font-black text-gray-900 uppercase tracking-widest">Active</span>
-                                 </div>
-                              </td>
+                               <td className="px-8 py-6">
+                                  <div className="flex items-center justify-between gap-2">
+                                     <div className="flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                                        <span className="text-[10px] font-black text-gray-900 uppercase tracking-widest">Active</span>
+                                     </div>
+                                     <button 
+                                       onClick={() => handleViewDetails(student)}
+                                       className="px-4 py-2 bg-gray-50 hover:bg-blue-50 text-[#0078FF] rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors"
+                                     >
+                                        View
+                                     </button>
+                                  </div>
+                               </td>
                              
                            </tr>
                         ))}
@@ -235,31 +293,31 @@ const AllStudent = () => {
 
       {/* Modal for Student Details - High End */}
       {showModal && selectedStudent && (
-        <div className="fixed inset-0 bg-[#0a1628]/60 backdrop-blur-sm z-50 flex items-center justify-center p-6 animate-fadeIn" onClick={closeModal}>
-          <div className="bg-white rounded-[40px] max-w-2xl w-full overflow-hidden shadow-2xl animate-slideUp" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-[#0a1628]/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 sm:p-6 animate-fadeIn" onClick={closeModal}>
+          <div className="bg-white rounded-[24px] md:rounded-[40px] max-w-2xl w-full overflow-hidden shadow-2xl animate-slideUp max-h-[95vh] overflow-y-auto custom-scrollbar" onClick={(e) => e.stopPropagation()}>
             {/* Modal Header */}
-            <div className="relative p-10 border-b border-gray-50">
-               <div className="flex items-center gap-8">
+            <div className="relative p-6 md:p-10 border-b border-gray-50">
+               <div className="flex flex-col sm:flex-row sm:items-center gap-6 md:gap-8">
                   <img 
                     src={getAvatar(selectedStudent)} 
                     alt={selectedStudent.fullName}
-                    className="w-24 h-24 rounded-[32px] object-cover ring-4 ring-gray-50 shadow-xl"
+                    className="w-20 h-20 md:w-24 md:h-24 rounded-2xl md:rounded-[32px] object-cover ring-4 ring-gray-50 shadow-xl"
                   />
-                  <div>
+                  <div className="pr-8 sm:pr-0">
                      <div className="flex items-center gap-2 mb-2">
                         <div className="w-2 h-2 rounded-full bg-green-500" />
                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Profile Overview</p>
                      </div>
-                     <h2 className="text-2xl font-black text-gray-900 tracking-tight leading-none mb-2">{selectedStudent.fullName}</h2>
+                     <h2 className="text-xl md:text-2xl font-black text-gray-900 tracking-tight leading-none mb-2">{selectedStudent.fullName}</h2>
                      <p className="text-[11px] font-black text-[#0078FF] uppercase tracking-widest">{selectedStudent.currentClass} Sector</p>
                   </div>
                </div>
-               <button onClick={closeModal} className="absolute top-8 right-8 text-gray-300 hover:text-[#FB0500] transition-colors"><Plus size={24} className="rotate-45" /></button>
+               <button onClick={closeModal} className="absolute top-6 right-6 md:top-8 md:right-8 text-gray-300 hover:text-[#FB0500] transition-colors bg-gray-50 rounded-full p-2"><Plus size={20} className="rotate-45" /></button>
             </div>
 
             {/* Modal Content */}
-            <div className="p-10 space-y-10">
-               <div className="grid grid-cols-2 gap-10">
+            <div className="p-6 md:p-10 space-y-8 md:space-y-10">
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 md:gap-10">
                   <div>
                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Contact Intelligence</p>
                      <div className="space-y-4">

@@ -605,32 +605,32 @@ const CourseContentManager = () => {
             </div>
 
             {/* High-End Compact Stats */}
-            <div className="flex gap-2 w-full lg:w-auto">
-              <div className="bg-white px-4 py-2 rounded-xl border border-gray-100 flex items-center gap-3 shadow-sm min-w-[100px]">
-                <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-[#0078FF]">
-                  <FolderTree size={14} />
+            <div className="grid grid-cols-3 gap-2 w-full lg:w-auto">
+              <div className="bg-white px-2 sm:px-4 py-2 rounded-xl border border-gray-100 flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-1 sm:gap-3 shadow-sm">
+                <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-blue-50 flex items-center justify-center text-[#0078FF]">
+                  <FolderTree className="w-3 h-3 sm:w-4 sm:h-4" />
                 </div>
-                <div>
+                <div className="text-center sm:text-left">
                   <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Modules</p>
-                  <p className="text-[14px] font-black text-gray-900 leading-none">{totalModules}</p>
+                  <p className="text-[12px] sm:text-[14px] font-black text-gray-900 leading-none mt-0.5">{totalModules}</p>
                 </div>
               </div>
-              <div className="bg-white px-4 py-2 rounded-xl border border-gray-100 flex items-center gap-3 shadow-sm min-w-[100px]">
-                <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center text-green-600">
-                  <Grid3x3 size={14} />
+              <div className="bg-white px-2 sm:px-4 py-2 rounded-xl border border-gray-100 flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-1 sm:gap-3 shadow-sm">
+                <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-green-50 flex items-center justify-center text-green-600">
+                  <Grid3x3 className="w-3 h-3 sm:w-4 sm:h-4" />
                 </div>
-                <div>
+                <div className="text-center sm:text-left">
                   <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Units</p>
-                  <p className="text-[14px] font-black text-gray-900 leading-none">{totalChapters}</p>
+                  <p className="text-[12px] sm:text-[14px] font-black text-gray-900 leading-none mt-0.5">{totalChapters}</p>
                 </div>
               </div>
-              <div className="bg-white px-4 py-2 rounded-xl border border-gray-100 flex items-center gap-3 shadow-sm min-w-[100px]">
-                <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600">
-                  <Sparkles size={14} />
+              <div className="bg-white px-2 sm:px-4 py-2 rounded-xl border border-gray-100 flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-1 sm:gap-3 shadow-sm">
+                <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600">
+                  <Sparkles className="w-3 h-3 sm:w-4 sm:h-4" />
                 </div>
-                <div>
+                <div className="text-center sm:text-left">
                   <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Lessons</p>
-                  <p className="text-[14px] font-black text-gray-900 leading-none">{totalTopics}</p>
+                  <p className="text-[12px] sm:text-[14px] font-black text-gray-900 leading-none mt-0.5">{totalTopics}</p>
                 </div>
               </div>
             </div>
@@ -640,11 +640,11 @@ const CourseContentManager = () => {
 
       {/* Main Studio Workspace - Standard Industrial Layout */}
       <div className="max-w-full mx-auto px-4 py-4">
-        <div className="flex gap-0 items-start relative bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm h-[calc(100vh-160px)]">
+        <div className="flex flex-col md:flex-row gap-0 items-start relative bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm h-[calc(100vh-160px)]">
 
           {/* LEFT: The Curriculum Explorer (Integrated Pane) */}
-          {!isExplorerCollapsed && (
-            <div className="w-[350px] flex flex-col border-r border-gray-200 h-full bg-gray-50/20">
+          {(!isExplorerCollapsed) && (
+            <div className={`${isModalOpen ? 'hidden md:flex' : 'flex'} w-full md:w-[350px] flex-col border-r border-gray-200 h-full bg-gray-50/20 flex-shrink-0`}>
               <div className="p-4 border-b border-gray-200 bg-white flex items-center justify-between">
                 <h3 className="text-[11px] font-black text-gray-900 uppercase tracking-widest">Explorer</h3>
                 <button
@@ -728,7 +728,7 @@ const CourseContentManager = () => {
           )}
 
           {/* RIGHT: The Editorial Studio (Integrated Workspace) */}
-          <div className="flex-1 flex flex-col h-full bg-white relative overflow-hidden">
+          <div className={`${!isModalOpen ? 'hidden md:flex' : 'flex'} flex-1 flex-col h-full w-full bg-white relative overflow-hidden`}>
             {isModalOpen ? (
               <div className="flex flex-col h-full animate-fadeIn">
                 {/* Studio Header - Integrated Controls */}
@@ -765,7 +765,7 @@ const CourseContentManager = () => {
                 </div>
 
                 <div className="flex-1 overflow-y-auto custom-scrollbar bg-white">
-                  <div className="max-w-4xl mx-auto p-10">
+                  <div className="max-w-4xl mx-auto p-4 sm:p-10">
                     {studioMode === 'preview' ? (
                       <div className="animate-fadeIn space-y-8">
                         <div className="flex items-center gap-2">
@@ -823,7 +823,7 @@ const CourseContentManager = () => {
                         )}
 
                         {(modalType === 'module' || modalType === 'chapter') && (
-                          <div className="p-20 text-center bg-gray-50 border border-dashed border-gray-200 rounded-xl">
+                          <div className="p-10 sm:p-20 text-center bg-gray-50 border border-dashed border-gray-200 rounded-xl">
                             <BookOpen size={40} className="mx-auto text-gray-200 mb-4" />
                             <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Metadata Context</p>
                           </div>
@@ -864,7 +864,7 @@ const CourseContentManager = () => {
                               <EditorContent editor={editor} className="min-h-[350px] text-gray-800 font-medium text-lg focus:outline-none" />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-12 pt-8 border-t border-gray-50">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 sm:gap-12 pt-8 border-t border-gray-50">
                               <div className="space-y-4">
                                 <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Media Type</label>
                                 <div className="flex bg-gray-50 p-1 rounded-lg border border-gray-200 shadow-sm">
@@ -883,7 +883,7 @@ const CourseContentManager = () => {
                               </div>
                             </div>
 
-                            <div className="bg-gray-50/50 border border-gray-100 rounded-xl p-8">
+                            <div className="bg-gray-50/50 border border-gray-100 rounded-xl p-4 sm:p-8">
                               <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-4">Resource Payload</label>
 
                               {/* Video Section */}
@@ -1017,8 +1017,8 @@ const CourseContentManager = () => {
                 </div>
 
                 {/* Studio Integrated Footer */}
-                <div className="px-10 py-6 border-t border-gray-100 bg-white flex items-center justify-between">
-                  <button onClick={closeModal} className="text-[9px] font-black uppercase text-gray-400 hover:text-red-600 transition-all tracking-[0.3em]">Discard Changes</button>
+                <div className="px-4 sm:px-10 py-4 sm:py-6 border-t border-gray-100 bg-white flex flex-col-reverse sm:flex-row items-center justify-between gap-4">
+                  <button onClick={closeModal} className="text-[9px] font-black uppercase text-gray-400 hover:text-red-600 transition-all tracking-[0.3em] py-2 w-full sm:w-auto text-center">Discard Changes</button>
                   <button
                     onClick={() => {
                       if (modalType === 'module') handleAddModule();
@@ -1026,7 +1026,7 @@ const CourseContentManager = () => {
                       else if (modalType === 'topic') handleAddTopic();
                     }}
                     disabled={uploading}
-                    className="bg-gray-900 text-white px-10 py-4 rounded-lg font-black text-[10px] uppercase tracking-[0.3em] hover:bg-black transition-all shadow-xl shadow-black/10 disabled:opacity-50 flex items-center gap-4"
+                    className="w-full sm:w-auto justify-center bg-gray-900 text-white px-6 sm:px-10 py-3 sm:py-4 rounded-lg font-black text-[10px] uppercase tracking-[0.3em] hover:bg-black transition-all shadow-xl shadow-black/10 disabled:opacity-50 flex items-center gap-4"
                   >
                     {uploading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <CheckCircle2 size={18} />}
                     {editingItem ? 'Sync Updates' : 'Initialize Component'}

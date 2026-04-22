@@ -133,6 +133,28 @@ const PurchasedCourse = () => {
         if (prevTopic) { handleTopicClick(prevTopic); window.scrollTo({ top: 0, behavior: 'smooth' }); }
     };
 
+    const handleDownloadNotes = async (e, url, title) => {
+        e.preventDefault();
+        try {
+            // Attempting to fetch the file to bypass cross-origin browser open behavior
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('Network response was not ok');
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = `${title ? title.replace(/[^a-zA-Z0-9]/g, '_') : 'Notes'}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(downloadUrl);
+        } catch (error) {
+            console.error('Error downloading the file:', error);
+            // Fallback: open in new tab if CORS prevents fetch
+            window.open(url, '_blank', 'noopener,noreferrer');
+        }
+    };
+
     // Loading State
     if (loading) return (
         <div className="min-h-screen bg-white flex items-center justify-center">
@@ -292,7 +314,7 @@ const PurchasedCourse = () => {
                         </svg>
                         <span className="hidden sm:inline">All Courses</span>
                     </button>
-                    <div className="font-semibold text-gray-800 truncate max-w-[200px] md:max-w-md">{selectedCourse.course.title}</div>
+                    <div className="font-semibold text-gray-800 truncate max-w-[150px] sm:max-w-[200px] md:max-w-md">{selectedCourse.course.title}</div>
                     <div className="flex items-center gap-3">
                         <span className="text-xs text-gray-400 hidden sm:inline">{completedTopicsCount}/{totalTopics}</span>
                         <div className="w-24 md:w-32 h-1.5 bg-gray-100 rounded-full overflow-hidden">
@@ -303,9 +325,9 @@ const PurchasedCourse = () => {
                 </div>
             </div>
 
-            <div className="flex pt-14">
+            <div className="flex flex-col lg:flex-row pt-14">
                 {/* SIDEBAR */}
-                <aside className="w-80 lg:w-96 bg-gray-50 border-r border-gray-200 h-[calc(100vh-3.5rem)] sticky top-14 overflow-y-auto">
+                <aside className="order-2 lg:order-1 w-full lg:w-80 xl:w-96 bg-gray-50 border-r border-gray-200 h-auto lg:h-[calc(100vh-3.5rem)] lg:sticky top-14 overflow-y-auto">
                     <div className="p-5 border-b border-gray-200">
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-12 h-12 rounded-xl bg-gray-200 flex items-center justify-center shadow-sm overflow-hidden">
@@ -418,7 +440,7 @@ const PurchasedCourse = () => {
                 </aside>
 
                 {/* MAIN CONTENT - Video with balanced side spacing */}
-                <main className="flex-1 overflow-y-auto h-[calc(100vh-3.5rem)] bg-white">
+                <main className="order-1 lg:order-2 flex-1 overflow-y-auto h-auto lg:h-[calc(100vh-3.5rem)] bg-white">
                     {/* Balanced padding: comfortable space on sides */}
                     <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6">
                         {selectedTopic ? (
@@ -455,7 +477,7 @@ const PurchasedCourse = () => {
                                     </div>
 
                                     {/* Mark Complete Row */}
-                                    <div className="flex justify-between items-center mt-4 bg-gray-50 rounded-xl p-3 border border-gray-200">
+                                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0 mt-4 bg-gray-50 rounded-xl p-3 border border-gray-200">
                                         {!videoCompleted[selectedTopic._id] ? (
                                             <>
                                                 <span className="text-sm text-gray-500">📺 Watch and mark as complete</span>
@@ -501,16 +523,15 @@ const PurchasedCourse = () => {
                                                     <h3 className="font-semibold text-gray-700">Study Notes</h3>
                                                 </div>
                                                 <p className="text-gray-500 text-sm">{selectedTopic.notes || 'No notes available for this topic.'}</p>
-                                                <a 
-                                                    href={selectedTopic.notesUrl} 
-                                                    download 
-                                                    className="inline-flex items-center gap-2 mt-3 text-sm text-gray-600 hover:text-gray-800 transition"
+                                                <button 
+                                                    onClick={(e) => handleDownloadNotes(e, selectedTopic.notesUrl, selectedTopic.title)}
+                                                    className="inline-flex items-center gap-2 mt-3 text-sm text-gray-600 hover:text-gray-800 transition cursor-pointer"
                                                 >
                                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                                                     </svg>
                                                     Download PDF
-                                                </a>
+                                                </button>
                                             </div>
                                         )}
 
@@ -519,7 +540,7 @@ const PurchasedCourse = () => {
                                             <button 
                                                 onClick={handlePrevTopic} 
                                                 disabled={!prevTopic} 
-                                                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${
+                                                className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-lg transition ${
                                                     prevTopic 
                                                         ? 'bg-gray-100 hover:bg-gray-200 text-gray-700' 
                                                         : 'opacity-30 cursor-not-allowed text-gray-300'
@@ -528,19 +549,20 @@ const PurchasedCourse = () => {
                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                                                 </svg>
-                                                Previous
+                                                <span className="hidden sm:inline">Previous</span>
+                                                <span className="sm:hidden">Prev</span>
                                             </button>
                                             <span className="text-sm text-gray-400">{currentTopicIndex + 1} / {allTopics.length}</span>
                                             <button 
                                                 onClick={handleNextTopic} 
                                                 disabled={!nextTopic} 
-                                                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${
+                                                className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-lg transition ${
                                                     nextTopic 
                                                         ? 'bg-black hover:bg-gray-800 text-white' 
                                                         : 'opacity-30 cursor-not-allowed bg-gray-100 text-gray-400'
                                                 }`}
                                             >
-                                                Next
+                                                <span>Next</span>
                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                                 </svg>
