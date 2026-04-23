@@ -52,6 +52,7 @@ const api = {
         apply:Base_Url+"/scholarship/apply",
 
        enrollCourse:Base_Url+"/enrollment/enroll-course",
+       getSchollership:Base_Url+"/scholarship/student-schollership"
      },
      payment:{
        createPayment:Base_Url+"/payment/create-payment",

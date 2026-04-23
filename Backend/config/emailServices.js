@@ -1,5 +1,5 @@
 import nodemailer from "nodemailer";
-// Create transporter
+
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -128,4 +128,85 @@ const sendContactEmail = async (userData) => {
     }
 };
 
-export { sendOTP, sendCallbackEmail, sendContactEmail };
+ const sendReceiptEmail = async (student, enrollment, course, filePath) => {
+  try {
+    const mailOptions = {
+      from: `"Roots Classes" <${process.env.EMAIL_USER}>`,
+      to: student.email,
+      subject: "Payment Successful - Course Enrollment Confirmation 🎉",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h2 style="color: #4F46E5;">Payment Successful!</h2>
+            <p style="font-size: 16px; color: #333;">Thank you for your purchase</p>
+          </div>
+          
+          <div style="background: #f0fdf4; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+            <p style="margin: 0 0 10px 0;"><strong>Hello ${student.fullName || student.name},</strong></p>
+            <p style="margin: 0;">Your payment has been successfully completed and you are now enrolled in the course.</p>
+          </div>
+          
+          <div style="margin-top: 20px; padding: 20px; background: #f3f4f6; border-radius: 10px;">
+            <h3 style="margin-top: 0; color: #374151;">Course Details:</h3>
+            <p><strong>Course Name:</strong> ${course.title}</p>
+            <p><strong>Enrollment ID:</strong> ${enrollment._id}</p>
+            <p><strong>Order ID:</strong> ${enrollment.orderId}</p>
+            <p><strong>Payment ID:</strong> ${enrollment.paymentId}</p>
+            <p><strong>Enrolled On:</strong> ${new Date(enrollment.enrolledAt).toLocaleDateString()}</p>
+          </div>
+          
+          <div style="margin-top: 20px; padding: 20px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 10px;">
+            <h3 style="margin-top: 0; color: #374151;">Payment Summary:</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0;">Original Price:</td>
+                <td style="padding: 8px 0; text-align: right;">₹${enrollment.originalPrice?.toLocaleString('en-IN') || 0}</td>
+              </tr>
+              ${enrollment.discountApplied > 0 ? `
+              <tr style="color: #059669;">
+                <td style="padding: 8px 0;">Discount (${enrollment.discountApplied}%):</td>
+                <td style="padding: 8px 0; text-align: right;">-₹${((enrollment.originalPrice || 0) - (enrollment.amount || 0)).toLocaleString('en-IN')}</td>
+              </tr>
+              ` : ''}
+              <tr style="border-top: 2px solid #e5e7eb;">
+                <td style="padding: 12px 0 0 0; font-weight: bold;">Total Paid:</td>
+                <td style="padding: 12px 0 0 0; text-align: right; font-weight: bold; color: #4F46E5;">₹${enrollment.amount?.toLocaleString('en-IN') || 0}</td>
+              </tr>
+            </table>
+          </div>
+          
+          <div style="margin-top: 30px; padding: 15px; background: #eff6ff; border-radius: 8px; text-align: center;">
+            <p style="margin: 0; color: #1e40af;">✓ You now have full access to all course materials</p>
+            <p style="margin: 10px 0 0 0; font-size: 14px; color: #3b82f6;">Login to your dashboard to start learning</p>
+          </div>
+          
+          <p style="margin-top: 30px;">Please find your payment receipt attached with this email.</p>
+          
+          <p style="margin-top: 20px;">Thank you for choosing Roots Classes! 🚀</p>
+          
+          <hr style="margin: 30px 0 20px 0;" />
+          
+          <p style="font-size: 12px; color: #888; text-align: center;">
+            This is an automated email. Please do not reply.<br />
+            For any assistance, contact us at support@rootsclasses.com
+          </p>
+        </div>
+      `,
+      attachments: [
+        {
+          filename: `receipt_${enrollment._id}.pdf`,
+          path: filePath,
+        },
+      ],
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log("Receipt Email sent:", info.messageId);
+    return true;
+  } catch (error) {
+    console.error("Error sending receipt email:", error);
+    return false;
+  }
+};
+
+export { sendOTP, sendCallbackEmail, sendContactEmail,sendReceiptEmail  };

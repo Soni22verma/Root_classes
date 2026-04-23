@@ -6,7 +6,7 @@ import api from '../../../services/endpoints';
 import {
   ArrowLeft, BookOpen, Clock, ChevronDown, ChevronRight,
   Play, FileText, Lock, Unlock, CheckCircle, X, CreditCard,
-  GraduationCap, Users, Info, Download
+  GraduationCap, Users, Info, Download, Tag, Percent, Calendar
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 
@@ -36,7 +36,7 @@ const loadRazorpayScript = () =>
     document.body.appendChild(s);
   });
 
-// ─── PDF Download Function (pure jsPDF, no html2canvas, no crash) ────────────
+// ─── PDF Download Function ────────────────────────────────────────────────────
 const downloadNotesAsPDF = (topic) => {
   try {
     const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
@@ -57,7 +57,6 @@ const downloadNotesAsPDF = (topic) => {
       });
     };
 
-    // ── Header ──
     pdf.setFillColor(37, 99, 235);
     pdf.rect(0, 0, 210, 28, 'F');
     pdf.setFontSize(16);
@@ -69,16 +68,13 @@ const downloadNotesAsPDF = (topic) => {
     pdf.text(`Generated: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, margin, 20);
     y = 38;
 
-    // ── Topic Title ──
     addText(topic.title, 15, true, [17, 24, 39]);
     y += 2;
 
-    // ── Divider ──
     pdf.setDrawColor(229, 231, 235);
     pdf.line(margin, y, pageW - margin, y);
     y += 6;
 
-    // ── Description ──
     if (topic.description) {
       addText('Description', 10, true, [107, 114, 128]);
       y += 1;
@@ -87,7 +83,6 @@ const downloadNotesAsPDF = (topic) => {
       y += 5;
     }
 
-    // ── Notes ──
     addText('Notes', 11, true, [37, 99, 235]);
     y += 2;
     const notesText = topic.notes
@@ -95,7 +90,6 @@ const downloadNotesAsPDF = (topic) => {
       : 'No notes available for this topic.';
     addText(notesText, 10, false, [55, 65, 81]);
 
-    // ── Footer ──
     const pageCount = pdf.internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       pdf.setPage(i);
@@ -106,7 +100,6 @@ const downloadNotesAsPDF = (topic) => {
 
     pdf.save(`${topic.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_notes.pdf`);
 
-    // ── Success toast ──
     const t = document.createElement('div');
     t.style.cssText = 'position:fixed;top:20px;right:16px;z-index:9999;padding:12px 18px;background:#22c55e;color:#fff;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,.15)';
     t.textContent = '✓ PDF Downloaded!';
@@ -133,6 +126,7 @@ const CourseDetails = () => {
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isEnrolled, setIsEnrolled] = useState(false);
+  const [checkingEnrollment, setCheckingEnrollment] = useState(true);
   const [enrollmentLoading, setEnrollmentLoading] = useState(false);
   const [expandedModules, setExpandedModules] = useState({});
   const [expandedChapters, setExpandedChapters] = useState({});
@@ -142,8 +136,11 @@ const CourseDetails = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', type: '' });
+  const [priceDetails, setPriceDetails] = useState(null);
+  const [fetchingPrice, setFetchingPrice] = useState(false);
+  const [hasPreviousPurchase, setHasPreviousPurchase] = useState(false);
+  const [scholarship, setScholarship] = useState(null);
 
-  // ── Load course ─────────────────────────────────────────────────────────────
   useEffect(() => {
     if (location.state?.course) {
       setCourse(location.state.course);
@@ -154,7 +151,12 @@ const CourseDetails = () => {
   }, [location.state]);
 
   useEffect(() => {
-    if (studentId && course?._id) checkEnrollment();
+    if (studentId && course?._id) {
+      checkEnrollment();
+      fetchPriceDetails();
+    } else if (!studentId) {
+      setCheckingEnrollment(false);
+    }
   }, [studentId, course]);
 
   const showToast = (message, type = 'info') => {
@@ -163,25 +165,96 @@ const CourseDetails = () => {
   };
 
   const checkEnrollment = async () => {
+    setCheckingEnrollment(true);
     try {
       const res = await axios.get(`${api.student.getStudentProfile}/${studentId}`);
       if (res.data?.success) {
         const enrolled = res.data.data?.enrolledCourses?.includes(course._id);
         setIsEnrolled(!!enrolled);
       }
-    } catch { /* silent */ }
+    } catch (error) {
+      console.error("Error checking enrollment:", error);
+    } finally {
+      setCheckingEnrollment(false);
+    }
   };
 
-  // ── Course helpers ───────────────────────────────────────────────────────────
+  const fetchPriceDetails = async () => {
+    if (!course?._id || !studentId) return;
+    setFetchingPrice(true);
+    try {
+      const response = await axios.post(api.payment.getPriceDetails, {
+        courseId: course._id,
+        studentId: studentId
+      });
+      
+      if (response.data?.success) {
+        // Extract data from response (handling nested data structure)
+        const resData = response.data?.data || response.data;
+        
+        // Extract discount and validity dates (look for both discount and discountApplied)
+        const discountApplied = resData.discountApplied || resData.discount || 0;
+        const validFrom = resData.validFrom || resData.discountValidFrom || null;
+        const validUntil = resData.validUntil || resData.discountValidUntil || null;
+        
+        setPriceDetails({
+          originalPrice: resData.originalPrice || course.price || 0,
+          finalPrice: resData.finalPrice || course.price || 0,
+          discountApplied: discountApplied,
+          hasScholarship: resData.hasScholarship || false,
+          isFirstPurchase: resData.isFirstPurchase !== undefined ? resData.isFirstPurchase : true,
+          message: resData.message || "No discount available",
+          discountValidFrom: validFrom,
+          discountValidUntil: validUntil
+        });
+        setHasPreviousPurchase(!resData.isFirstPurchase);
+      } else {
+        setPriceDetails({
+          originalPrice: course.price || 0,
+          finalPrice: course.price || 0,
+          discountApplied: 0,
+          hasScholarship: false,
+          isFirstPurchase: true,
+          message: "No discount available",
+          discountValidFrom: null,
+          discountValidUntil: null
+        });
+        setHasPreviousPurchase(false);
+      }
+    } catch (error) {
+      console.error("Error fetching price details:", error);
+      setPriceDetails({
+        originalPrice: course.price || 0,
+        finalPrice: course.price || 0,
+        discountApplied: 0,
+        hasScholarship: false,
+        isFirstPurchase: true,
+        message: "Failed to fetch price details",
+        discountValidFrom: null,
+        discountValidUntil: null
+      });
+      setHasPreviousPurchase(false);
+    } finally {
+      setFetchingPrice(false);
+    }
+  };
+
   const hasPaidContent = () =>
     course?.modules?.some(m => m.chapters?.some(c => c.topics?.some(t => t.isPreviewFree === false)));
 
   const hasPreviewContent = () =>
     course?.modules?.some(m => m.chapters?.some(c => c.topics?.some(t => t.isPreviewFree === true)));
 
-  const isCompletelyFree = () => (!course?.price || course.price === 0) && !hasPaidContent();
+  const isCompletelyFree = () => {
+    const coursePrice = course?.price || 0;
+    const finalPrice = priceDetails?.finalPrice ?? coursePrice;
+    return (coursePrice === 0 || finalPrice === 0) && !hasPaidContent();
+  };
 
-  const isPaidCourse = () => (course?.price && course.price > 0) || hasPaidContent();
+  const isPaidCourse = () => {
+    const finalPrice = priceDetails?.finalPrice ?? (course?.price || 0);
+    return finalPrice > 0 || hasPaidContent();
+  };
 
   const totalTopics = () =>
     course?.modules?.reduce((s, m) => s + (m.chapters?.reduce((cs, c) => cs + (c.topics?.length || 0), 0) || 0), 0) || 0;
@@ -192,65 +265,234 @@ const CourseDetails = () => {
   const paidTopics = () =>
     course?.modules?.reduce((s, m) => s + (m.chapters?.reduce((cs, c) => cs + c.topics?.filter(t => !t.isPreviewFree).length, 0) || 0), 0) || 0;
 
-  const enrollmentInfo = () => {
-    if (isEnrolled) return { action: 'Continue Learning', type: 'enrolled' };
-    if (isCompletelyFree()) return { action: 'Start Learning — Free', type: 'free' };
-    return { action: `Enroll Now — ₹${course?.price || 0}`, type: 'paid' };
+  // Helper function to format date
+  const formatDate = (dateString) => {
+    if (!dateString) return null;
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-IN', { 
+        day: 'numeric', 
+        month: 'short', 
+        year: 'numeric' 
+      });
+    } catch (e) {
+      return dateString;
+    }
   };
 
-  // ── Payment ─────────────────────────────────────────────────────────────────
-  const handleEnrollClick = () => {
-    if (!studentId) return showToast('Please log in to enroll', 'error');
-    if (isEnrolled || isCompletelyFree()) return navigate(`/course-content/${course._id}`, { state: { course } });
-    if (isPaidCourse()) return setShowPaymentModal(true);
-    navigate(`/course-content/${course._id}`, { state: { course } });
+  // FIX: Compare only dates (YYYY-MM-DD) to avoid timezone issues
+  const isDiscountActive = () => {
+    if (!priceDetails?.discountApplied || priceDetails.discountApplied === 0) return false;
+    
+    const validFromStr = priceDetails.discountValidFrom;
+    const validUntilStr = priceDetails.discountValidUntil;
+    
+    if (!validFromStr && !validUntilStr) return true;
+    
+    // Get today's date in UTC (YYYY-MM-DD)
+    const todayUTC = new Date().toISOString().split('T')[0];
+    
+    if (validFromStr && validFromStr.split('T')[0] > todayUTC) return false;
+    if (validUntilStr && validUntilStr.split('T')[0] < todayUTC) return false;
+    
+    return true;
+  };
+
+  const enrollmentInfo = () => {
+    if (isEnrolled) return { action: 'Already Enrolled ✓', type: 'enrolled', disabled: true };
+    if (isCompletelyFree()) return { action: 'Start Learning — Free', type: 'free', disabled: false };
+    const finalPrice = priceDetails?.finalPrice ?? (course?.price || 0);
+    
+    if (isDiscountActive() && priceDetails?.discountApplied > 0 && !hasPreviousPurchase) {
+      return { 
+        action: `Enroll Now — ₹${finalPrice.toLocaleString('en-IN')} (${priceDetails.discountApplied}% off)`, 
+        type: 'paid', 
+        disabled: false 
+      };
+    }
+    
+    return { action: `Enroll Now — ₹${finalPrice.toLocaleString('en-IN')}`, type: 'paid', disabled: false };
+  };
+
+  const getDiscountMessage = () => {
+    if (hasPreviousPurchase) {
+      return {
+        show: true,
+        message: "ℹ️ You've already used your first-purchase scholarship. Regular price applies to all future courses.",
+        type: "info"
+      };
+    }
+    if (isDiscountActive() && priceDetails?.discountApplied > 0) {
+      let message = `🎉 Welcome! You get ${priceDetails.discountApplied}% off on your first purchase! This is a one-time offer.`;
+      if (priceDetails.discountValidFrom && priceDetails.discountValidUntil) {
+        const fromDate = formatDate(priceDetails.discountValidFrom);
+        const untilDate = formatDate(priceDetails.discountValidUntil);
+        message += ` Valid from ${fromDate} to ${untilDate}.`;
+      } else if (priceDetails.discountValidUntil) {
+        const untilDate = formatDate(priceDetails.discountValidUntil);
+        message += ` Valid until ${untilDate}.`;
+      }
+      return {
+        show: true,
+        message: message,
+        type: "success"
+      };
+    }
+    if (!priceDetails?.hasScholarship && !hasPreviousPurchase) {
+      return {
+        show: true,
+        type: "info"
+      };
+    }
+    return { show: false };
   };
 
   const processPayment = async () => {
+    if (isEnrolled) {
+      showToast('You are already enrolled in this course!', 'info');
+      setShowPaymentModal(false);
+      return;
+    }
+
     const loaded = await loadRazorpayScript();
-    if (!loaded) return showToast('Payment gateway failed to load', 'error');
+    if (!loaded) {
+      showToast('Payment gateway failed to load', 'error');
+      return;
+    }
+    
     setPaymentProcessing(true);
+    
     try {
-      const { data } = await axios.post(api.payment.createPayment, { courseId: course._id, studentId });
+      const { data } = await axios.post(api.payment.createPayment, { 
+        courseId: course._id, 
+        studentId 
+      });
+      
       if (!data.success) throw new Error(data.message);
+      
+      const enrollmentId = data.enrollmentId;
+      
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         amount: data.order.amount,
         currency: data.order.currency,
         name: course.title,
+        description: `Enrollment for ${course.title}`,
         order_id: data.order.id,
-        handler: async (resp) => {
+        handler: async (response) => {
           try {
-            const verify = await axios.post(api.payment.verifyPayment, {
-              razorpay_order_id: resp.razorpay_order_id,
-              razorpay_payment_id: resp.razorpay_payment_id,
-              razorpay_signature: resp.razorpay_signature,
-              enrollmentId: data.enrollmentId,
+            showToast('Verifying payment...', 'info');
+            
+            const verifyPromise = axios.post(api.payment.verifyPayment, {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              enrollmentId: enrollmentId, 
+            }, {
+              timeout: 10000 
             });
-            if (verify.data.success) {
+            
+            const timeoutPromise = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Verification timeout')), 25000)
+            );
+            
+            const verifyResponse = await Promise.race([verifyPromise, timeoutPromise]);
+            
+            if (verifyResponse.data.success) {
               setIsEnrolled(true);
-              showToast('Payment successful! You are now enrolled 🎉', 'success');
+              showToast('Payment successful! 🎉', 'success');
+              setShowPaymentModal(false);
+              setPaymentProcessing(false);
+              setTimeout(() => {
+                navigate("/purchescourse");
+              }, 1500);
+            } else {
+              throw new Error(verifyResponse.data.message || 'Payment verification failed');
             }
-          } catch { showToast('Payment verification failed. Contact support.', 'error'); }
-          finally { setPaymentProcessing(false); }
+          } catch (err) {
+            console.error("Verification error:", err);
+            showToast(err.message || 'Payment verification failed. Contact support.', 'error');
+            setPaymentProcessing(false);
+            setShowPaymentModal(false);
+          }
         },
-        prefill: { name: student?.name || '', email: student?.email || '', contact: student?.phone || '' },
+        prefill: { 
+          name: student?.fullName || student?.name || '', 
+          email: student?.email || '', 
+          contact: student?.phone || '' 
+        },
         theme: { color: '#2563EB' },
-        modal: { ondismiss: () => { setPaymentProcessing(false); showToast('Payment cancelled', 'info'); } },
+        modal: { 
+          ondismiss: () => { 
+            setPaymentProcessing(false); 
+            setShowPaymentModal(false);
+            showToast('Payment cancelled', 'info'); 
+          } 
+        },
       };
-      new window.Razorpay(options).open();
+      
+      const razorpay = new window.Razorpay(options);
+      razorpay.on('payment.failed', (response) => {
+        console.error("Payment failed:", response);
+        showToast(response.error?.description || 'Payment failed. Please try again.', 'error');
+        setPaymentProcessing(false);
+        setShowPaymentModal(false);
+      });
+      razorpay.open();
+      
     } catch (err) {
+      console.error("Payment error:", err);
       showToast(err.response?.data?.message || 'Payment failed. Try again.', 'error');
       setPaymentProcessing(false);
     }
   };
 
+  const handleSchollerShip = async() => {
+    if (!studentId) return;
+    try {
+      const response = await axios.post(api.scholarship.getSchollership, {
+        studentId: studentId
+      });
+      if (response.data?.success && response.data?.data) {
+        setScholarship(response.data.data);
+      }
+      console.log(response);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  
+  useEffect(() => {
+    handleSchollerShip();
+  }, [studentId]);
+
   const handlePayment = async () => {
+    if (isEnrolled) {
+      showToast('You are already enrolled in this course!', 'info');
+      setShowPaymentModal(false);
+      return;
+    }
     setShowPaymentModal(false);
     await processPayment();
   };
 
-  // ── Video ────────────────────────────────────────────────────────────────────
+  const handleEnrollClick = () => {
+    if (!studentId) {
+      showToast('Please log in to enroll', 'error');
+      return;
+    }
+    if (isEnrolled) {
+      showToast('You are already enrolled in this course!', 'info');
+      return;
+    }
+    if (isCompletelyFree()) {
+      navigate(`/course-content/${course._id}`, { state: { course } });
+    } else if (isPaidCourse()) {
+      setShowPaymentModal(true);
+    }
+  };
+
+  // Video
   const playVideo = (topic) => {
     const hasAccess = isEnrolled || topic.isPreviewFree || isCompletelyFree();
     if (!hasAccess) return showToast('Enroll to access this lesson', 'error');
@@ -267,7 +509,6 @@ const CourseDetails = () => {
   const openNotes = (topic) => {
     const hasAccess = isEnrolled || topic.isPreviewFree || isCompletelyFree();
     if (!hasAccess) return showToast('Enroll to access notes', 'error');
-    // Direct download — no new tab, no Save As dialog
     const a = document.createElement('a');
     a.href = topic.notesUrl;
     a.download = `${(topic.title || 'notes').replace(/[^a-z0-9]/gi, '_').toLowerCase()}_notes`;
@@ -277,7 +518,6 @@ const CourseDetails = () => {
     document.body.removeChild(a);
   };
 
-  // ── Download Notes as PDF ─────────────────────────────────────────────────
   const handleDownloadNotesPDF = async (topic) => {
     const hasAccess = isEnrolled || topic.isPreviewFree || isCompletelyFree();
     if (!hasAccess) return showToast('Enroll to access notes', 'error');
@@ -286,15 +526,12 @@ const CourseDetails = () => {
       return showToast('No notes available for download', 'error');
     }
 
-    // If we have a URL, it means the notes are an uploaded file (like a PDF).
-    // Download it directly instead of trying to parse it as text.
     if (topic.notesUrl) {
       try {
-        // Show downloading toast
-        const toast = document.createElement('div');
-        toast.style.cssText = 'position:fixed;top:20px;right:16px;z-index:9999;padding:12px 18px;background:#3b82f6;color:#fff;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,.15)';
-        toast.textContent = '⏳ Downloading...';
-        document.body.appendChild(toast);
+        const toastEl = document.createElement('div');
+        toastEl.style.cssText = 'position:fixed;top:20px;right:16px;z-index:9999;padding:12px 18px;background:#3b82f6;color:#fff;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,.15)';
+        toastEl.textContent = '⏳ Downloading...';
+        document.body.appendChild(toastEl);
 
         const response = await fetch(topic.notesUrl);
         const blob = await response.blob();
@@ -317,7 +554,7 @@ const CourseDetails = () => {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
 
-        toast.remove();
+        toastEl.remove();
 
         const success = document.createElement('div');
         success.style.cssText = 'position:fixed;top:20px;right:16px;z-index:9999;padding:12px 18px;background:#22c55e;color:#fff;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,.15)';
@@ -325,18 +562,16 @@ const CourseDetails = () => {
         document.body.appendChild(success);
         setTimeout(() => success.remove(), 3000);
 
-        return; // Early return since we successfully downloaded the file
+        return;
       } catch (error) {
         console.error('Error fetching notes:', error);
         return showToast('Failed to download notes', 'error');
       }
     }
 
-    // If it's pure text notes stored in DB, generate a PDF out of it
     downloadNotesAsPDF(topic);
   };
 
-  // ── Navigate to Topic Info Page ─────────────────────────────────────────────
   const openTopicInfo = (topic) => {
     const hasAccess = isEnrolled || topic.isPreviewFree || isCompletelyFree();
     if (!hasAccess) return showToast('Enroll to access topic information', 'error');
@@ -350,14 +585,14 @@ const CourseDetails = () => {
     });
   };
 
-  // ── Expand toggles ───────────────────────────────────────────────────────────
+  // Expand toggles
   const toggleModule = (idx) => setExpandedModules(p => ({ ...p, [idx]: !p[idx] }));
   const toggleChapter = (mIdx, cIdx) => {
     const k = `${mIdx}-${cIdx}`;
     setExpandedChapters(p => ({ ...p, [k]: !p[k] }));
   };
 
-  // ── Loading / error ──────────────────────────────────────────────────────────
+  // Loading / error
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -387,13 +622,24 @@ const CourseDetails = () => {
   const tt = totalTopics();
   const ft = freeTopics();
   const pt = paidTopics();
+  const originalPrice = priceDetails?.originalPrice ?? course.price ?? 0;
+  const finalPrice = priceDetails?.finalPrice ?? course.price ?? 0;
+  const discountApplied = priceDetails?.discountApplied ?? 0;
+  const discountActive = isDiscountActive();
+  const discountValidFrom = priceDetails?.discountValidFrom ? formatDate(priceDetails.discountValidFrom) : null;
+  const discountValidUntil = priceDetails?.discountValidUntil ? formatDate(priceDetails.discountValidUntil) : null;
+  const discountMessage = getDiscountMessage();
+
+  // Determine if the discount block should be shown in the right card
+  const showDiscountBlock = !hasPreviousPurchase && discountActive && discountApplied > 0;
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Toast */}
       {toast.show && (
-        <div className={`fixed top-5 right-4 z-[9999] px-5 py-3 rounded-xl shadow-lg text-sm font-medium text-white flex items-center gap-2 transition-all ${toast.type === 'success' ? 'bg-green-500' : toast.type === 'error' ? 'bg-red-500' : 'bg-blue-500'
-          }`}>
+        <div className={`fixed top-5 right-4 z-[9999] px-5 py-3 rounded-xl shadow-lg text-sm font-medium text-white flex items-center gap-2 transition-all ${
+          toast.type === 'success' ? 'bg-green-500' : toast.type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+        }`}>
           {toast.type === 'success' && <CheckCircle size={15} />}
           {toast.type === 'error' && <X size={15} />}
           {toast.message}
@@ -406,29 +652,88 @@ const CourseDetails = () => {
           <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl overflow-hidden" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <h3 className="text-base font-bold text-gray-900">Complete Enrollment</h3>
-              <button onClick={() => setShowPaymentModal(false)} className="p-1 hover:bg-gray-100 rounded-lg"><X size={16} className="text-gray-400" /></button>
+              <button onClick={() => setShowPaymentModal(false)} className="p-1 hover:bg-gray-100 rounded-lg">
+                <X size={16} className="text-gray-400" />
+              </button>
             </div>
             <div className="p-6">
               <div className="text-center mb-5">
                 <p className="text-sm text-gray-500 mb-1">{course.title}</p>
-                <p className="text-3xl font-bold text-gray-900">₹{course.price?.toLocaleString('en-IN')}</p>
+                
+                {hasPreviousPurchase ? (
+                  <div>
+                    <p className="text-3xl font-bold text-gray-900">₹{finalPrice.toLocaleString('en-IN')}</p>
+                    <p className="text-xs text-gray-400 mt-1">Regular price</p>
+                  </div>
+                ) : showDiscountBlock ? (
+                  <div className="mb-2">
+                    <p className="text-sm text-gray-400 line-through">₹{originalPrice.toLocaleString('en-IN')}</p>
+                    <p className="text-3xl font-bold text-gray-900">₹{finalPrice.toLocaleString('en-IN')}</p>
+                    <div className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-green-100 rounded-full">
+                      <Percent size={12} className="text-green-600" />
+                      <span className="text-xs font-semibold text-green-700">{discountApplied}% First Purchase Discount!</span>
+                    </div>
+                    {(discountValidFrom || discountValidUntil) && (
+                      <div className="mt-2 flex items-center justify-center gap-1 text-xs text-gray-500">
+                        <Calendar size={12} />
+                        {discountValidFrom && discountValidUntil ? (
+                          <span>Valid: {discountValidFrom} - {discountValidUntil}</span>
+                        ) : discountValidUntil ? (
+                          <span>Valid until: {discountValidUntil}</span>
+                        ) : discountValidFrom ? (
+                          <span>Valid from: {discountValidFrom}</span>
+                        ) : null}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-3xl font-bold text-gray-900">₹{finalPrice.toLocaleString('en-IN')}</p>
+                )}
+                
+                <p className="text-xs text-gray-500 mt-2">✓ Receipt will be sent to your email</p>
               </div>
+              
               <div className="bg-gray-50 rounded-xl p-4 mb-5 space-y-2 text-sm">
-                <div className="flex justify-between text-gray-600"><span>Total lessons</span><span className="font-medium text-gray-900">{tt}</span></div>
-                <div className="flex justify-between text-gray-600"><span>Free preview</span><span className="font-medium text-green-600">{ft} lessons</span></div>
-                {pt > 0 && <div className="flex justify-between text-gray-600"><span>Premium lessons</span><span className="font-medium text-blue-600">{pt}</span></div>}
+                <div className="flex justify-between text-gray-600">
+                  <span>Total lessons</span>
+                  <span className="font-medium text-gray-900">{tt}</span>
+                </div>
+                <div className="flex justify-between text-gray-600">
+                  <span>Free preview</span>
+                  <span className="font-medium text-green-600">{ft} lessons</span>
+                </div>
+                {pt > 0 && (
+                  <div className="flex justify-between text-gray-600">
+                    <span>Premium lessons</span>
+                    <span className="font-medium text-blue-600">{pt}</span>
+                  </div>
+                )}
               </div>
+              
               <div className="flex items-center gap-2 px-4 py-3 border border-gray-200 rounded-xl mb-5">
                 <CreditCard size={16} className="text-gray-400" />
                 <span className="text-sm font-medium text-gray-700">Razorpay — Secure Payment</span>
               </div>
-              <button onClick={handlePayment} disabled={paymentProcessing} className="w-full py-3 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-60 transition-colors">
-                {paymentProcessing ? 'Processing...' : `Pay ₹${course.price} & Enroll`}
+              
+              <button 
+                onClick={handlePayment} 
+                disabled={paymentProcessing} 
+                className="w-full py-3 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-60 transition-colors"
+              >
+                {paymentProcessing ? 'Processing...' : `Pay ₹${finalPrice.toLocaleString('en-IN')} & Enroll`}
               </button>
-              <button onClick={() => setShowPaymentModal(false)} disabled={paymentProcessing} className="w-full mt-2 py-2.5 text-sm text-gray-500 hover:text-gray-700 transition-colors">
+              
+              <button 
+                onClick={() => setShowPaymentModal(false)} 
+                disabled={paymentProcessing} 
+                className="w-full mt-2 py-2.5 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+              >
                 Cancel
               </button>
-              <p className="text-xs text-gray-400 text-center mt-3">Payments are secured by Razorpay</p>
+              
+              <p className="text-xs text-gray-400 text-center mt-3">
+                After payment, you'll receive a receipt via email
+              </p>
             </div>
           </div>
         </div>
@@ -444,6 +749,39 @@ const CourseDetails = () => {
         <div className="flex flex-col lg:flex-row gap-6 items-start">
           {/* LEFT COLUMN */}
           <div className="flex-1 min-w-0">
+            {/* Scholarship Banner */}
+            {scholarship && !isEnrolled && course?.price > 0 && !isCompletelyFree() && (
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-xl p-5 mb-5 flex items-start gap-4">
+                <div className="bg-blue-100 p-2.5 rounded-full flex-shrink-0 mt-0.5">
+                  <Tag size={20} className="text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
+                    Special Scholarship Available!
+                    <span className="bg-blue-600 text-white text-xs px-2.5 py-0.5 rounded-full font-semibold shadow-sm">
+                      {scholarship.discount}% OFF
+                    </span>
+                  </h3>
+                  <p className="text-sm text-gray-600 mt-1.5 leading-relaxed">
+                    You have a special scholarship discount of <span className="font-semibold text-gray-800">{scholarship.discount}%</span> on this course. 
+                    Enroll now to claim your discount!
+                  </p>
+                  {(scholarship.validFrom || scholarship.validUntil) && (
+                    <div className="flex items-center gap-1.5 mt-2.5 text-xs text-gray-500 font-medium bg-white/60 w-fit px-3 py-1.5 rounded-lg border border-blue-50">
+                      <Calendar size={13} className="text-blue-500" />
+                      {scholarship.validFrom && scholarship.validUntil ? (
+                        <span>Valid from {formatDate(scholarship.validFrom)} to {formatDate(scholarship.validUntil)}</span>
+                      ) : scholarship.validUntil ? (
+                        <span>Valid until {formatDate(scholarship.validUntil)}</span>
+                      ) : (
+                        <span>Valid from {formatDate(scholarship.validFrom)}</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Course header */}
             <div className="bg-white rounded-xl border border-gray-100 p-6 mb-5">
               <div className="flex flex-wrap gap-2 mb-3">
@@ -454,6 +792,11 @@ const CourseDetails = () => {
                 {isEnrolled && <span className="text-xs font-medium text-green-700 bg-green-50 px-2.5 py-1 rounded-md flex items-center gap-1"><CheckCircle size={11} /> Enrolled</span>}
                 {!isEnrolled && isCompletelyFree() && <span className="text-xs font-medium text-green-700 bg-green-50 px-2.5 py-1 rounded-md">Free</span>}
                 {!isEnrolled && !isCompletelyFree() && hasPreviewContent() && <span className="text-xs font-medium text-blue-700 bg-blue-50 px-2.5 py-1 rounded-md">Free Preview Available</span>}
+                {showDiscountBlock && !isEnrolled && (
+                  <span className="text-xs font-medium text-green-700 bg-green-50 px-2.5 py-1 rounded-md flex items-center gap-1">
+                    <Percent size={11} /> {discountApplied}% First Purchase Discount
+                  </span>
+                )}
               </div>
               <h1 className="text-2xl font-bold text-gray-900 mb-3">{course.title}</h1>
               {course.description && (
@@ -481,8 +824,9 @@ const CourseDetails = () => {
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`px-5 py-2 text-sm font-medium rounded-lg transition-colors capitalize ${activeTab === tab ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-                    }`}
+                  className={`px-5 py-2 text-sm font-medium rounded-lg transition-colors capitalize ${
+                    activeTab === tab ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                  }`}
                 >
                   {tab}
                 </button>
@@ -522,35 +866,6 @@ const CourseDetails = () => {
                     </ul>
                   </div>
                 )}
-                <div className="bg-white rounded-xl border border-gray-100 p-5">
-                  <h2 className="text-base font-bold text-gray-900 mb-3">Instructor</h2>
-                  <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-base font-bold flex-shrink-0">
-                      {(course.instructor?.name || course.instructor?.fullName || 'I')[0].toUpperCase()}
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-gray-900">{course.instructor?.name || course.instructor?.fullName || 'Expert Instructor'}</p>
-                      <p className="text-xs text-gray-500">{course.instructor?.email || 'Professional Trainer'}</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-white rounded-xl border border-gray-100 p-5">
-                  <h2 className="text-base font-bold text-gray-900 mb-3">Course Details</h2>
-                  <div className="divide-y divide-gray-50 text-sm">
-                    {[
-                      ['Modules', course.modules?.length || 0, 'text-blue-600'],
-                      ['Total Lessons', tt, 'text-purple-600'],
-                      ['Free Lessons', ft, 'text-green-600'],
-                      ...(pt > 0 ? [['Premium Lessons', pt, 'text-orange-600']] : []),
-                      ['Level', <span className="capitalize">{course.level || 'Beginner'}</span>, 'text-gray-800'],
-                    ].map(([label, val, cls], i) => (
-                      <div key={i} className="flex justify-between py-2.5">
-                        <span className="text-gray-500">{label}</span>
-                        <span className={`font-semibold ${cls}`}>{val}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
               </div>
             )}
 
@@ -629,10 +944,11 @@ const CourseDetails = () => {
                                                 <button
                                                   onClick={() => playVideo(topic)}
                                                   disabled={!hasAccess}
-                                                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${hasAccess
+                                                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                                                    hasAccess
                                                       ? 'bg-blue-600 text-white hover:bg-blue-700'
                                                       : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                                    }`}
+                                                  }`}
                                                 >
                                                   <Play size={11} /> Watch
                                                 </button>
@@ -646,14 +962,25 @@ const CourseDetails = () => {
                                                   <Info size={11} /> Info
                                                 </button>
                                               )}
+
+                                              {(topic.notes || topic.notesUrl) && (
+                                                <button
+                                                  onClick={() => handleDownloadNotesPDF(topic)}
+                                                  disabled={!hasAccess}
+                                                  className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 ${
+                                                    hasAccess
+                                                      ? 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+                                                      : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                  }`}
+                                                >
+                                                  <Download size={11} /> Notes
+                                                </button>
+                                              )}
                                             </div>
                                           </div>
                                         </div>
                                       );
                                     })}
-                                    {ch.topics?.length === 0 && (
-                                      <p className="text-xs text-gray-400 pl-14 py-2">No lessons added yet.</p>
-                                    )}
                                   </div>
                                 )}
                               </div>
@@ -676,21 +1003,90 @@ const CourseDetails = () => {
           {/* RIGHT COLUMN - Enrollment card */}
           <div className="w-full lg:w-72 flex-shrink-0">
             <div className="sticky top-5 bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm">
-              {!isEnrolled ? (
+              {checkingEnrollment ? (
+                <div className="p-8 text-center">
+                  <div className="w-8 h-8 border-3 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-2" />
+                  <p className="text-xs text-gray-400">Checking enrollment...</p>
+                </div>
+              ) : isEnrolled ? (
+                <div className="p-6 text-center">
+                  <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <CheckCircle size={26} className="text-green-600" />
+                  </div>
+                  <p className="font-bold text-gray-900 mb-1">Already Enrolled!</p>
+                  <p className="text-xs text-gray-500 mb-4">You have full access to this course</p>
+                  <div className="mb-4 py-2 border-y border-gray-100">
+                    <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">Course Price</p>
+                    <p className="text-lg font-bold text-gray-700">₹{(course?.price || 0).toLocaleString('en-IN')}</p>
+                  </div>
+                  <button
+                    onClick={() => navigate(`/course-content/${course._id}`, { state: { course } })}
+                    className="w-full py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors"
+                  >
+                    Continue Learning
+                  </button>
+                </div>
+              ) : (
                 <>
                   <div className="p-5 text-center border-b border-gray-100">
-                    <p className="text-3xl font-bold text-gray-900">
-                      {isCompletelyFree() ? 'Free' : `₹${course.price?.toLocaleString('en-IN') || '0'}`}
-                    </p>
-                    {!isCompletelyFree() && <p className="text-xs text-gray-400 mt-1">One-time payment · Full access</p>}
+                    {fetchingPrice ? (
+                      <div className="animate-pulse">
+                        <div className="h-8 bg-gray-200 rounded w-24 mx-auto mb-2"></div>
+                        <div className="h-3 bg-gray-100 rounded w-32 mx-auto"></div>
+                      </div>
+                    ) : (
+                      <>
+                        {hasPreviousPurchase ? (
+                          <div>
+                            <p className="text-xs text-gray-500 mb-1">Regular Price</p>
+                            <p className="text-3xl font-bold text-gray-900">₹{finalPrice.toLocaleString('en-IN')}</p>
+                            <p className="text-xs text-gray-400 mt-2">Standard pricing applies</p>
+                          </div>
+                        ) : showDiscountBlock ? (
+                          <div>
+                            <p className="text-sm text-gray-400 line-through">₹{originalPrice.toLocaleString('en-IN')}</p>
+                            <p className="text-3xl font-bold text-gray-900">₹{finalPrice.toLocaleString('en-IN')}</p>
+                            <div className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-green-100 rounded-full">
+                              <Percent size={12} className="text-green-600" />
+                              <span className="text-xs font-semibold text-green-700">{discountApplied}% First Purchase Discount!</span>
+                            </div>
+                            {(discountValidFrom || discountValidUntil) && (
+                              <div className="mt-3 pt-2 border-t border-gray-100">
+                                <div className="flex items-center justify-center gap-1 text-xs text-gray-500">
+                                  <Calendar size={12} />
+                                  {discountValidFrom && discountValidUntil ? (
+                                    <span>Valid: {discountValidFrom} - {discountValidUntil}</span>
+                                  ) : discountValidUntil ? (
+                                    <span>Valid until: {discountValidUntil}</span>
+                                  ) : discountValidFrom ? (
+                                    <span>Valid from: {discountValidFrom}</span>
+                                  ) : null}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ) : isCompletelyFree() ? (
+                          <p className="text-3xl font-bold text-green-600">Free</p>
+                        ) : (
+                          <>
+                            <p className="text-3xl font-bold text-gray-900">₹{finalPrice.toLocaleString('en-IN')}</p>
+                            {!isCompletelyFree() && <p className="text-xs text-gray-400 mt-1">One-time payment · Full access</p>}
+                          </>
+                        )}
+                      </>
+                    )}
                   </div>
                   <div className="p-5 space-y-4">
                     <button
                       onClick={handleEnrollClick}
-                      disabled={enrollmentLoading || paymentProcessing}
-                      className="w-full py-3 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-60 transition-colors"
+                      disabled={enrollmentLoading || paymentProcessing || fetchingPrice || info.disabled}
+                      className={`w-full py-3 text-sm font-semibold rounded-xl transition-colors ${
+                        info.disabled
+                          ? 'bg-gray-400 text-white cursor-not-allowed'
+                          : 'bg-blue-600 text-white hover:bg-blue-700'
+                      } disabled:opacity-60`}
                     >
-                      {(enrollmentLoading || paymentProcessing) ? 'Processing...' : info.action}
+                      {enrollmentLoading || paymentProcessing || fetchingPrice ? 'Processing...' : info.action}
                     </button>
                     <div className="space-y-2.5 text-sm text-gray-600">
                       <div className="flex items-center gap-2"><BookOpen size={14} className="text-blue-500" /> {course.modules?.length || 0} modules</div>
@@ -698,17 +1094,11 @@ const CourseDetails = () => {
                       {ft > 0 && <div className="flex items-center gap-2"><Unlock size={14} className="text-green-500" /> {ft} free previews</div>}
                       {pt > 0 && !isCompletelyFree() && <div className="flex items-center gap-2"><Lock size={14} className="text-gray-400" /> {pt} premium lessons</div>}
                     </div>
+                    <div className="text-center text-xs text-gray-400 pt-2 border-t border-gray-100">
+                      <p>✓ Receipt will be sent to your email</p>
+                    </div>
                   </div>
                 </>
-              ) : (
-                <div className="p-6 text-center">
-                  <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <CheckCircle size={26} className="text-green-600" />
-                  </div>
-                  <p className="font-bold text-gray-900 mb-1">You're enrolled!</p>
-                  <p className="text-xs text-gray-500 mb-4">Full access to all lessons</p>
-
-                </div>
               )}
             </div>
           </div>

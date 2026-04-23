@@ -1,4 +1,5 @@
 import { Test } from "../../Admin/CreateTest/createtest.model.js";
+import scholarshipModel from "../Scholrship/scholarship.model.js";
 import { Result } from "./result.model.js";
 
 export const submitTest = async (req, res) => {
@@ -129,10 +130,25 @@ export const getAllResults = async (req, res) => {
       .populate("studentId", "fullName email")
       .populate("testId", "title");
 
+    const updatedResults = await Promise.all(
+      results.map(async (r) => {
+        const scholarship = await scholarshipModel.findOne({
+          studentId: r.studentId._id
+        });
+
+        return {
+          ...r._doc,
+          scholarshipId: scholarship?._id || null, 
+          scholarshipStatus: scholarship?.status || "not_applied"
+        };
+      })
+    );
+
     res.status(200).json({
       success: true,
-      data: results,
+      data: updatedResults,
     });
+
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

@@ -50,9 +50,6 @@ const EnrollStudentSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-
-// This ensures a student can't enroll in the SAME course twice
-// But allows enrolling in different courses
 EnrollStudentSchema.index(
   { student: 1, course: 1 },
   { unique: true }

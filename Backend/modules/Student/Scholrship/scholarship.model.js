@@ -4,8 +4,9 @@ const scholarshipSchema = new mongoose.Schema(
   {
     studentId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",   // agar aapka alag Student model hai
-      required: true
+      ref: "User",
+      required: true,
+      unique: true, // ✔ 1 student = 1 scholarship
     },
 
     program: {
@@ -36,7 +37,52 @@ const scholarshipSchema = new mongoose.Schema(
     phone: {
       type: String,
       required: true
+    },
+
+    status: {
+      type: String,
+      enum: ["pending", "approved", "rejected"],
+      default: "pending"
+    },
+
+    discount: {
+      type: Number,
+      default: 0
+    },
+       
+    discountType: {
+      type: String,
+      enum: ["percentage", "fixed"],
+      default: "percentage",
+    },
+
+    
+    validFrom: {
+      type: Date,
+    },
+
+    validUntil: {
+      type: Date,
+    },
+
+    adminRemark: {
+      type: String
+    },
+
+    isUsed: {
+      type: Boolean,
+      default: false   
+    },
+
+    usedAt: {
+      type: Date       
+    },
+
+    usedForCourse: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Course"   
     }
+
   },
   { timestamps: true }
 );

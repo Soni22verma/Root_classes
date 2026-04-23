@@ -3,76 +3,147 @@ import razorpay from "../../../config/rozorpay.js";
 import { Course } from "../../instructor/createCourse/createCourse.model.js";
 import { EnrollStudent } from "./enrollStudent.model.js";
 import User from '../student.model.js';
+import Scholarship from "../Scholrship/scholarship.model.js";
+import { generateReceipt } from "../../../utils/generate_recipt.js";
+import { sendReceiptEmail } from "../../../config/emailServices.js";
+import path  from "path";
+import fs from 'fs'
 
 export const createPayment = async (req, res) => {
   try {
     const { courseId, studentId } = req.body;
 
     if (!courseId || !studentId) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Course ID and Student ID are required" 
+      return res.status(400).json({
+        success: false,
+        message: "Course ID and Student ID are required"
       });
     }
 
     const course = await Course.findById(courseId);
     if (!course) {
-      return res.status(404).json({ success: false, message: "Course not found" });
-    }
-
-    const existingSuccessfulEnrollment = await EnrollStudent.findOne({
-      student: studentId,
-      course: courseId,
-      status: "success"
-    });
-
-    if (existingSuccessfulEnrollment) {
-      return res.status(400).json({
+      return res.status(404).json({
         success: false,
-        message: "You are already enrolled in this course"
+        message: "Course not found"
       });
     }
 
-    // Clean up any pending enrollment for THIS SPECIFIC course
-    const existingPendingEnrollment = await EnrollStudent.findOne({
+    const existingEnrollment = await EnrollStudent.findOne({
       student: studentId,
       course: courseId,
+      status: { $in: ['active', 'completed'] } 
+    });
+
+    if (existingEnrollment) {
+      return res.status(400).json({
+        success: false,
+        message: "You have already purchased this course!",
+        alreadyPurchased: true,
+        enrollmentId: existingEnrollment._id
+      });
+    }
+
+    const student = await User.findById(studentId);
+    if (student && student.enrolledCourses?.includes(courseId)) {
+      return res.status(400).json({
+        success: false,
+        message: "You have already purchased this course!",
+        alreadyPurchased: true
+      });
+    }
+
+    const pendingEnrollment = await EnrollStudent.findOne({
+      student: studentId,
+      course: courseId,
+      paymentStatus: "pending",
       status: "pending"
     });
 
-    if (existingPendingEnrollment) {
-      await EnrollStudent.deleteOne({ _id: existingPendingEnrollment._id });
+    if (pendingEnrollment) {
+      return res.status(400).json({
+        success: false,
+        message: "You already have a pending payment for this course. Please complete or cancel it.",
+        alreadyPurchased: false,
+        pending: true
+      });
+      
+    }
+const now = new Date();
+
+   const scholarship = await Scholarship.findOne({
+  studentId,
+  status: "approved",
+  isUsed: false,
+  validFrom: { $lte: now },
+  validUntil: { $gte: now }  
+});
+
+    let finalPrice = course.price;
+    let discountApplied = 0;
+
+    if (scholarship) {
+      discountApplied = scholarship.discount || 0;
+      finalPrice = course.price - (course.price * discountApplied / 100);
     }
 
+    console.log("Final Price:", finalPrice);
+
     const order = await razorpay.orders.create({
-      amount: Math.round(course.price * 100), 
+      amount: Math.round(finalPrice * 100),
       currency: "INR",
-     receipt: `rcpt_${Date.now().toString().slice(-10)}`
+      receipt: `rcpt_${Date.now().toString().slice(-10)}`
     });
 
-    const enrollment = await EnrollStudent.create({
-      student: studentId,
-      course: courseId,
-      orderId: order.id,
-      amount: course.price,
-      status: "pending",
-      paymentStatus: "pending"
-    });
+    let enrollment;
+    try {
+      enrollment = await EnrollStudent.create({
+        student: studentId,
+        course: courseId,
+        orderId: order.id,
+        amount: finalPrice,
+        originalPrice: course.price,
+        discountApplied,
+        status: "pending",
+        paymentStatus: "pending"
+      });
+    } catch (dbError) {
+      if (dbError.code === 11000) {
+        return res.status(400).json({
+          success: false,
+          message: "You have already purchased this course!",
+          alreadyPurchased: true
+        });
+      }
+      throw dbError;
+    }
 
     res.json({
       success: true,
       order,
-      enrollmentId: enrollment._id
+      enrollmentId: enrollment._id,
+      finalPrice,
+      discountApplied
     });
 
   } catch (error) {
     console.error("Create payment error:", error);
-    res.status(500).json({ 
-      success: false, 
-      message: error.message || "Failed to create payment" 
+    
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: "You have already purchased this course!",
+        alreadyPurchased: true
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      message: error.message || "Failed to create payment"
     });
   }
 };
+
+
 
 export const verifyPayment = async (req, res) => {
   try {
@@ -84,6 +155,7 @@ export const verifyPayment = async (req, res) => {
     } = req.body;
 
     const body = razorpay_order_id + "|" + razorpay_payment_id;
+
     const expectedSignature = crypto
       .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
       .update(body)
@@ -97,11 +169,11 @@ export const verifyPayment = async (req, res) => {
     }
 
     let enrollment = null;
-    
+
     if (enrollmentId) {
       enrollment = await EnrollStudent.findById(enrollmentId);
     }
-    
+
     if (!enrollment) {
       enrollment = await EnrollStudent.findOne({
         orderId: razorpay_order_id
@@ -115,7 +187,6 @@ export const verifyPayment = async (req, res) => {
       });
     }
 
-    // Check if already processed
     if (enrollment.status === "success") {
       return res.json({
         success: true,
@@ -124,24 +195,73 @@ export const verifyPayment = async (req, res) => {
       });
     }
 
-    // Update enrollment with payment details
     enrollment.paymentId = razorpay_payment_id;
     enrollment.signature = razorpay_signature;
     enrollment.status = "success";
     enrollment.paymentStatus = "success";
     enrollment.enrolledAt = new Date();
+
     await enrollment.save();
 
-    // Add course to student's enrolled courses (using $addToSet to prevent duplicates)
     await User.findByIdAndUpdate(
-      enrollment.student, 
-      { 
-        $addToSet: { enrolledCourses: enrollment.course } 
-      },
-      { new: true }
+      enrollment.student,
+      {
+        $addToSet: { enrolledCourses: enrollment.course }
+      }
     );
 
-    res.json({
+    const scholarship = await Scholarship.findOne({
+      studentId: enrollment.student,
+      status: "approved",
+      isUsed: false
+    });
+
+    if (scholarship) {
+      scholarship.isUsed = true;
+      scholarship.usedAt = new Date();
+      scholarship.usedForCourse = enrollment.course;
+      await scholarship.save();
+    }
+
+    const student = await User.findById(enrollment.student);
+    const course = await Course.findById(enrollment.course);
+
+    if (!student || !course) {
+      return res.status(404).json({
+        success: false,
+        message: "Student or Course not found",
+      });
+    }
+
+    // Create receipts directory
+    const dir = path.join(process.cwd(), "receipts");
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+
+    // Generate receipt PDF
+    const fileName = `receipt_${enrollment._id}.pdf`;
+    const filePath = path.join(dir, fileName);
+
+    // Generate receipt with all data
+    await generateReceipt(filePath, {
+      name: student.fullName || student.name,
+      course: course.title,
+      originalPrice: enrollment.originalPrice,
+      discount: enrollment.discountApplied || 0,
+      finalPrice: enrollment.amount,
+      orderId: enrollment.orderId,
+      paymentId: razorpay_payment_id,
+      date: new Date().toLocaleString()
+    });
+
+    enrollment.receiptUrl = `/receipts/${fileName}`;
+    await enrollment.save();
+
+    await sendReceiptEmail(student, enrollment, course, filePath)
+      .catch(err => console.error("Email failed:", err));
+
+    return res.json({
       success: true,
       message: "Payment successful and enrollment completed",
       data: enrollment
@@ -149,59 +269,12 @@ export const verifyPayment = async (req, res) => {
 
   } catch (error) {
     console.error("Verify payment error:", error);
-    res.status(500).json({ 
-      success: false, 
-      message: error.message || "Payment verification failed" 
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Payment verification failed"
     });
   }
 };
-
-// // Check enrollment status for a specific course
-// export const checkEnrollmentStatus = async (req, res) => {
-//   try {
-//     const { studentId, courseId } = req.params;
-    
-//     const enrollment = await EnrollStudent.findOne({
-//       student: studentId,
-//       course: courseId,
-//       status: "success"
-//     });
-    
-//     res.json({
-//       success: true,
-//       isEnrolled: !!enrollment,
-//       enrollment
-//     });
-//   } catch (error) {
-//     res.status(500).json({ 
-//       success: false, 
-//       message: error.message 
-//     });
-//   }
-// };
-
-// export const getStudentEnrollments = async (req, res) => {
-//   try {
-//     const { studentId } = req.params;
-    
-//     const enrollments = await EnrollStudent.find({
-//       student: studentId,
-//       status: "success"
-//     }).populate('course');
-    
-//     res.json({
-//       success: true,
-//       data: enrollments
-//     });
-//   } catch (error) {
-//     res.status(500).json({ 
-//       success: false, 
-//       message: error.message 
-//     });
-//   }
-// };
-
-
 export const GetMyCourse = async(req,res,next)=>{
   try {
     const {studentId} = req.body;

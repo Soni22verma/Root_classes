@@ -75,7 +75,10 @@ const api ={
          delete: Base_Url + "/success-story/delete"
      },
      schollership:{
-        schollershipResult:Base_Url+"/result/get-all-results"
+        schollershipResult:Base_Url+"/result/get-all-results",
+        grantScholarship:Base_Url+"/scholarship/approve",
+        rejectScholarship:Base_Url+"/scholarship/reject",
+        getApprovedReject:Base_Url+"/scholarship/approved-rejected"
      }
 
     
