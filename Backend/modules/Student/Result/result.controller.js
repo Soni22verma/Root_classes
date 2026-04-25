@@ -133,7 +133,7 @@ export const getAllResults = async (req, res) => {
     const updatedResults = await Promise.all(
       results.map(async (r) => {
         const scholarship = await scholarshipModel.findOne({
-          studentId: r.studentId._id
+          studentId: r.studentId?._id
         });
 
         return {

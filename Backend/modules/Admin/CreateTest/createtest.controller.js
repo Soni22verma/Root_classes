@@ -4,11 +4,12 @@ import { emitNotification } from "../../../config/socket.js";
 
 export const createTest = async (req, res) => {
   try {
-    const { title, duration, passingPercentage } = req.body;
+    const { title, duration, passingPercentage, className } = req.body;
 
     const test = await Test.create({
       title,
       duration,
+       className,
       passingPercentage
     });
 
@@ -26,7 +27,7 @@ export const createTest = async (req, res) => {
 
 export const updateTest = async (req, res) => {
   try {
-    const { testId, title, duration, passingPercentage, isPublished } = req.body;
+    const { testId, title, duration, passingPercentage, isPublished,className } = req.body;
 
     const test = await Test.findById(testId);
 
@@ -37,7 +38,7 @@ export const updateTest = async (req, res) => {
     if (title !== undefined) test.title = title;
     if (duration !== undefined) test.duration = duration;
     if (passingPercentage !== undefined) test.passingPercentage = passingPercentage;
-
+    if(className !== undefined) test.className = className;
     if (isPublished !== undefined) {
       test.isPublished = isPublished;
     }
@@ -115,7 +116,7 @@ export const addQuestion = async (req, res) => {
 export const getQuestionsByTest = async (req, res) => {
   try {
 
-    const test = await Test.find().select("title questions");
+    const test = await Test.find().select("title duration className questions");
 
     if (!test) {
       return res.status(404).json({ message: "Test not found" });

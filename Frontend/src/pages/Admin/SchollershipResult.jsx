@@ -31,9 +31,7 @@ const ScholarshipResult = () => {
         return;
       }
 
-      const scholarshipResponse = await axios.get(api.schollership.schollershipResult, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const scholarshipResponse = await axios.get(api.schollership.schollershipResult);
 
       const pendingApplications = scholarshipResponse.data?.data || [];
 
@@ -185,7 +183,7 @@ const ScholarshipResult = () => {
     }
 
     try {
-      setActionLoading(selectedStudent._id);
+      setActionLoading(selectedStudent?._id);
       const token = localStorage.getItem("token");
 
       if (!token) {

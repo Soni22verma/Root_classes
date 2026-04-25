@@ -65,6 +65,11 @@ const userSchema = new mongoose.Schema(
             default: null
         },
 
+      className:{
+        type:String,
+        enum:["9th","10th","11th","12th"],
+       
+      }
 
     },
     { timestamps: true }

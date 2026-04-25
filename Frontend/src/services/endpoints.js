@@ -9,7 +9,8 @@ const api = {
         editprofiledetails:Base_Url+"/student/edit-profile-details",
         sendOtp:Base_Url+"/student/send-otp",
         verifyOTP:Base_Url+"/student/verify-otp",
-        resetPassword:Base_Url+"/student/reset-password"
+        resetPassword:Base_Url+"/student/reset-password",
+        getTestforStudent: Base_Url+"/student/get-testfor-student"
     },
     course:{
         getcourses:Base_Url+"/course/get_courses",
@@ -38,7 +39,8 @@ const api = {
     },
     test:{
       publishTest:Base_Url+"/test/get_isPublish",
-      getQuestion:Base_Url+"/test/get_questions"
+      getQuestion:Base_Url+"/test/get_questions",
+      
      },
      result:{
         submitTest:Base_Url+"/result/submit_test",

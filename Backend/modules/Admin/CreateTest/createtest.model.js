@@ -14,6 +14,11 @@ const testSchema = new mongoose.Schema({
   duration: { type: Number },
 
   questions: [questionSchema],
+  className:{
+    type:String,
+    enum:["9th","10th","11th","12th"],
+    required:true
+  },
 
   isPublished: { type: Boolean, default: false }
 }, { timestamps: true });

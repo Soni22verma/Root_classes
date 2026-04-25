@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Save, Edit, ChevronDown, ChevronUp, Loader, X, CheckCircle, Radio, BookOpen, Clock, Percent, AlertCircle, Menu } from 'lucide-react';
+import { Plus, Trash2, Save, Edit, ChevronDown, ChevronUp, Loader, X, CheckCircle, BookOpen, Clock, Percent, AlertCircle } from 'lucide-react';
 import axios from 'axios';
 import api from '../../services/adminendpoint';
 
@@ -13,23 +13,21 @@ const AdminTestCreator = () => {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [publishingTestId, setPublishingTestId] = useState(null);
   const [deletingTestId, setDeletingTestId] = useState(null);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  
-  // Edit Test Modal State
   const [isEditTestModalOpen, setIsEditTestModalOpen] = useState(false);
   const [editingTest, setEditingTest] = useState(null);
   const [editTestForm, setEditTestForm] = useState({
     title: '',
     duration: 60,
     passingPercentage: 70,
+    className: '',
     isPublished: false
   });
 
-  // New Test Form
   const [newTest, setNewTest] = useState({
     title: '',
     passingPercentage: 70,
     duration: 60,
+    className: '',
     isPublished: 'draft'
   });
 
@@ -44,26 +42,49 @@ const AdminTestCreator = () => {
     fetchAllTests();
   }, []);
 
+  const getQuestionsFromTest = (test) => {
+    if (test.questions && Array.isArray(test.questions)) return test.questions;
+    if (test.Questions && Array.isArray(test.Questions)) return test.Questions;
+    if (test.questionList && Array.isArray(test.questionList)) return test.questionList;
+    if (test.data && Array.isArray(test.data)) return test.data;
+    return [];
+  };
+
   const fetchAllTests = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.post(api.test.getQuestion, {});
-      console.log("API Response:", response.data);
+      const response = await axios.post(api.test.getQuestion);
+      console.log("Full API Response:", response.data);
       
+      let testsArray = [];
       if (response.data.success && Array.isArray(response.data.data)) {
-        const tests = response.data.data.map(item => ({
-          _id: item._id,
-          title: item.title,
-          questions: item.questions || [],
-          isPublished: item.isPublished || false,
-          passingPercentage: item.passingPercentage || 70,
-          duration: item.duration || 60
-        }));
-        setAllTests(tests);
+        testsArray = response.data.data;
+      } else if (response.data.success && Array.isArray(response.data.tests)) {
+        testsArray = response.data.tests;
+      } else if (Array.isArray(response.data)) {
+        testsArray = response.data;
+      } else if (response.data.data && Array.isArray(response.data.data.tests)) {
+        testsArray = response.data.data.tests;
+      } else {
+        console.warn("Unexpected response structure:", response.data);
+        testsArray = [];
       }
+
+      const tests = testsArray.map(item => ({
+        _id: item._id || item.id,
+        title: item.title || 'Untitled Test',
+        questions: getQuestionsFromTest(item),
+        isPublished: item.isPublished || item.is_published || false,
+        passingPercentage: item.passingPercentage || item.passing_percentage || 70,
+        duration: item.duration || 60,
+        className: item.className || item.class_name || ''
+      }));
+      
+      console.log("Processed tests with questions:", tests.map(t => ({ id: t._id, title: t.title, questionCount: t.questions.length })));
+      setAllTests(tests);
     } catch (error) {
       console.error('Error fetching tests:', error);
-      alert('Failed to load tests');
+      alert('Failed to load tests: ' + (error.response?.data?.message || error.message));
     } finally {
       setIsLoading(false);
     }
@@ -81,31 +102,34 @@ const AdminTestCreator = () => {
         title: newTest.title,
         duration: newTest.duration,
         passingPercentage: newTest.passingPercentage,
+        className: newTest.className,
         isPublished: newTest.isPublished === 'published'
       });
       
       if (response.data.success) {
-        setNewTest({ title: '', passingPercentage: 70, duration: 60, isPublished: 'draft' });
+        setNewTest({ title: '', passingPercentage: 70, duration: 60, className: '', isPublished: 'draft' });
         await fetchAllTests();
         setSaveSuccess(true);
         setTimeout(() => setSaveSuccess(false), 3000);
         alert('Test created successfully!');
+      } else {
+        alert(response.data.message || 'Failed to create test');
       }
     } catch (error) {
       console.error('Error creating test:', error);
-      alert('Failed to create test');
+      alert('Failed to create test: ' + (error.response?.data?.message || error.message));
     } finally {
       setIsSaving(false);
     }
   };
 
-  // Open Edit Test Modal
   const openEditTestModal = (test) => {
     setEditingTest(test);
     setEditTestForm({
       title: test.title,
       duration: test.duration,
       passingPercentage: test.passingPercentage,
+      className: test.className || '',
       isPublished: test.isPublished
     });
     setIsEditTestModalOpen(true);
@@ -124,29 +148,21 @@ const AdminTestCreator = () => {
         title: editTestForm.title,
         duration: editTestForm.duration,
         passingPercentage: editTestForm.passingPercentage,
+        className: editTestForm.className,
         isPublished: editTestForm.isPublished
       });
-      
-      console.log('Update test response:', response);
       
       if (response.data.success) {
         await fetchAllTests();
         setIsEditTestModalOpen(false);
         setEditingTest(null);
-        setEditTestForm({
-          title: '',
-          duration: 60,
-          passingPercentage: 70,
-          isPublished: false
-        });
         alert('Test updated successfully!');
       } else {
         alert(response.data.message || 'Failed to update test');
       }
     } catch (error) {
       console.error('Error updating test:', error);
-      const errorMessage = error.response?.data?.message || 'Failed to update test';
-      alert(errorMessage);
+      alert('Failed to update test: ' + (error.response?.data?.message || error.message));
     } finally {
       setIsSaving(false);
     }
@@ -167,11 +183,11 @@ const AdminTestCreator = () => {
             setExpandedTest(null);
           }
         } else {
-          alert('Failed to delete test');
+          alert(response.data.message || 'Failed to delete test');
         }
       } catch (error) {
         console.error('Error deleting test:', error);
-        alert('Failed to delete test');
+        alert('Failed to delete test: ' + (error.response?.data?.message || error.message));
       } finally {
         setDeletingTestId(null);
       }
@@ -191,8 +207,9 @@ const AdminTestCreator = () => {
       if (response.data.success) {
         await fetchAllTests();
         return true;
+      } else {
+        throw new Error(response.data.message || 'Failed to add question');
       }
-      return false;
     } catch (error) {
       console.error('Error adding question:', error);
       throw error;
@@ -213,8 +230,9 @@ const AdminTestCreator = () => {
       if (response.data.success) {
         await fetchAllTests(); 
         return true;
+      } else {
+        throw new Error(response.data.message || 'Failed to update question');
       }
-      return false;
     } catch (error) {
       console.error('Error updating question:', error);
       throw error;
@@ -223,17 +241,17 @@ const AdminTestCreator = () => {
 
   const deleteQuestion = async (testId, questionId) => {
     try {
-      console.log(testId, questionId);
       const response = await axios.post(api.test.deleteQuestion, {
         testId: testId, 
         questionId: questionId 
       });
-      console.log(response);
+      
       if (response.data.success) {
         await fetchAllTests(); 
         return true;
+      } else {
+        throw new Error(response.data.message || 'Failed to delete question');
       }
-      return false;
     } catch (error) {
       console.error('Error deleting question:', error);
       throw error;
@@ -247,14 +265,16 @@ const AdminTestCreator = () => {
         testId: testId,
         isPublished: isPublished
       });
-      console.log(response);
+      
       if (response.data.success) {
         await fetchAllTests();
         alert(`Test ${isPublished ? 'published' : 'unpublished'} successfully!`);
+      } else {
+        alert(response.data.message || 'Failed to update test status');
       }
     } catch (error) {
       console.error('Error updating publish status:', error);
-      alert('Failed to update test status');
+      alert('Failed to update test status: ' + (error.response?.data?.message || error.message));
     } finally {
       setPublishingTestId(null);
     }
@@ -264,9 +284,9 @@ const AdminTestCreator = () => {
     if (question && test) {
       setQuestionForm({
         question: question.question,
-        options: [...question.options],
+        options: [...(question.options || [])],
         correctAnswer: question.correctAnswer,
-        marks: question.marks
+        marks: question.marks || 1
       });
       setEditingQuestion({ testId: test._id, questionId: question._id });
     } else if (test) {
@@ -314,8 +334,14 @@ const AdminTestCreator = () => {
       
       setIsQuestionModalOpen(false);
       setEditingQuestion(null);
+      setQuestionForm({
+        question: '',
+        options: ['', '', '', ''],
+        correctAnswer: '',
+        marks: 1
+      });
     } catch (error) {
-      alert('Failed to save question');
+      alert(error.message || 'Failed to save question');
     } finally {
       setIsSaving(false);
     }
@@ -327,7 +353,7 @@ const AdminTestCreator = () => {
         await deleteQuestion(testId, questionId);
         alert('Question deleted successfully!');
       } catch (error) {
-        alert('Failed to delete question');
+        alert(error.message || 'Failed to delete question');
       }
     }
   };
@@ -386,6 +412,17 @@ const AdminTestCreator = () => {
                     value={newTest.title}
                     onChange={(e) => setNewTest({ ...newTest, title: e.target.value })}
                     placeholder="e.g., JavaScript Fundamentals Quiz"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Class Name</label>
+                  <input
+                    type="text"
+                    value={newTest.className}
+                    onChange={(e) => setNewTest({ ...newTest, className: e.target.value })}
+                    placeholder="e.g., Mathematics 101, Grade 10 Science"
                     className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                   />
                 </div>
@@ -510,6 +547,11 @@ const AdminTestCreator = () => {
                               }`}>
                                 {test.isPublished ? 'Published' : 'Draft'}
                               </span>
+                              {test.className && (
+                                <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
+                                  {test.className}
+                                </span>
+                              )}
                             </div>
                             <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs text-gray-500">
                               <span className="flex items-center gap-1">
@@ -713,6 +755,17 @@ const AdminTestCreator = () => {
                     value={editTestForm.title}
                     onChange={(e) => setEditTestForm({ ...editTestForm, title: e.target.value })}
                     placeholder="Enter test title"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Class Name</label>
+                  <input
+                    type="text"
+                    value={editTestForm.className}
+                    onChange={(e) => setEditTestForm({ ...editTestForm, className: e.target.value })}
+                    placeholder="e.g., Mathematics 101, Grade 10 Science"
                     className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                   />
                 </div>

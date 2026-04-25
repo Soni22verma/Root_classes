@@ -6,64 +6,93 @@ import useStudentStore from '../../Store/studentstore';
 const StudentTestPanel = () => {
   const { student } = useStudentStore();
 
-  const [availableTests, setAvailableTests] = useState([]);
-  const [completedTests, setCompletedTests] = useState([]);
+  // Main state
+  const [tests, setTests] = useState([]);           // formatted tests with attempt status
   const [loading, setLoading] = useState(true);
+  const [studentId, setStudentId] = useState(null);
+  const [studentClass, setStudentClass] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  // Test taking state
   const [selectedTest, setSelectedTest] = useState(null);
   const [testStarted, setTestStarted] = useState(false);
+  const [questions, setQuestions] = useState([]);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState({});
   const [testCompleted, setTestCompleted] = useState(false);
-  const [score, setScore] = useState(null);
   const [scoreDetails, setScoreDetails] = useState(null);
-  const [questions, setQuestions] = useState([]);
   const [timeRemaining, setTimeRemaining] = useState(null);
   const [timerActive, setTimerActive] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [studentId, setStudentId] = useState(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [viewingResult, setViewingResult] = useState(null);
-  const [showResultModal, setShowResultModal] = useState(false);
-  const [checkingAttempt, setCheckingAttempt] = useState(false);
 
+  // Result modal
+  const [showResultModal, setShowResultModal] = useState(false);
+  const [viewingResult, setViewingResult] = useState(null);
+
+  // Helper: extract numeric class from string like "12th" -> 12
+  const extractClassNumber = (className) => {
+    if (!className) return null;
+    const match = String(className).match(/\d+/);
+    return match ? parseInt(match[0], 10) : null;
+  };
+
+  // ----- 1. Get student ID and class from store / localStorage -----
   useEffect(() => {
-    if (student && student._id) {
-      setStudentId(student._id);
-      setIsLoggedIn(true);
-    } else if (student && student.id) {
-      setStudentId(student.id);
-      setIsLoggedIn(true);
+    let id = null;
+    let cls = null;
+    if (student) {
+      id = student._id || student.id;
+      cls = student.currentClass || student.className || student.class;
     } else {
       try {
         const userStr = localStorage.getItem('user');
         const token = localStorage.getItem('token');
         if (token && userStr) {
           const user = JSON.parse(userStr);
-          const id = user._id || user.id || user.userId || user.studentId;
-          if (id) {
-            setStudentId(id);
-            setIsLoggedIn(true);
-          } else {
-            setIsLoggedIn(false);
-            setStudentId(null);
-          }
-        } else {
-          setIsLoggedIn(false);
-          setStudentId(null);
+          id = user._id || user.id || user.userId || user.studentId;
+          cls = user.currentClass || user.className || user.class;
         }
       } catch (error) {
-        setIsLoggedIn(false);
-        setStudentId(null);
+        // ignore
       }
     }
+    setStudentId(id);
+    setStudentClass(cls);
+    setIsLoggedIn(!!id);
   }, [student]);
 
+  // ----- 2. If logged in but class missing, fetch full profile -----
+  const fetchFullProfile = async () => {
+    if (isLoggedIn && studentId && !studentClass) {
+      try {
+        const res = await axios.post(api.student.getStudent, {
+          studentId: studentId,
+        });
+        if (res.data?.success) {
+          const profile = res.data.user || res.data.data;
+          if (profile) {
+            const cls = profile.currentClass || profile.className || profile.class;
+            if (cls) {
+              setStudentClass(cls);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching full profile:', error);
+      }
+    }
+  };
+  useEffect(() => {
+    fetchFullProfile();
+  }, [isLoggedIn, studentId, studentClass]);
+
+  // ----- 3. Fetch completed tests for this student -----
   const fetchCompletedTests = async () => {
     if (!studentId) return [];
     try {
       const res = await axios.post(api.result.getStudentResults, { studentId });
-      if (res.data && res.data.success && res.data.data) {
-        const completed = res.data.data.map(result => ({
+      if (res.data?.success && res.data.data) {
+        return res.data.data.map(result => ({
           testId: result.testId?._id || result.testId,
           testTitle: result.testId?.title || 'Unknown Test',
           score: result.obtainedMarks,
@@ -72,10 +101,7 @@ const StudentTestPanel = () => {
           completedAt: result.createdAt,
           isEligible: result.isEligible,
           obtainedMarks: result.obtainedMarks,
-          totalQuestions: result.totalQuestions
         }));
-        setCompletedTests(completed);
-        return completed;
       }
     } catch (error) {
       console.error('Error fetching completed tests:', error);
@@ -83,102 +109,118 @@ const StudentTestPanel = () => {
     return [];
   };
 
-  const checkAttemptTest = async (testId) => {
-    if (!studentId) return { attempted: false, result: null };
+  // ----- 4. Check if a specific test has been attempted (fallback) -----
+  const checkAttemptStatus = async (testId) => {
+    if (!studentId) return false;
     try {
       const res = await axios.post(api.result.attemptTest, { studentId, testId });
-      if (res.data && res.data.success) {
-        if (res.data.data && (res.data.data.attempted === true || res.data.data.alreadyAttempted === true)) {
-          return { attempted: true, result: res.data.data };
-        }
-        if (res.data.message && (res.data.message.includes('already') || res.data.message.includes('completed'))) {
-          return { attempted: true, result: res.data.data };
-        }
-        return { attempted: false, result: null };
+      if (res.data?.success) {
+        return res.data.data?.attempted === true || res.data.data?.alreadyAttempted === true;
       }
-      return { attempted: false, result: null };
+      return false;
     } catch (error) {
-      if (error.response && error.response.data) {
-        const message = error.response.data.message || '';
-        if (message.includes('already') || message.includes('completed') || message.includes('attempted')) {
-          return { attempted: true, result: error.response.data.data || null };
-        }
-      }
-      return { attempted: false, result: null };
+      if (error.response?.data?.message?.includes('already')) return true;
+      return false;
     }
   };
 
-  const GetAllPublishedTest = async () => {
-    try {
-      setLoading(true);
-      const res = await axios.post(api.test.publishTest);
-      if (res.data && res.data.success && res.data.data) {
-        const completed = await fetchCompletedTests();
-        const completedTestIds = new Set(completed.map(t => t.testId));
-        const completedResultsMap = new Map();
-        completed.forEach(result => completedResultsMap.set(result.testId, result));
+  // ----- 5. Main function: fetch tests for this student (only his class) -----
+  const getTestsForStudent = async () => {
+    if (!isLoggedIn || !studentId) {
+      setTests([]);
+      setLoading(false);
+      return;
+    }
 
-        const testsWithAttemptStatus = await Promise.all(
-          res.data.data.map(async (test) => {
-            let isCompleted = completedTestIds.has(test._id);
-            let completedResult = completedResultsMap.get(test._id);
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.post(
+        api.student.getTestforStudent,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      console.log(res);
+
+      if (res.data?.success) {
+        let rawTests = res.data.tests || res.data.data || [];
+
+        // Optional: filter by class if backend doesn't
+        if (studentClass) {
+          const studentNum = extractClassNumber(studentClass);
+          rawTests = rawTests.filter(test => {
+            const testNum = extractClassNumber(test.className);
+            return studentNum && testNum && studentNum === testNum;
+          });
+        }
+
+        // Get completed tests from results
+        const completedTests = await fetchCompletedTests();
+        const completedIds = new Set(completedTests.map(t => t.testId));
+
+        // Build final test list with attempt info
+        const formattedTests = await Promise.all(
+          rawTests.map(async (test) => {
+            // ✅ FIX: Get actual question count from the questions array
+            const questionCount = test.questions?.length || test.questionCount || test.totalQuestions || 0;
+            // Use totalMarks from response, or estimate if missing
+            const totalMarks = test.totalMarks ?? (questionCount * 1);
+
+            let isCompleted = completedIds.has(test._id);
+            let completedResult = completedTests.find(t => t.testId === test._id);
+
+            // If not marked completed by results, double-check via attempt API
             if (!isCompleted) {
-              try {
-                const attemptStatus = await checkAttemptTest(test._id);
-                isCompleted = attemptStatus.attempted;
-                completedResult = completedResult || attemptStatus.result;
-              } catch (error) { }
+              const attempted = await checkAttemptStatus(test._id);
+              if (attempted) {
+                isCompleted = true;
+                completedResult = { testTitle: test.title, percentage: 0, obtainedMarks: 0 };
+              }
             }
+
             return {
               id: test._id,
-              title: test.title || "Untitled Test",
+              title: test.title || 'Untitled Test',
               duration: test.duration || 30,
-              totalQuestions: test.totalQuestions || 0,
-              totalMarks: test.totalMarks || 0,
-              description: test.description || `Test your knowledge in ${test.title}`,
-              difficulty: test.difficulty || "Medium",
-              category: test.category || "General",
+              totalQuestions: questionCount,
+              totalMarks: totalMarks,
+              description: test.description || `Test your knowledge`,
+              difficulty: test.difficulty || 'Medium',
+              category: test.category || 'General',
               isCompleted,
               completedResult,
-              originalData: test
+              originalData: test, // Keep full test data for potential use
             };
           })
         );
-        setAvailableTests(testsWithAttemptStatus);
+
+        setTests(formattedTests);
       } else {
-        setAvailableTests([]);
+        setTests([]);
       }
     } catch (error) {
-      setAvailableTests([]);
+      console.error('Error fetching student tests:', error);
+      setTests([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const SubmitTest = async (testId, answers) => {
-    try {
-      setSubmitting(true);
-      const requestData = { studentId, testId, answers };
-      const res = await axios.post(api.result.submitTest, requestData);
-      if (res.data?.success) {
-        setScoreDetails(res.data.data);
-        await GetAllPublishedTest();
-        await fetchCompletedTests();
-        return { success: true, data: res.data.data };
-      }
-      return { success: false, error: res.data?.message || "Submission failed" };
-    } catch (error) {
-      alert(error.response?.data?.message || "Failed to submit test. Please try again.");
-      return { success: false, error: error.message };
-    } finally {
-      setSubmitting(false);
+  // Reload tests when studentId or studentClass changes
+  useEffect(() => {
+    if (isLoggedIn && studentId) {
+      getTestsForStudent();
+    } else {
+      setTests([]);
+      setLoading(false);
     }
-  };
+  }, [studentId, studentClass, isLoggedIn]);
 
+  // ----- 6. Fetch questions for a test -----
   const fetchTestQuestions = async (testId) => {
     try {
       const res = await axios.post(api.test.getQuestion, { testId });
-      if (res.data && res.data.success && res.data.data) {
+      if (res.data?.success && res.data.data) {
         let questionsData = [];
         if (Array.isArray(res.data.data)) {
           questionsData = res.data.data;
@@ -190,81 +232,69 @@ const StudentTestPanel = () => {
         return questionsData.map((q) => ({
           _id: q._id,
           id: q._id,
-          questionId: q._id,
-          text: q.question || q.questionText || q.text || "Question not available",
-          options: q.options || ["Option 1", "Option 2", "Option 3", "Option 4"],
+          text: q.question || q.questionText || q.text || 'Question not available',
+          options: q.options || ['Option 1', 'Option 2', 'Option 3', 'Option 4'],
           marks: q.marks || 1,
-          correctAnswer: q.correctAnswer !== undefined ? parseInt(q.correctAnswer) : 0
+          correctAnswer: q.correctAnswer !== undefined ? parseInt(q.correctAnswer) : 0,
         }));
       }
-    } catch (error) { }
+    } catch (error) {
+      console.error('Error fetching questions:', error);
+    }
     return [];
   };
 
+  // ----- 7. Submit test -----
+  const submitTest = async (testId, answersObj) => {
+    if (!studentId) return { success: false, error: 'Student not found' };
+    try {
+      setSubmitting(true);
+      const requestData = { studentId, testId, answers: answersObj };
+      const res = await axios.post(api.result.submitTest, requestData);
+      if (res.data?.success) {
+        return { success: true, data: res.data.data };
+      }
+      return { success: false, error: res.data?.message || 'Submission failed' };
+    } catch (error) {
+      return { success: false, error: error.response?.data?.message || error.message };
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // ----- 8. Start test handler -----
   const handleStartTest = async (test) => {
-    // Check if test is already completed from the local state
     if (test.isCompleted) {
-      alert('⚠️ You have already taken this test! You cannot retake it.');
+      alert('⚠️ You have already taken this test!');
       return;
-    }
-    
-    let currentStudentId = studentId;
-    if (!currentStudentId && student) {
-      currentStudentId = student._id || student.id;
-      if (currentStudentId) { setStudentId(currentStudentId); setIsLoggedIn(true); }
-    }
-    if (!currentStudentId) {
-      try {
-        const userStr = localStorage.getItem('user');
-        if (userStr) {
-          const user = JSON.parse(userStr);
-          currentStudentId = user._id || user.id || user.userId || user.studentId;
-          if (currentStudentId) { setStudentId(currentStudentId); setIsLoggedIn(true); }
-        }
-      } catch (error) { }
-    }
-    if (!currentStudentId) { 
-      alert('Please login to take the test'); 
-      return; 
     }
 
-    setCheckingAttempt(true);
-    const attemptStatus = await checkAttemptTest(test.id);
-    if (attemptStatus.attempted) {
-      alert('⚠️ You have already taken this test! You cannot retake it.');
-      await GetAllPublishedTest(); // Refresh the test list to update the button state
-      setCheckingAttempt(false);
-      return;
-    }
-    setCheckingAttempt(false);
     setSelectedTest(test);
     setLoading(true);
     const testQuestions = await fetchTestQuestions(test.id);
     setQuestions(testQuestions);
-    if (test.duration) { setTimeRemaining(test.duration * 60); setTimerActive(true); }
+    if (test.duration) {
+      setTimeRemaining(test.duration * 60);
+      setTimerActive(true);
+    }
     setTestStarted(true);
     setCurrentQuestion(0);
     setAnswers({});
     setTestCompleted(false);
-    setScore(null);
     setScoreDetails(null);
     setLoading(false);
   };
 
-  const handleViewResult = (test) => {
-    setViewingResult(test.completedResult);
-    setShowResultModal(true);
-  };
-
+  // ----- 9. Submit automatically on timer end -----
   useEffect(() => {
     let interval;
     if (timerActive && timeRemaining > 0 && !testCompleted) {
       interval = setInterval(() => {
-        setTimeRemaining(prev => {
+        setTimeRemaining((prev) => {
           if (prev <= 1) {
             clearInterval(interval);
             setTimerActive(false);
-            if (!testCompleted) calculateAndSubmitScore();
+            if (!testCompleted) handleAutoSubmit();
             return 0;
           }
           return prev - 1;
@@ -274,35 +304,65 @@ const StudentTestPanel = () => {
     return () => clearInterval(interval);
   }, [timerActive, timeRemaining, testCompleted]);
 
-  const calculateAndSubmitScore = async () => {
+  const handleAutoSubmit = async () => {
     if (submitting || testCompleted) return;
     const formattedAnswers = {};
-    questions.forEach(question => {
-      const questionId = question._id || question.id || question.questionId;
-      const userAnswer = answers[questionId];
-      if (userAnswer !== undefined && userAnswer !== null) {
-        formattedAnswers[questionId] = Number(userAnswer);
+    questions.forEach((q) => {
+      const ans = answers[q.id];
+      if (ans !== undefined && ans !== null) {
+        formattedAnswers[q.id] = Number(ans);
       }
     });
     if (Object.keys(formattedAnswers).length === 0) {
-      alert("Please answer at least one question before submitting.");
+      alert('Please answer at least one question before time runs out.');
       return;
     }
-    const result = await SubmitTest(selectedTest.id, formattedAnswers);
+    const result = await submitTest(selectedTest.id, formattedAnswers);
     if (result.success) {
       setTestCompleted(true);
       setTimerActive(false);
-      if (result.data) { setScoreDetails(result.data); setScore(result.data.percentage); }
+      setScoreDetails(result.data);
+      await getTestsForStudent();
+    } else {
+      alert(result.error || 'Failed to submit test');
     }
   };
 
+  const handleSubmitManually = async () => {
+    if (submitting || testCompleted) return;
+    const formattedAnswers = {};
+    questions.forEach((q) => {
+      const ans = answers[q.id];
+      if (ans !== undefined && ans !== null) {
+        formattedAnswers[q.id] = Number(ans);
+      }
+    });
+    if (Object.keys(formattedAnswers).length === 0) {
+      alert('Please answer at least one question before submitting.');
+      return;
+    }
+    const result = await submitTest(selectedTest.id, formattedAnswers);
+    if (result.success) {
+      setTestCompleted(true);
+      setTimerActive(false);
+      setScoreDetails(result.data);
+      await getTestsForStudent();
+    } else {
+      alert(result.error || 'Failed to submit test');
+    }
+  };
+
+  // ----- 10. Navigation inside test -----
   const handleAnswerSelect = (questionId, answerIndex) => {
-    setAnswers(prev => ({ ...prev, [questionId]: answerIndex }));
+    setAnswers((prev) => ({ ...prev, [questionId]: answerIndex }));
   };
 
   const handleNextQuestion = () => {
-    if (currentQuestion < questions.length - 1) setCurrentQuestion(currentQuestion + 1);
-    else calculateAndSubmitScore();
+    if (currentQuestion < questions.length - 1) {
+      setCurrentQuestion(currentQuestion + 1);
+    } else {
+      handleSubmitManually();
+    }
   };
 
   const handlePreviousQuestion = () => {
@@ -311,15 +371,28 @@ const StudentTestPanel = () => {
 
   const handleBackToTests = () => {
     if (testStarted && !testCompleted) {
-      if (!window.confirm('Are you sure you want to exit? Your progress will be lost.')) return;
+      if (!window.confirm('Are you sure you want to exit? Progress will be lost.')) return;
     }
-    setTestStarted(false); setSelectedTest(null); setTestCompleted(false);
-    setCurrentQuestion(0); setAnswers({}); setScore(null); setScoreDetails(null);
-    setQuestions([]); setTimerActive(false); setTimeRemaining(null);
+    setTestStarted(false);
+    setSelectedTest(null);
+    setTestCompleted(false);
+    setCurrentQuestion(0);
+    setAnswers({});
+    setScoreDetails(null);
+    setQuestions([]);
+    setTimerActive(false);
+    setTimeRemaining(null);
   };
 
+  // ----- 11. View result modal -----
+  const handleViewResult = (test) => {
+    setViewingResult(test.completedResult);
+    setShowResultModal(true);
+  };
+
+  // ----- 12. Helper functions for UI -----
   const formatTime = (seconds) => {
-    if (!seconds) return "00:00";
+    if (!seconds && seconds !== 0) return '00:00';
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
@@ -328,10 +401,14 @@ const StudentTestPanel = () => {
   const getDifficultyColor = (difficulty) => {
     if (!difficulty) return 'bg-gray-100 text-gray-600';
     switch (difficulty.toLowerCase()) {
-      case 'easy': return 'bg-green-50 text-green-700 border border-green-200';
-      case 'medium': return 'bg-yellow-50 text-yellow-700 border border-yellow-200';
-      case 'hard': return 'bg-red-50 text-[#FB0500] border border-red-200';
-      default: return 'bg-gray-100 text-gray-600';
+      case 'easy':
+        return 'bg-green-50 text-green-700 border border-green-200';
+      case 'medium':
+        return 'bg-yellow-50 text-yellow-700 border border-yellow-200';
+      case 'hard':
+        return 'bg-red-50 text-[#FB0500] border border-red-200';
+      default:
+        return 'bg-gray-100 text-gray-600';
     }
   };
 
@@ -340,51 +417,31 @@ const StudentTestPanel = () => {
     return questions.length > 0 ? (answeredCount / questions.length) * 100 : 0;
   };
 
-  useEffect(() => { GetAllPublishedTest(); }, [studentId]);
-  useEffect(() => { if (testCompleted && studentId) { GetAllPublishedTest(); fetchCompletedTests(); } }, [testCompleted]);
-
-  // ── Loading / Checking Screens ──────────────────────────────────────────────
+  // ----- 13. RENDER -----
   if (loading && !testStarted) {
     return (
       <div className="min-h-screen bg-dot-grid flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 border-3 border-gray-200 border-t-[#0078FF] rounded-full animate-spin mx-auto mb-4" style={{ borderWidth: 3 }}></div>
-          <p className="text-sm text-gray-500">Loading available tests...</p>
+          <div className="w-12 h-12 border-3 border-gray-200 border-t-[#0078FF] rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-sm text-gray-500">Loading your tests...</p>
         </div>
       </div>
     );
   }
 
-  if (checkingAttempt) {
-    return (
-      <div className="min-h-screen bg-dot-grid flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-10 h-10 border-3 border-gray-200 border-t-[#FB0500] rounded-full animate-spin mx-auto mb-4" style={{ borderWidth: 3 }}></div>
-          <p className="text-sm text-gray-500">Checking test availability...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // ── Test List View ───────────────────────────────────────────────────────────
+  // ----- TEST LIST VIEW (default) -----
   if (!testStarted && !testCompleted) {
-    const totalDuration = availableTests.reduce((sum, t) => sum + (t.duration || 0), 0);
-    const totalQuestions = availableTests.reduce((sum, t) => sum + (t.totalQuestions || 0), 0);
-    const completedCount = availableTests.filter(t => t.isCompleted).length;
+    const totalDuration = tests.reduce((sum, t) => sum + (t.duration || 0), 0);
+    const totalQuestions = tests.reduce((sum, t) => sum + (t.totalQuestions || 0), 0);
+    const completedCount = tests.filter((t) => t.isCompleted).length;
 
     return (
       <div className="bg-white min-h-screen">
-
-        {/* ── Hero (Light & Sleek) ── */}
+        {/* Hero section */}
         <div className="relative bg-white border-b border-gray-100 overflow-hidden">
-          <div className="absolute inset-0 opacity-[0.4]" style={{
-            backgroundImage: 'radial-gradient(#e5e7eb 1px, transparent 1px)',
-            backgroundSize: '24px 24px'
-          }} />
-
+          <div className="absolute inset-0 opacity-[0.4]" style={{ backgroundImage: 'radial-gradient(#e5e7eb 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
           <div className="absolute -top-24 -right-24 w-96 h-96 bg-[#0078FF]/5 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-[#FB0500]/5 rounded-full blur-3xl pointer-events-none" />
-
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
               <div className="flex-1">
@@ -395,12 +452,20 @@ const StudentTestPanel = () => {
                 <h1 className="text-3xl md:text-5xl font-black text-gray-900 leading-tight">
                   Available <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FB0500] via-[#0078FF] to-[#28A745]">Tests</span>
                 </h1>
+                {studentClass && (
+                  <p className="text-sm text-gray-500 mt-2">
+                    Showing tests for <strong>{studentClass}</strong> class
+                  </p>
+                )}
               </div>
-
               <div className="flex-shrink-0">
                 {!isLoggedIn ? (
                   <div className="inline-flex items-center gap-2 bg-yellow-50 border border-yellow-100 rounded-xl px-4 py-2">
                     <p className="text-yellow-700 text-xs font-semibold uppercase tracking-wider">Login to attempt</p>
+                  </div>
+                ) : !studentClass ? (
+                  <div className="inline-flex items-center gap-2 bg-orange-50 border border-orange-100 rounded-xl px-4 py-2">
+                    <p className="text-orange-700 text-xs font-semibold uppercase tracking-wider">Complete your profile (Class missing)</p>
                   </div>
                 ) : (
                   <div className="inline-flex items-center gap-2 bg-green-50 border border-green-100 rounded-xl px-4 py-2">
@@ -417,7 +482,7 @@ const StudentTestPanel = () => {
         <div className="bg-white border-b border-gray-100 shadow-sm relative z-20">
           <div className="max-w-7xl mx-auto px-4 py-6 grid grid-cols-2 md:grid-cols-4 divide-x-0 md:divide-x divide-gray-100">
             {[
-              { label: 'Total Tests', value: availableTests.length, color: '#FB0500' },
+              { label: 'Total Tests', value: tests.length, color: '#FB0500' },
               { label: 'Total Questions', value: totalQuestions, color: '#0078FF' },
               { label: 'Total Duration', value: `${Math.floor(totalDuration / 60)}h ${totalDuration % 60}m`, color: '#28A745' },
               { label: 'Completed', value: completedCount, color: '#F1C40F' },
@@ -433,21 +498,26 @@ const StudentTestPanel = () => {
         {/* Test Grid */}
         <div className="bg-line-grid py-12 px-4">
           <div className="max-w-7xl mx-auto">
-            {availableTests.length === 0 ? (
+            {tests.length === 0 ? (
               <div className="text-center py-16">
                 <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
                   <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                   </svg>
                 </div>
-                <p className="text-gray-500 text-sm">No tests available at the moment. Check back later.</p>
+                <p className="text-gray-500 text-sm">
+                  {isLoggedIn && !studentClass
+                    ? 'Please complete your profile (set your class) to see available tests.'
+                    : isLoggedIn && studentClass
+                    ? `No tests available for class ${studentClass} at the moment.`
+                    : 'No tests available at the moment. Check back later.'}
+                </p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
-                {availableTests.map((test, i) => {
+                {tests.map((test, i) => {
                   const isWide = i % 5 === 0;
                   const accentRed = i % 2 === 0;
-
                   return (
                     <div
                       key={test.id}
@@ -458,9 +528,8 @@ const StudentTestPanel = () => {
                       }`}
                     >
                       <div className={`h-1.5 w-full ${accentRed ? 'bg-[#FB0500]' : 'bg-[#0078FF]'}`}></div>
-
                       <div className="p-6 flex flex-col flex-1">
-                        <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-start justify-between mb-4 flex-wrap gap-2">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className={`text-xs font-semibold px-2.5 py-1 rounded-lg ${getDifficultyColor(test.difficulty)}`}>
                               {test.difficulty}
@@ -475,14 +544,8 @@ const StudentTestPanel = () => {
                             </span>
                           )}
                         </div>
-
-                        <h3 className="text-lg font-bold mb-2 leading-snug text-gray-900">
-                          {test.title}
-                        </h3>
-                        <p className="text-sm mb-5 line-clamp-2 leading-relaxed flex-1 text-gray-500">
-                          {test.description}
-                        </p>
-
+                        <h3 className="text-lg font-bold mb-2 leading-snug text-gray-900">{test.title}</h3>
+                        <p className="text-sm mb-5 line-clamp-2 leading-relaxed flex-1 text-gray-500">{test.description}</p>
                         <div className="grid grid-cols-2 gap-2 mb-5 text-xs text-gray-500">
                           <div className="flex items-center gap-1.5">
                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -503,13 +566,11 @@ const StudentTestPanel = () => {
                             {test.totalMarks} Marks
                           </div>
                           {test.isCompleted && test.completedResult && (
-                            <div className="flex items-center gap-1.5 text-green-600 font-semibold">
+                            <div className="flex items-center gap-1.5 text-green-600 font-semibold col-span-2">
                               Score: {test.completedResult.percentage || 0}%
                             </div>
                           )}
                         </div>
-
-                        {/* Action Buttons */}
                         {test.isCompleted ? (
                           <button
                             onClick={() => handleViewResult(test)}
@@ -520,16 +581,16 @@ const StudentTestPanel = () => {
                         ) : (
                           <button
                             onClick={() => handleStartTest(test)}
-                            disabled={!isLoggedIn}
+                            disabled={!isLoggedIn || !studentClass}
                             className={`w-full py-2.5 rounded-xl font-semibold text-sm transition ${
-                              !isLoggedIn
+                              !isLoggedIn || !studentClass
                                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                 : accentRed
                                 ? 'bg-[#FB0500] text-white hover:opacity-90'
                                 : 'bg-[#0078FF] text-white hover:opacity-90'
                             }`}
                           >
-                            {!isLoggedIn ? 'Login to Start' : 'Start Test →'}
+                            {!isLoggedIn ? 'Login to Start' : !studentClass ? 'Set your class first' : 'Start Test →'}
                           </button>
                         )}
                       </div>
@@ -544,7 +605,7 @@ const StudentTestPanel = () => {
         {/* Result Modal */}
         {showResultModal && viewingResult && (
           <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setShowResultModal(false)}>
-            <div className="bg-white rounded-2xl max-w-md w-full overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="bg-white rounded-2xl max-w-md w-full overflow-hidden" onClick={(e) => e.stopPropagation()}>
               <div className="bg-white p-6 border-b border-gray-100">
                 <div className="flex justify-between items-start">
                   <div>
@@ -560,9 +621,7 @@ const StudentTestPanel = () => {
                 </div>
               </div>
               <div className="p-6 text-center">
-                <div className="text-5xl font-bold text-[#FB0500] mb-1">
-                  {viewingResult.percentage || viewingResult.score || 0}%
-                </div>
+                <div className="text-5xl font-bold text-[#FB0500] mb-1">{viewingResult.percentage || viewingResult.score || 0}%</div>
                 <p className="text-sm text-gray-500 mb-6">
                   {(viewingResult.percentage || 0) >= 70 ? 'Great job! You passed.' : 'Keep practicing to improve.'}
                 </p>
@@ -601,13 +660,13 @@ const StudentTestPanel = () => {
     );
   }
 
-  // ── Test Taking View ─────────────────────────────────────────────────────────
+  // ----- TEST TAKING VIEW -----
   if (testStarted && !testCompleted) {
     if (loading) {
       return (
         <div className="min-h-screen bg-dot-grid flex items-center justify-center">
           <div className="text-center">
-            <div className="w-12 h-12 rounded-full border-3 border-gray-200 border-t-[#0078FF] animate-spin mx-auto mb-4" style={{ borderWidth: 3 }}></div>
+            <div className="w-12 h-12 rounded-full border-3 border-gray-200 border-t-[#0078FF] animate-spin mx-auto mb-4"></div>
             <p className="text-sm text-gray-500">Loading test questions...</p>
           </div>
         </div>
@@ -645,16 +704,26 @@ const StudentTestPanel = () => {
             <div className="flex justify-between items-center mb-3">
               <div>
                 <p className="font-bold text-gray-900 text-sm">{selectedTest.title}</p>
-                <p className="text-xs text-gray-400">Question {currentQuestion + 1} of {questions.length}</p>
+                <p className="text-xs text-gray-400">
+                  Question {currentQuestion + 1} of {questions.length}
+                </p>
               </div>
               <div className="flex items-center gap-3">
                 {timeRemaining !== null && (
-                  <div className={`px-3 py-1.5 rounded-lg font-mono font-bold text-sm tabular-nums ${timeRemaining < 300 ? 'bg-red-50 text-[#FB0500] border border-red-200' : 'bg-blue-50 text-[#0078FF] border border-blue-100'
-                    }`}>
+                  <div
+                    className={`px-3 py-1.5 rounded-lg font-mono font-bold text-sm tabular-nums ${
+                      timeRemaining < 300
+                        ? 'bg-red-50 text-[#FB0500] border border-red-200'
+                        : 'bg-blue-50 text-[#0078FF] border border-blue-100'
+                    }`}
+                  >
                     {formatTime(timeRemaining)}
                   </div>
                 )}
-                <button onClick={handleBackToTests} className="text-xs text-gray-400 hover:text-gray-700 font-medium px-3 py-1.5 rounded-lg hover:bg-gray-100 transition">
+                <button
+                  onClick={handleBackToTests}
+                  className="text-xs text-gray-400 hover:text-gray-700 font-medium px-3 py-1.5 rounded-lg hover:bg-gray-100 transition"
+                >
                   ✕ Exit
                 </button>
               </div>
@@ -662,18 +731,28 @@ const StudentTestPanel = () => {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <div className="flex justify-between text-xs text-gray-400 mb-1">
-                  <span>Navigation</span><span>{currentQuestion + 1}/{questions.length}</span>
+                  <span>Navigation</span>
+                  <span>
+                    {currentQuestion + 1}/{questions.length}
+                  </span>
                 </div>
                 <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-[#0078FF] rounded-full transition-all" style={{ width: `${((currentQuestion + 1) / questions.length) * 100}%` }}></div>
+                  <div
+                    className="h-full bg-[#0078FF] rounded-full transition-all"
+                    style={{ width: `${((currentQuestion + 1) / questions.length) * 100}%` }}
+                  ></div>
                 </div>
               </div>
               <div>
                 <div className="flex justify-between text-xs text-gray-400 mb-1">
-                  <span>Answered</span><span>{Math.round(progress)}%</span>
+                  <span>Answered</span>
+                  <span>{Math.round(progress)}%</span>
                 </div>
                 <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-[#08B100] rounded-full transition-all" style={{ width: `${progress}%` }}></div>
+                  <div
+                    className="h-full bg-[#08B100] rounded-full transition-all"
+                    style={{ width: `${progress}%` }}
+                  ></div>
                 </div>
               </div>
             </div>
@@ -688,20 +767,22 @@ const StudentTestPanel = () => {
                   <span className="text-xs font-bold text-[#0078FF] bg-blue-50 border border-blue-100 px-3 py-1 rounded-lg">
                     Q{currentQuestion + 1}
                   </span>
-                  <span className="text-xs text-gray-400">{currentQ.marks} mark{currentQ.marks > 1 ? 's' : ''}</span>
+                  <span className="text-xs text-gray-400">
+                    {currentQ.marks} mark{currentQ.marks > 1 ? 's' : ''}
+                  </span>
                 </div>
                 <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-6 leading-relaxed">
-                  {currentQ?.text}
+                  {currentQ.text}
                 </h3>
-
                 <div className="space-y-2.5">
-                  {currentQ?.options.map((option, idx) => (
+                  {currentQ.options.map((option, idx) => (
                     <label
                       key={idx}
-                      className={`flex items-start p-3.5 border-2 rounded-xl cursor-pointer transition-all ${answers[currentQ.id] === idx
+                      className={`flex items-start p-3.5 border-2 rounded-xl cursor-pointer transition-all ${
+                        answers[currentQ.id] === idx
                           ? 'border-[#0078FF] bg-blue-50'
                           : 'border-gray-100 hover:border-gray-200 bg-gray-50'
-                        }`}
+                      }`}
                     >
                       <input
                         type="radio"
@@ -715,33 +796,44 @@ const StudentTestPanel = () => {
                     </label>
                   ))}
                 </div>
-
                 <div className="flex justify-between gap-3 mt-7">
                   <button
                     onClick={handlePreviousQuestion}
                     disabled={currentQuestion === 0}
-                    className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition ${currentQuestion === 0 ? 'bg-gray-100 text-gray-300 cursor-not-allowed' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
+                    className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition ${
+                      currentQuestion === 0
+                        ? 'bg-gray-100 text-gray-300 cursor-not-allowed'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
                   >
                     ← Previous
                   </button>
                   <button
                     onClick={handleNextQuestion}
                     disabled={!hasAnswered || submitting}
-                    className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition ${!hasAnswered || submitting
+                    className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition ${
+                      !hasAnswered || submitting
                         ? 'bg-gray-100 text-gray-300 cursor-not-allowed'
                         : 'bg-[#FB0500] text-white hover:opacity-90'
-                      }`}
+                    }`}
                   >
                     {submitting ? (
                       <span className="flex items-center gap-2">
                         <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          ></path>
                         </svg>
                         Submitting...
                       </span>
-                    ) : (isLastQuestion ? '✓ Submit Test' : 'Next →')}
+                    ) : isLastQuestion ? (
+                      '✓ Submit Test'
+                    ) : (
+                      'Next →'
+                    )}
                   </button>
                 </div>
               </div>
@@ -755,21 +847,31 @@ const StudentTestPanel = () => {
                     <button
                       key={idx}
                       onClick={() => setCurrentQuestion(idx)}
-                      className={`w-9 h-9 rounded-lg font-semibold text-xs transition ${currentQuestion === idx
+                      className={`w-9 h-9 rounded-lg font-semibold text-xs transition ${
+                        currentQuestion === idx
                           ? 'bg-[#0078FF] text-white shadow-sm'
                           : answers[q.id] !== undefined
-                            ? 'bg-[#08B100] text-white'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                        }`}
+                          ? 'bg-[#08B100] text-white'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
                     >
                       {idx + 1}
                     </button>
                   ))}
                 </div>
                 <div className="space-y-1.5 text-xs text-gray-500">
-                  <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-[#08B100]"></div>Answered</div>
-                  <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-[#0078FF]"></div>Current</div>
-                  <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-gray-200"></div>Not Answered</div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded bg-[#08B100]"></div>
+                    <span>Answered</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded bg-[#0078FF]"></div>
+                    <span>Current</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded bg-gray-200"></div>
+                    <span>Not Answered</span>
+                  </div>
                 </div>
                 <div className="mt-4 pt-4 border-t border-gray-100 text-xs text-gray-400">
                   {Object.keys(answers).length} of {questions.length} answered
@@ -782,19 +884,27 @@ const StudentTestPanel = () => {
     );
   }
 
-  // ── Results View ─────────────────────────────────────────────────────────────
+  // ----- RESULTS VIEW (after completion) -----
   if (testCompleted) {
-    const percentage = Math.round(score || scoreDetails?.percentage || 0);
+    const percentage = Math.round(scoreDetails?.percentage || 0);
     const obtainedMarks = scoreDetails?.obtainedMarks || 0;
     const totalPossibleMarks = scoreDetails?.totalMarks || questions.reduce((sum, q) => sum + q.marks, 0);
     const eligibilityStatus = scoreDetails?.isEligible;
-
-    let resultLabel = '';
-    let resultAccent = '';
-    if (percentage >= 80) { resultLabel = 'Excellent!'; resultAccent = 'text-[#08B100]'; }
-    else if (percentage >= 60) { resultLabel = 'Good Job!'; resultAccent = 'text-[#0078FF]'; }
-    else if (percentage >= 40) { resultLabel = 'Keep Practicing!'; resultAccent = 'text-yellow-500'; }
-    else { resultLabel = 'Need Improvement'; resultAccent = 'text-[#FB0500]'; }
+    let resultLabel = '',
+      resultAccent = '';
+    if (percentage >= 80) {
+      resultLabel = 'Excellent!';
+      resultAccent = 'text-[#08B100]';
+    } else if (percentage >= 60) {
+      resultLabel = 'Good Job!';
+      resultAccent = 'text-[#0078FF]';
+    } else if (percentage >= 40) {
+      resultLabel = 'Keep Practicing!';
+      resultAccent = 'text-yellow-500';
+    } else {
+      resultLabel = 'Need Improvement';
+      resultAccent = 'text-[#FB0500]';
+    }
 
     return (
       <div className="min-h-screen bg-dot-grid flex items-center justify-center p-4">
@@ -808,18 +918,22 @@ const StudentTestPanel = () => {
             <p className="text-xs font-bold text-[#0078FF] uppercase tracking-widest mb-1">Test Complete</p>
             <h2 className="text-xl font-bold text-gray-900">{selectedTest.title}</h2>
           </div>
-
           <div className="p-8 text-center">
             <div className={`text-6xl font-bold mb-1 ${resultAccent}`}>{percentage}%</div>
             <p className={`text-base font-semibold mb-6 ${resultAccent}`}>{resultLabel}</p>
-
             {eligibilityStatus !== undefined && (
-              <div className={`mb-6 px-4 py-3 rounded-xl text-sm font-medium ${eligibilityStatus ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-yellow-50 text-yellow-700 border border-yellow-200'
-                }`}>
-                {eligibilityStatus ? '✓ You are eligible for certification.' : 'Score 70%+ to become eligible for certification.'}
+              <div
+                className={`mb-6 px-4 py-3 rounded-xl text-sm font-medium ${
+                  eligibilityStatus
+                    ? 'bg-green-50 text-green-700 border border-green-200'
+                    : 'bg-yellow-50 text-yellow-700 border border-yellow-200'
+                }`}
+              >
+                {eligibilityStatus
+                  ? '✓ You are eligible for certification.'
+                  : 'Score 70%+ to become eligible for certification.'}
               </div>
             )}
-
             <div className="grid grid-cols-2 gap-3 mb-7">
               {[
                 { label: 'Total Questions', value: questions.length, color: 'text-[#0078FF]' },
@@ -833,7 +947,6 @@ const StudentTestPanel = () => {
                 </div>
               ))}
             </div>
-
             <button
               onClick={handleBackToTests}
               className="w-full py-3 bg-[#0078FF] text-white rounded-xl font-semibold text-sm hover:opacity-90 transition"
