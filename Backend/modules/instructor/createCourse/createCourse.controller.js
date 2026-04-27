@@ -40,8 +40,10 @@ import User from "../../Student/student.model.js"
         category,
         price,
         level: level || "beginner",
-        instructor: req.user?.id, 
+        instructor: req.user?._id, 
+        instructorName: req.user?.fullName || "Instructor Name Not Available",
         modules: [],
+        status:"pending"
       });
 
 
@@ -77,6 +79,7 @@ export const GetCategory = async(req,res,next)=>{
 export const GetCreatedCourse = async(req,res,next)=>{
     try {
         const CreatedCourse = await Course.find()
+        .populate("instructor","fullName email")
         return res.status(200).json({
             message:"fatch all course successfully",
             error:false,
@@ -132,6 +135,7 @@ export const UpdateCourse = async (req, res, next) => {
         category: category || existingCourse.category,
         level: level || existingCourse.level,
         price: price || existingCourse.price,
+        instructorName: existingCourse.instructorName || req.user?.fullName,
       },
       { returnDocument: "after" }
     );
@@ -892,8 +896,6 @@ export const DeleteTopic = async (req, res) => {
 
 export const getFullCourseDetails = async (req, res) => {
   try {
-
-
     const course = await Course.find()
       .populate("category", "name") 
       .populate("instructor","fullName email");
@@ -920,6 +922,73 @@ export const getFullCourseDetails = async (req, res) => {
     });
   }
 };
+
+
+export const approvedCourse = async(req,res,next)=>{
+  try {
+    const {courseId,status} = req.body;
+       if (!["approved", "rejected"].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid status",
+      });
+    }
+
+    const course = await Course.findByIdAndUpdate(
+      courseId,
+      {status},
+      {new:true}
+    )
+
+    if(!course){
+      return res.status(404).json({
+        success:true,
+        message:"course not found"
+      })
+    }
+
+     res.status(200).json({
+      success: true,
+      message: `Course ${status} successfully`,
+      data: course,
+    });
+    
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const getApprovedCourse = async(req,res,next)=>{
+   try {
+    const course = await Course.find({
+      status: "approved",
+    })
+      .populate("category", "name")
+      .populate("instructor", "fullName email");
+
+    if (!course || course.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No approved courses found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Approved courses fetched successfully",
+      data: course,
+    });
+
+  } catch (error) {
+    console.error("Error in getFullCourseDetails:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+}
 
 
 

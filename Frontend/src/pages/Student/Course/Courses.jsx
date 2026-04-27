@@ -49,7 +49,7 @@ const ClassroomCourses = () => {
   const GetFullCourse = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(api.fullcourse.getfullcourse);
+      const res = await axios.get(api.fullcourse.getApprovedcourse);
       let data = res.data?.data?.data || res.data?.data || (Array.isArray(res.data) ? res.data : res.data?.courses) || [];
       setCourses(data);
       setCategories(['All', ...new Set(data.map(c => c.category?.name || 'Uncategorized'))]);

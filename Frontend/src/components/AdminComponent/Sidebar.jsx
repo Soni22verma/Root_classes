@@ -71,6 +71,7 @@ const AdminSidebar = ({ isMobileOpen, setIsMobileOpen }) => {
 
   const menuItems = userData.role === 'admin' ? [
     { name: 'Dashboard', path: '/admin', icon: LayoutDashboard },
+    { name: 'All Students', path: '/admin/allstudent', icon: Users },
     { name: 'Course Manager', icon: BookOpen, submenu: [
         { name: 'All Courses', path: '/admin/allcourses', icon: BookOpen },
         { name: 'Categories', path: '/admin/coursecategory', icon: BarChart },

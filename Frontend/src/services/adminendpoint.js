@@ -46,7 +46,8 @@ const api ={
         deleteTestimonial:Base_Url+"/testimonial/delete_testinomial"
     },
     fullcourse:{
-        getfullcourse:Base_Url+"/course/get-full-course"
+        getfullcourse:Base_Url+"/course/get-full-course",
+        approvedCourse:Base_Url+"/course/approved-course",
     },
     enroll:{
       getpurchesCourse:Base_Url+"/enroll/get-purches-course"

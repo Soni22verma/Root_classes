@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import useStudentStore from '../../../Store/studentstore';
 import api from '../../../services/adminendpoint';
+import Loader from '../../../components/AdminComponent/Loader';
 
 const Enrollment = () => {
     const { student } = useStudentStore();  
@@ -200,40 +201,9 @@ const Enrollment = () => {
         }
     };
 
-    const LoadingSkeleton = () => (
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
-            <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-slate-200">
-                    <thead className="bg-slate-50">
-                        <tr>
-                            <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Enrollment ID</th>
-                            <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Student</th>
-                            <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Course</th>
-                            <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
-                            <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Amount</th>
-                            <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
-                            <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Payment</th>
-                            <th className="px-3 sm:px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-slate-200">
-                        {[1, 2, 3, 4, 5].map((item) => (
-                            <tr key={item} className="animate-pulse">
-                                <td className="px-3 sm:px-4 py-3"><div className="h-4 bg-gray-300 rounded w-20 sm:w-24"></div></td>
-                                <td className="px-3 sm:px-4 py-3"><div className="h-4 bg-gray-300 rounded w-28 sm:w-32"></div></td>
-                                <td className="px-3 sm:px-4 py-3"><div className="h-4 bg-gray-300 rounded w-32 sm:w-40"></div></td>
-                                <td className="px-3 sm:px-4 py-3"><div className="h-4 bg-gray-300 rounded w-20 sm:w-24"></div></td>
-                                <td className="px-3 sm:px-4 py-3"><div className="h-4 bg-gray-300 rounded w-14 sm:w-16"></div></td>
-                                <td className="px-3 sm:px-4 py-3"><div className="h-6 bg-gray-300 rounded w-16 sm:w-20"></div></td>
-                                <td className="px-3 sm:px-4 py-3"><div className="h-6 bg-gray-300 rounded w-14 sm:w-16"></div></td>
-                                <td className="px-3 sm:px-4 py-3"><div className="h-8 bg-gray-300 rounded w-16 sm:w-20 ml-auto"></div></td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    );
+    if (loading) {
+        return <Loader message="Loading Enrollments..." />;
+    }
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
@@ -401,9 +371,7 @@ const Enrollment = () => {
                 )}
 
                 {/* Desktop Table View - For screens 768px and above */}
-                {loading ? (
-                    <LoadingSkeleton />
-                ) : !error && enrollments.length === 0 ? (
+                {!error && enrollments.length === 0 ? (
                     <div className="text-center py-8 sm:py-12 bg-white rounded-xl shadow-sm">
                         <svg className="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />

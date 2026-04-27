@@ -35,17 +35,19 @@ const api = {
         getTestimonial:Base_Url+"/testimonial/get_testimonial",
     },
      fullcourse:{
-        getfullcourse:Base_Url+"/course/get-full-course"
+        getApprovedcourse:Base_Url+"/course/get-approved-course"
     },
     test:{
       publishTest:Base_Url+"/test/get_isPublish",
       getQuestion:Base_Url+"/test/get_questions",
+    
       
      },
      result:{
         submitTest:Base_Url+"/result/submit_test",
         attemptTest:Base_Url+"/result/check-existing-test",
         getStudentResults:Base_Url+"/result/get-student-results",
+         startTest:Base_Url+"/result/start-test"
      },
      enrollment:{
        enrollCourse:Base_Url+"/student/enroll-course"

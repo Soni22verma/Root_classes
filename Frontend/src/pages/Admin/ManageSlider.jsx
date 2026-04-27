@@ -3,6 +3,7 @@ import axios from 'axios';
 import { toast, Toaster } from 'react-hot-toast';
 import { Pencil, Trash2, Plus, X, Eye, Video } from 'lucide-react';
 import api from '../../services/adminendpoint';
+import Loader from '../../components/AdminComponent/Loader';
 
 const ManageSlider = () => {
   const [sliders, setSliders] = useState([]);
@@ -305,6 +306,10 @@ const ManageSlider = () => {
     }
   };
 
+  if (loading || vLoading) {
+    return <Loader message="Loading Slider Management..." />;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <Toaster position="top-right" />
@@ -333,11 +338,7 @@ const ManageSlider = () => {
       <div className="px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
         {/* Mobile Card View - For screens below 768px */}
         <div className="block md:hidden space-y-3 sm:space-y-4">
-          {loading && sliders.length === 0 ? (
-            <div className="flex justify-center py-12">
-              <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-t-2 border-b-2 border-blue-500"></div>
-            </div>
-          ) : sliders.length === 0 ? (
+          {sliders.length === 0 ? (
             <div className="bg-white rounded-xl shadow-sm p-8 sm:p-12 text-center">
               <div className="text-gray-500">
                 <Eye size={48} className="mx-auto mb-4 text-gray-400" />
@@ -429,15 +430,7 @@ const ManageSlider = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {loading && sliders.length === 0 ? (
-                  <tr>
-                    <td colSpan="7" className="px-4 py-12 text-center">
-                      <div className="flex justify-center">
-                        <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-t-2 border-b-2 border-blue-500"></div>
-                      </div>
-                    </td>
-                  </tr>
-                ) : sliders.length === 0 ? (
+                {sliders.length === 0 ? (
                   <tr>
                     <td colSpan="7" className="px-4 py-12 text-center">
                       <div className="text-gray-500">

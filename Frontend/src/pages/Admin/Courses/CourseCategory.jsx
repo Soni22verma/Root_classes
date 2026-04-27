@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import api from '../../../services/adminendpoint';
+import Loader from '../../../components/AdminComponent/Loader';
 
 const CourseCategory = () => {
   const [categories, setCategories] = useState([]);
@@ -179,6 +180,10 @@ const CourseCategory = () => {
     });
   };
 
+  if (loading && categories.length === 0) {
+    return <Loader message="Loading categories..." />;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-4 sm:py-6 md:py-8 px-3 sm:px-4 md:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
@@ -240,16 +245,6 @@ const CourseCategory = () => {
             </div>
           </div>
         )}
-
-        {/* Loading State */}
-        {loading && categories.length === 0 && (
-          <div className="flex flex-col justify-center items-center h-48 sm:h-64">
-            <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-blue-600 mb-4"></div>
-            <p className="text-sm sm:text-base text-gray-600">Loading categories...</p>
-          </div>
-        )}
-
-        {/* Mobile Card View - For screens below 768px */}
         {!loading && categories.length > 0 && (
           <>
             <div className="block md:hidden space-y-3 sm:space-y-4">

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Star, Trash2, Edit2, Plus, X, Upload, Image as ImageIcon } from "lucide-react";
 import axios from "axios";
 import api from "../../services/adminendpoint";
+import Loader from "../../components/AdminComponent/Loader";
 
 export default function AdminTestimonials() {
     const [testimonials, setTestimonials] = useState([]);
@@ -215,11 +216,7 @@ export default function AdminTestimonials() {
     };
 
     if (loading) {
-        return (
-            <div className="flex justify-center items-center h-48 sm:h-64">
-                <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-blue-600"></div>
-            </div>
-        );
+        return <Loader message="Loading Testimonials..." />;
     }
 
     return (

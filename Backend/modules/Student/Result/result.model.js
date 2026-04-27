@@ -46,10 +46,14 @@ const resultSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
-    isCompleted:{
-      type:Boolean,
-      default:false
-    }
+    isCompleted: {
+      type: Boolean,
+      default: false
+    },
+    testStartTime: {
+      type: Date,
+      default: Date.now,
+    },
   },
   { timestamps: true }
 );

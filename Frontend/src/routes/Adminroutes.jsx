@@ -15,6 +15,8 @@ import Settings from "../pages/Admin/Settings";
 import SchollershipResult from "../pages/Admin/SchollershipResult";
 
 
+import Dashboard from "../pages/Admin/Dashboard";
+
 const Adminroutes = [
 
   {
@@ -23,7 +25,7 @@ const Adminroutes = [
     children: [
       {
         index: true,
-        element: <AllStudents />,
+        element: <Dashboard />,
       },
       {
         path: "allstudent",

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Save, Edit, ChevronDown, ChevronUp, Loader, X, CheckCircle, BookOpen, Clock, Percent, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, Save, Edit, ChevronDown, ChevronUp, Loader as LoaderIcon, X, CheckCircle, BookOpen, Clock, Percent, AlertCircle } from 'lucide-react';
 import axios from 'axios';
 import api from '../../services/adminendpoint';
+import Loader from '../../components/AdminComponent/Loader';
 
 const AdminTestCreator = () => {
   const [allTests, setAllTests] = useState([]);
@@ -362,15 +363,8 @@ const AdminTestCreator = () => {
     setExpandedTest(expandedTest === testId ? null : testId);
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <Loader className="animate-spin h-12 w-12 text-blue-600 mx-auto" />
-          <p className="mt-3 text-gray-600">Loading tests...</p>
-        </div>
-      </div>
-    );
+  if (isLoading && allTests.length === 0) {
+    return <Loader message="Loading tests..." />;
   }
 
   return (
@@ -497,7 +491,7 @@ const AdminTestCreator = () => {
                   disabled={isSaving || !newTest.title.trim()}
                   className="w-full flex items-center justify-center gap-2 px-4 py-2 sm:py-2.5 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl hover:from-green-700 hover:to-green-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md text-sm sm:text-base"
                 >
-                  {isSaving ? <Loader className="animate-spin" size={18} /> : <Save size={18} />}
+                  {isSaving ? <LoaderIcon className="animate-spin" size={18} /> : <Save size={18} />}
                   Create Test
                 </button>
               </div>
@@ -585,7 +579,7 @@ const AdminTestCreator = () => {
                             {/* Publish Toggle Buttons */}
                             <div className="flex items-center gap-1 border-l border-gray-200 pl-1 sm:pl-2 ml-0 sm:ml-1">
                               {publishingTestId === test._id ? (
-                                <Loader className="animate-spin h-3 w-3 sm:h-4 sm:w-4 text-gray-500" />
+                                <LoaderIcon className="animate-spin h-3 w-3 sm:h-4 sm:w-4 text-gray-500" />
                               ) : (
                                 <>
                                   <button
@@ -645,7 +639,7 @@ const AdminTestCreator = () => {
                               title="Delete Test"
                             >
                               {deletingTestId === test._id ? (
-                                <Loader className="animate-spin" size={16} />
+                                <LoaderIcon className="animate-spin" size={16} />
                               ) : (
                                 <Trash2 size={16} />
                               )}

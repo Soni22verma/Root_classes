@@ -23,8 +23,7 @@ export const authMiddleware = async (req, res, next) => {
     }
 
     req.user = user; 
-
-    next();
+    next()
   } catch (error) {
     return res.status(401).json({
       success: false,

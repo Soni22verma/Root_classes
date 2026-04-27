@@ -7,7 +7,7 @@ const StudentTestPanel = () => {
   const { student } = useStudentStore();
 
   // Main state
-  const [tests, setTests] = useState([]);           // formatted tests with attempt status
+  const [tests, setTests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [studentId, setStudentId] = useState(null);
   const [studentClass, setStudentClass] = useState(null);
@@ -24,6 +24,11 @@ const StudentTestPanel = () => {
   const [timeRemaining, setTimeRemaining] = useState(null);
   const [timerActive, setTimerActive] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [existingAttemptId, setExistingAttemptId] = useState(null);
+
+  // Exit blocking after 2 minutes
+  const [testStartTime, setTestStartTime] = useState(null);
+  const [isExitBlocked, setIsExitBlocked] = useState(false);
 
   // Result modal
   const [showResultModal, setShowResultModal] = useState(false);
@@ -92,7 +97,7 @@ const StudentTestPanel = () => {
     try {
       const res = await axios.post(api.result.getStudentResults, { studentId });
       if (res.data?.success && res.data.data) {
-        return res.data.data.map(result => ({
+        return res.data.data.filter(result => result.isCompleted).map(result => ({
           testId: result.testId?._id || result.testId,
           testTitle: result.testId?.title || 'Unknown Test',
           score: result.obtainedMarks,
@@ -140,12 +145,10 @@ const StudentTestPanel = () => {
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      console.log(res);
 
       if (res.data?.success) {
         let rawTests = res.data.tests || res.data.data || [];
 
-        // Optional: filter by class if backend doesn't
         if (studentClass) {
           const studentNum = extractClassNumber(studentClass);
           rawTests = rawTests.filter(test => {
@@ -154,29 +157,16 @@ const StudentTestPanel = () => {
           });
         }
 
-        // Get completed tests from results
         const completedTests = await fetchCompletedTests();
         const completedIds = new Set(completedTests.map(t => t.testId));
 
-        // Build final test list with attempt info
         const formattedTests = await Promise.all(
           rawTests.map(async (test) => {
-            // ✅ FIX: Get actual question count from the questions array
             const questionCount = test.questions?.length || test.questionCount || test.totalQuestions || 0;
-            // Use totalMarks from response, or estimate if missing
             const totalMarks = test.totalMarks ?? (questionCount * 1);
 
             let isCompleted = completedIds.has(test._id);
             let completedResult = completedTests.find(t => t.testId === test._id);
-
-            // If not marked completed by results, double-check via attempt API
-            if (!isCompleted) {
-              const attempted = await checkAttemptStatus(test._id);
-              if (attempted) {
-                isCompleted = true;
-                completedResult = { testTitle: test.title, percentage: 0, obtainedMarks: 0 };
-              }
-            }
 
             return {
               id: test._id,
@@ -189,7 +179,7 @@ const StudentTestPanel = () => {
               category: test.category || 'General',
               isCompleted,
               completedResult,
-              originalData: test, // Keep full test data for potential use
+              originalData: test,
             };
           })
         );
@@ -206,7 +196,6 @@ const StudentTestPanel = () => {
     }
   };
 
-  // Reload tests when studentId or studentClass changes
   useEffect(() => {
     if (isLoggedIn && studentId) {
       getTestsForStudent();
@@ -244,8 +233,25 @@ const StudentTestPanel = () => {
     return [];
   };
 
-  // ----- 7. Submit test -----
-  const submitTest = async (testId, answersObj) => {
+  // ----- 7. Start test API call (creates or retrieves an attempt) -----
+  const callStartTestAPI = async (testId) => {
+    try {
+      const response = await axios.post(api.result.startTest, {
+        studentId,
+        testId,
+      });
+      if (response.data?.success) {
+        return response.data.data;
+      }
+      throw new Error(response.data?.message || 'Failed to start test');
+    } catch (error) {
+      console.error('Start test API error:', error);
+      throw error;
+    }
+  };
+
+  // ----- 8. Submit test API call (backend must NOT block after 2 minutes) -----
+  const submitTestAPI = async (testId, answersObj) => {
     if (!studentId) return { success: false, error: 'Student not found' };
     try {
       setSubmitting(true);
@@ -262,7 +268,7 @@ const StudentTestPanel = () => {
     }
   };
 
-  // ----- 8. Start test handler -----
+  // ----- 9. Start test handler (with resume support & capture start time) -----
   const handleStartTest = async (test) => {
     if (test.isCompleted) {
       alert('⚠️ You have already taken this test!');
@@ -271,30 +277,112 @@ const StudentTestPanel = () => {
 
     setSelectedTest(test);
     setLoading(true);
-    const testQuestions = await fetchTestQuestions(test.id);
-    setQuestions(testQuestions);
-    if (test.duration) {
-      setTimeRemaining(test.duration * 60);
-      setTimerActive(true);
+
+    try {
+      const attempt = await callStartTestAPI(test.id);
+      setExistingAttemptId(attempt._id);
+      // Store the exact test start time from backend
+      setTestStartTime(new Date(attempt.testStartTime));
+
+      const testQuestions = await fetchTestQuestions(test.id);
+      setQuestions(testQuestions);
+
+      if (attempt.answers && Array.isArray(attempt.answers) && attempt.answers.length > 0) {
+        const savedAnswers = {};
+        attempt.answers.forEach((ans) => {
+          if (ans.selectedAnswer !== null && ans.selectedAnswer !== undefined) {
+            savedAnswers[ans.questionId] = ans.selectedAnswer;
+          }
+        });
+        setAnswers(savedAnswers);
+      } else {
+        // Try to load from localStorage if available
+        const localSaved = localStorage.getItem(`test_answers_${studentId}_${test.id}`);
+        if (localSaved) {
+          try {
+            setAnswers(JSON.parse(localSaved));
+          } catch (e) {
+            setAnswers({});
+          }
+        } else {
+          setAnswers({});
+        }
+      }
+
+      if (test.duration) {
+        setTimeRemaining(test.duration * 60);
+        setTimerActive(true);
+      }
+
+      setTestStarted(true);
+      setCurrentQuestion(0);
+      setTestCompleted(false);
+      setScoreDetails(null);
+      setIsExitBlocked(false);
+    } catch (error) {
+      console.error('Error starting test:', error);
+      alert(error.message || 'Failed to start test. Please try again.');
+    } finally {
+      setLoading(false);
     }
-    setTestStarted(true);
-    setCurrentQuestion(0);
-    setAnswers({});
-    setTestCompleted(false);
-    setScoreDetails(null);
-    setLoading(false);
   };
 
-  // ----- 9. Submit automatically on timer end -----
+  // ----- Monitor elapsed time to block exit after 10 minutes -----
+  useEffect(() => {
+    if (testStarted && testStartTime && !testCompleted) {
+      const interval = setInterval(() => {
+        const elapsedMinutes = (new Date() - testStartTime) / (1000 * 60);
+        if (elapsedMinutes > 10) {
+          setIsExitBlocked(true);
+          clearInterval(interval);
+        } else {
+          setIsExitBlocked(false);
+        }
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [testStarted, testStartTime, testCompleted]);
+
+  // ----- Browser Exit Restrictions (10 minutes) -----
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (isExitBlocked && !testCompleted) {
+        e.preventDefault();
+        e.returnValue = 'You cannot leave the test after 10 minutes. Please submit it.';
+      }
+    };
+
+    const handlePopState = (e) => {
+      if (isExitBlocked && !testCompleted) {
+        window.history.pushState(null, '', window.location.href);
+        alert("❌ You cannot exit after 10 minutes of starting the test.\nPlease complete and submit the test.");
+      }
+    };
+
+    if (testStarted && !testCompleted) {
+      window.addEventListener('beforeunload', handleBeforeUnload);
+      window.history.pushState(null, '', window.location.href);
+      window.addEventListener('popstate', handlePopState);
+    }
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [testStarted, isExitBlocked, testCompleted]);
+
+  // ----- 10. Submit automatically on timer end -----
   useEffect(() => {
     let interval;
-    if (timerActive && timeRemaining > 0 && !testCompleted) {
+    if (timerActive && timeRemaining > 0 && !testCompleted && !submitting) {
       interval = setInterval(() => {
         setTimeRemaining((prev) => {
           if (prev <= 1) {
             clearInterval(interval);
             setTimerActive(false);
-            if (!testCompleted) handleAutoSubmit();
+            // Replaced auto-submit with a simple notification or just stopping.
+            // User requested ONLY explicit manual submission.
+            alert("⏰ Time is up! Please click 'Submit Test' now to save your results.");
             return 0;
           }
           return prev - 1;
@@ -302,7 +390,7 @@ const StudentTestPanel = () => {
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [timerActive, timeRemaining, testCompleted]);
+  }, [timerActive, timeRemaining, testCompleted, submitting]);
 
   const handleAutoSubmit = async () => {
     if (submitting || testCompleted) return;
@@ -317,11 +405,12 @@ const StudentTestPanel = () => {
       alert('Please answer at least one question before time runs out.');
       return;
     }
-    const result = await submitTest(selectedTest.id, formattedAnswers);
+    const result = await submitTestAPI(selectedTest.id, formattedAnswers);
     if (result.success) {
       setTestCompleted(true);
       setTimerActive(false);
       setScoreDetails(result.data);
+      localStorage.removeItem(`test_answers_${studentId}_${selectedTest.id}`);
       await getTestsForStudent();
     } else {
       alert(result.error || 'Failed to submit test');
@@ -341,20 +430,53 @@ const StudentTestPanel = () => {
       alert('Please answer at least one question before submitting.');
       return;
     }
-    const result = await submitTest(selectedTest.id, formattedAnswers);
+    const result = await submitTestAPI(selectedTest.id, formattedAnswers);
     if (result.success) {
       setTestCompleted(true);
       setTimerActive(false);
       setScoreDetails(result.data);
+      localStorage.removeItem(`test_answers_${studentId}_${selectedTest.id}`);
       await getTestsForStudent();
     } else {
       alert(result.error || 'Failed to submit test');
     }
   };
 
-  // ----- 10. Navigation inside test -----
+  // ----- 11. Navigation inside test - BLOCK EXIT AFTER 10 MINUTES -----
+  const handleBackToTests = () => {
+    if (testStarted && !testCompleted) {
+      // Check if exit is blocked (>=10 minutes elapsed)
+      if (isExitBlocked) {
+        alert("You cannot exit/submit the test after 10 minutes of starting the test.");
+        return;
+      }
+      if (!window.confirm('Are you sure you want to exit? Your progress will be saved and you can resume later.')) {
+        return;
+      }
+    }
+    setTestStarted(false);
+    setSelectedTest(null);
+    setTestCompleted(false);
+    setCurrentQuestion(0);
+    setAnswers({});
+    setScoreDetails(null);
+    setQuestions([]);
+    setTimerActive(false);
+    setTimeRemaining(null);
+    setExistingAttemptId(null);
+    setTestStartTime(null);
+    setIsExitBlocked(false);
+  };
+
+  // FIX: Only update answers & save to localStorage – NO AUTO-SUBMIT!
   const handleAnswerSelect = (questionId, answerIndex) => {
-    setAnswers((prev) => ({ ...prev, [questionId]: answerIndex }));
+    setAnswers((prev) => {
+      const newAnswers = { ...prev, [questionId]: answerIndex };
+      if (selectedTest && studentId) {
+        localStorage.setItem(`test_answers_${studentId}_${selectedTest.id}`, JSON.stringify(newAnswers));
+      }
+      return newAnswers;
+    });
   };
 
   const handleNextQuestion = () => {
@@ -369,28 +491,13 @@ const StudentTestPanel = () => {
     if (currentQuestion > 0) setCurrentQuestion(currentQuestion - 1);
   };
 
-  const handleBackToTests = () => {
-    if (testStarted && !testCompleted) {
-      if (!window.confirm('Are you sure you want to exit? Progress will be lost.')) return;
-    }
-    setTestStarted(false);
-    setSelectedTest(null);
-    setTestCompleted(false);
-    setCurrentQuestion(0);
-    setAnswers({});
-    setScoreDetails(null);
-    setQuestions([]);
-    setTimerActive(false);
-    setTimeRemaining(null);
-  };
-
-  // ----- 11. View result modal -----
+  // ----- 12. View result modal -----
   const handleViewResult = (test) => {
     setViewingResult(test.completedResult);
     setShowResultModal(true);
   };
 
-  // ----- 12. Helper functions for UI -----
+  // ----- 13. Helper functions for UI -----
   const formatTime = (seconds) => {
     if (!seconds && seconds !== 0) return '00:00';
     const mins = Math.floor(seconds / 60);
@@ -417,7 +524,7 @@ const StudentTestPanel = () => {
     return questions.length > 0 ? (answeredCount / questions.length) * 100 : 0;
   };
 
-  // ----- 13. RENDER -----
+  // ----- 14. RENDER -----
   if (loading && !testStarted) {
     return (
       <div className="min-h-screen bg-dot-grid flex items-center justify-center">
@@ -722,7 +829,12 @@ const StudentTestPanel = () => {
                 )}
                 <button
                   onClick={handleBackToTests}
-                  className="text-xs text-gray-400 hover:text-gray-700 font-medium px-3 py-1.5 rounded-lg hover:bg-gray-100 transition"
+                  disabled={isExitBlocked}
+                  className={`text-xs font-medium px-3 py-1.5 rounded-lg transition ${
+                    isExitBlocked
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      : 'text-gray-400 hover:text-gray-700 hover:bg-gray-100'
+                  }`}
                 >
                   ✕ Exit
                 </button>

@@ -3,6 +3,7 @@ import axios from 'axios';
 import { Plus, Trash2, Edit2, ExternalLink, Video, Save, X } from 'lucide-react';
 import { toast } from 'react-toastify';
 import api from '../../services/endpoints';
+import Loader from '../../components/AdminComponent/Loader';
 
 const SuccessStoriesManagement = () => {
   const [stories, setStories] = useState([]);
@@ -107,6 +108,10 @@ const SuccessStoriesManagement = () => {
     setIsModalOpen(true);
   };
 
+  if (loading) {
+    return <Loader message="Loading Success Stories..." />;
+  }
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex justify-between items-center mb-8">
@@ -122,11 +127,7 @@ const SuccessStoriesManagement = () => {
         </button>
       </div>
 
-      {loading ? (
-        <div className="flex justify-center py-20">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        </div>
-      ) : stories.length === 0 ? (
+      {stories.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm border border-dashed border-gray-300 py-20 text-center">
           <Video className="mx-auto h-12 w-12 text-gray-300 mb-4" />
           <h3 className="text-lg font-medium text-gray-900">No stories found</h3>

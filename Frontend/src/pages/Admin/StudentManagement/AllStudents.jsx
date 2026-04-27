@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Plus } from 'lucide-react';
 import api from '../../../services/adminendpoint';
+import Loader from '../../../components/AdminComponent/Loader';
 
 const AllStudent = () => {
   const [students, setStudents] = useState([]);
@@ -85,14 +86,7 @@ const AllStudent = () => {
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   if (loading) {
-    return (
-      <div className="min-h-full flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-slate-800 mx-auto"></div>
-          <p className="mt-3 sm:mt-4 text-sm sm:text-base text-slate-600">Loading students...</p>
-        </div>
-      </div>
-    );
+    return <Loader message="Loading Students..." />;
   }
 
   return (

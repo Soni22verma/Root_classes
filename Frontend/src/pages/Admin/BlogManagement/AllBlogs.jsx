@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import api from '../../../services/adminendpoint';
 import { toast } from 'react-toastify';
 import { useBlogStore } from '../../../Store/blogStore';
+import Loader from '../../../components/AdminComponent/Loader';
 
 const AdminBlogPanel = () => {
     const { setBlogId, blogId } = useBlogStore();
@@ -372,6 +373,10 @@ const AdminBlogPanel = () => {
         });
     };
 
+    if (loading && blogs.length === 0) {
+        return <Loader message="Loading Blogs..." />;
+    }
+
     return (
         <div className="min-h-screen bg-gray-100 overflow-x-hidden">
             {/* Admin Header - Responsive */}
@@ -383,17 +388,6 @@ const AdminBlogPanel = () => {
             </header>
 
             <main className="px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6">
-                {/* Loading Overlay */}
-                {loading && (
-                    <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center">
-                        <div className="bg-white rounded-lg p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
-                            <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-indigo-600"></div>
-                            <span className="text-xs sm:text-sm text-gray-700">Processing...</span>
-                        </div>
-                    </div>
-                )}
-
-                {/* Success Message - Responsive */}
                 {successMessage && (
                     <div className="mb-4 p-2.5 sm:p-3 bg-green-100 border border-green-400 text-green-700 rounded-lg flex items-center justify-between text-xs sm:text-sm">
                         <span>{successMessage}</span>

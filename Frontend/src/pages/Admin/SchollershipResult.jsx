@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import api from '../../services/adminendpoint';
+import Loader from '../../components/AdminComponent/Loader';
 
 const ScholarshipResult = () => {
   const [results, setResults] = useState([]);
@@ -420,14 +421,7 @@ const ScholarshipResult = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading scholarship data...</p>
-        </div>
-      </div>
-    );
+    return <Loader message="Loading Scholarship Data..." />;
   }
 
   if (error) {

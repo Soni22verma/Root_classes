@@ -2,82 +2,205 @@ import { Test } from "../../Admin/CreateTest/createtest.model.js";
 import scholarshipModel from "../Scholrship/scholarship.model.js";
 import { Result } from "./result.model.js";
 
+// export const submitTest = async (req, res) => {
+//   try {
+//     const { studentId, testId, answers } = req.body;
+
+//     console.log("Received submission:", {
+//       studentId,
+//       testId,
+//       answers,
+//     });
+
+//     if (!studentId || !testId || !answers) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "studentId, testId and answers are required",
+//       });
+//     }
+
+//     const test = await Test.findById(testId);
+
+//     if (!test) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Test not found",
+//       });
+//     }
+
+//     const existingAttempt = await Result.findOne({
+//       studentId,
+//       testId,
+//     });
+
+//     if (!existingAttempt) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Please start test first",
+//       });
+//     }
+
+//     if (existingAttempt.isCompleted) {
+//       return res.status(400).json({
+//         success: false,
+//         message:
+//           "You have already completed this test. You cannot retake it.",
+//       });
+//     }
+
+//     const startTime = new Date(existingAttempt.testStartTime);
+//     const currentTime = new Date();
+
+//     const diffInMinutes =
+//       (currentTime - startTime) / (1000 * 60);
+
+//     console.log("Time spent:", diffInMinutes, "minutes");
+//     let obtainedMarks = 0;
+//     let totalMarks = 0;
+//     const formattedAnswers = [];
+
+//     test.questions.forEach((q) => {
+//       totalMarks += q.marks;
+
+//       const questionIdStr = q._id.toString();
+//       const userAnswer = answers[questionIdStr];
+
+//       const isCorrect =
+//         userAnswer !== undefined &&
+//         q.options[Number(userAnswer)]?.trim() ===
+//           q.correctAnswer.trim();
+
+//       if (isCorrect) {
+//         obtainedMarks += q.marks;
+//       }
+
+//       formattedAnswers.push({
+//         questionId: q._id,
+//         selectedAnswer:
+//           userAnswer !== undefined
+//             ? Number(userAnswer)
+//             : null,
+//         isCorrect,
+//       });
+//     });
+
+//     const percentage =
+//       totalMarks > 0
+//         ? (obtainedMarks / totalMarks) * 100
+//         : 0;
+
+//     const isEligible = percentage >= 70;
+
+//     existingAttempt.obtainedMarks = obtainedMarks;
+//     existingAttempt.totalMarks = totalMarks;
+//     existingAttempt.percentage = percentage;
+//     existingAttempt.isEligible = isEligible;
+//     existingAttempt.answers = formattedAnswers;
+//     existingAttempt.isCompleted = true;
+//     existingAttempt.attemptDate = new Date();
+
+//     await existingAttempt.save();
+
+//     return res.status(200).json({
+//       success: true,
+//       message: "Test submitted successfully",
+//       data: existingAttempt,
+//     });
+
+//   } catch (error) {
+//     console.error("Error in submitTest:", error);
+
+//     return res.status(500).json({
+//       success: false,
+//       message: error.message,
+//     });
+//   }
+// };
+
+
+export const startTest = async (req, res) => {
+  try {
+    const { studentId, testId } = req.body;
+    if (!studentId || !testId) {
+      return res.status(400).json({ success: false, message: "studentId and testId are required" });
+    }
+
+    const existingAttempt = await Result.findOne({ studentId, testId });
+    if (existingAttempt) {
+      // Return existing attempt (allows resuming)
+      return res.status(200).json({ success: true, message: "Test already started", data: existingAttempt });
+    }
+
+    const newAttempt = await Result.create({
+      studentId,
+      testId,
+      testStartTime: new Date(),
+      isCompleted: false,
+      obtainedMarks: 0,
+      totalMarks: 0,
+      percentage: 0,
+      isEligible: false,
+      answers: [],
+    });
+
+    return res.status(201).json({ success: true, message: "Test started successfully", data: newAttempt });
+  } catch (error) {
+    console.error("Error in startTest:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 export const submitTest = async (req, res) => {
   try {
     const { studentId, testId, answers } = req.body;
+    if (!studentId || !testId || !answers) {
+      return res.status(400).json({ success: false, message: "studentId, testId and answers are required" });
+    }
 
-    console.log('Received submission:', { studentId, testId, answers });
-
-    // Find the test
     const test = await Test.findById(testId);
-    if (!test) {
-      return res.status(404).json({
-        success: false,
-        message: "Test not found",
-      });
+    if (!test) return res.status(404).json({ success: false, message: "Test not found" });
+
+    const existingAttempt = await Result.findOne({ studentId, testId });
+    if (!existingAttempt) return res.status(400).json({ success: false, message: "Please start test first" });
+    if (existingAttempt.isCompleted) {
+      return res.status(400).json({ success: false, message: "You have already completed this test. You cannot retake it." });
     }
 
-    const alreadyAttempted = await Result.findOne({ studentId, testId });
-    if (alreadyAttempted) {
-      return res.status(400).json({
-        success: false,
-        message: "You have already completed this test. You cannot retake it.",
-      });
-    }
-
+    // ✅ No time restriction for submission – submit button always works.
     let obtainedMarks = 0;
     let totalMarks = 0;
     const formattedAnswers = [];
 
     test.questions.forEach((q) => {
       totalMarks += q.marks;
-
       const questionIdStr = q._id.toString();
       const userAnswer = answers[questionIdStr];
-
-      const isCorrect =
-        userAnswer !== undefined &&
-        q.options[Number(userAnswer)]?.trim() === q.correctAnswer.trim();
-
-      if (isCorrect) {
-        obtainedMarks += q.marks;
-      }
-
+      const isCorrect = (userAnswer !== undefined && q.options[Number(userAnswer)]?.trim() === q.correctAnswer.trim());
+      if (isCorrect) obtainedMarks += q.marks;
       formattedAnswers.push({
         questionId: q._id,
-        selectedAnswer: userAnswer !== undefined ? String(userAnswer) : null,
-        isCorrect: isCorrect,
+        selectedAnswer: userAnswer !== undefined ? Number(userAnswer) : null,
+        isCorrect,
       });
     });
 
-    const percentage = (obtainedMarks / totalMarks) * 100;
+    const percentage = totalMarks > 0 ? (obtainedMarks / totalMarks) * 100 : 0;
     const isEligible = percentage >= 70;
 
-    console.log(`Total Marks: ${totalMarks}, Obtained: ${obtainedMarks}, Percentage: ${percentage}%`);
+    existingAttempt.obtainedMarks = obtainedMarks;
+    existingAttempt.totalMarks = totalMarks;
+    existingAttempt.percentage = percentage;
+    existingAttempt.isEligible = isEligible;
+    existingAttempt.answers = formattedAnswers;
+    existingAttempt.isCompleted = true;
+    existingAttempt.attemptDate = new Date();
 
-    const result = await Result.create({
-      studentId,
-      testId,
-      obtainedMarks,
-      totalMarks,
-      percentage,
-      isEligible,
-      isCompleted: true,
-      answers: formattedAnswers,
-    });
+    await existingAttempt.save();
 
-    res.status(200).json({
-      success: true,
-      message: "Test submitted successfully",
-      data: result,
-    });
-
+    return res.status(200).json({ success: true, message: "Test submitted successfully", data: existingAttempt });
   } catch (error) {
-    console.error('Error in submitTest:', error);
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    console.error("Error in submitTest:", error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 

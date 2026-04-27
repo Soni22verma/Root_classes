@@ -146,14 +146,14 @@ export const rejectScholarship = async (req, res) => {
 
         await scholarship.save();
 
-        res.json({
+        return res.json({
             success: true,
             message: "Scholarship rejected",
             scholarship
         });
 
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        return res.status(500).json({ message: error.message });
     }
 };
 
@@ -165,13 +165,13 @@ export const getApprovedRejectedScholarships = async (req, res) => {
         )
             .populate("studentId", "fullName email");
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             data: scholarships
         });
 
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        return res.status(500).json({ message: error.message });
     }
 };
 

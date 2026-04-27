@@ -1,14 +1,15 @@
 import express, { Router } from "express"
-import {  createCourse, DeleteCourse, DeleteTopic, GetCategory, GetCreatedCourse, UpdateCourse, handleAddChapter, handleAddModule, handleAddTopic, handleDeleteChapter, handleDeleteModule, handleEditTopic, handleGetCourseById, handleUpdateChapter, handleUpdateModule, getFullCourseDetails } from "./createCourse.controller.js"
+import {  createCourse, DeleteCourse, DeleteTopic, GetCategory, GetCreatedCourse, UpdateCourse, handleAddChapter, handleAddModule, handleAddTopic, handleDeleteChapter, handleDeleteModule, handleEditTopic, handleGetCourseById, handleUpdateChapter, handleUpdateModule, getFullCourseDetails, approvedCourse, getApprovedCourse } from "./createCourse.controller.js"
 import multer from "multer";
 
+import { authMiddleware } from "../../../middleware/auth.js"
 const createcourseRouter = Router()
 const Upload = multer({ dest: "uploads/" });
-createcourseRouter.post("/create_course",createCourse)
+createcourseRouter.post("/create_course", authMiddleware, createCourse)
 createcourseRouter.post("/get_category",GetCategory)
 createcourseRouter.post("/get_course",GetCreatedCourse)
-createcourseRouter.post("/edit_course",UpdateCourse)
-createcourseRouter.post("/delete_course",DeleteCourse)
+createcourseRouter.post("/edit_course", authMiddleware, UpdateCourse)
+createcourseRouter.post("/delete_course", authMiddleware, DeleteCourse)
 createcourseRouter.post("/get-course-by-id" , handleGetCourseById)
 
 createcourseRouter.post("/add-module" , handleAddModule)
@@ -30,5 +31,7 @@ createcourseRouter.post("/add-topic",Upload.fields([
 createcourseRouter.post("/delete-topic",DeleteTopic)
 
 createcourseRouter.get("/get-full-course",getFullCourseDetails)
+createcourseRouter.post("/approved-course",approvedCourse)
+createcourseRouter.get("/get-approved-course",getApprovedCourse)
 
 export default createcourseRouter 

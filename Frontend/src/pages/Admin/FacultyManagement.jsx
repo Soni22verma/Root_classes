@@ -7,11 +7,12 @@ import {
   Edit2, 
   X, 
   Image as ImageIcon, 
-  Loader2,
+  Loader2 as LoaderIcon,
   Star,
   Users
 } from 'lucide-react';
 import api from '../../services/adminendpoint';
+import Loader from '../../components/AdminComponent/Loader';
 
 
 const FacultyManagement = () => {
@@ -147,6 +148,10 @@ const FacultyManagement = () => {
       }
     }
   };
+
+  if (loading && faculty.length === 0) {
+    return <Loader message="Loading faculty list..." />;
+  }
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 bg-gray-50 min-h-screen">
@@ -344,7 +349,7 @@ const FacultyManagement = () => {
                   disabled={loading}
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center gap-2"
                 >
-                  {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (isEditing ? 'Update' : 'Add')}
+                  {loading ? <LoaderIcon className="w-5 h-5 animate-spin" /> : (isEditing ? 'Update' : 'Add')}
                 </button>
               </div>
             </form>
