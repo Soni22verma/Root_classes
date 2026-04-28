@@ -127,8 +127,17 @@ export const startTest = async (req, res) => {
 
     const existingAttempt = await Result.findOne({ studentId, testId });
     if (existingAttempt) {
+      // Calculate if exit should be blocked (10 minutes)
+      const elapsedMinutes = (new Date() - new Date(existingAttempt.testStartTime)) / (1000 * 60);
+      const isExitBlocked = elapsedMinutes >= 10;
+
       // Return existing attempt (allows resuming)
-      return res.status(200).json({ success: true, message: "Test already started", data: existingAttempt });
+      return res.status(200).json({ 
+        success: true, 
+        message: "Test already started", 
+        data: existingAttempt,
+        isExitBlocked 
+      });
     }
 
     const newAttempt = await Result.create({
@@ -143,7 +152,12 @@ export const startTest = async (req, res) => {
       answers: [],
     });
 
-    return res.status(201).json({ success: true, message: "Test started successfully", data: newAttempt });
+    return res.status(201).json({ 
+      success: true, 
+      message: "Test started successfully", 
+      data: newAttempt,
+      isExitBlocked: false 
+    });
   } catch (error) {
     console.error("Error in startTest:", error);
     return res.status(500).json({ success: false, message: error.message });
@@ -175,7 +189,26 @@ export const submitTest = async (req, res) => {
       totalMarks += q.marks;
       const questionIdStr = q._id.toString();
       const userAnswer = answers[questionIdStr];
-      const isCorrect = (userAnswer !== undefined && q.options[Number(userAnswer)]?.trim() === q.correctAnswer.trim());
+      
+      let isCorrect = false;
+      if (userAnswer !== undefined && q.options[Number(userAnswer)]) {
+        const selectedOption = q.options[Number(userAnswer)];
+        // Compare English version by default as it's more standard
+        const correctEng = q.correctAnswer?.english?.trim();
+        const selectedEng = selectedOption?.english?.trim();
+        
+        if (correctEng && selectedEng && correctEng === selectedEng) {
+          isCorrect = true;
+        } else {
+          // Fallback to Hindi if English doesn't match or is missing
+          const correctHindi = q.correctAnswer?.hindi?.trim();
+          const selectedHindi = selectedOption?.hindi?.trim();
+          if (correctHindi && selectedHindi && correctHindi === selectedHindi) {
+            isCorrect = true;
+          }
+        }
+      }
+
       if (isCorrect) obtainedMarks += q.marks;
       formattedAnswers.push({
         questionId: q._id,

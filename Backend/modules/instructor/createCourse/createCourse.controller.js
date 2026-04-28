@@ -184,10 +184,7 @@ export const handleGetCourseById = async (req, res, next) => {
     }
 
     // ✅ CORRECT: Use lowercase 'category' (field name from schema)
-    const course = await Course.findById(courseId).populate('category');
-    
-    // If you want to populate instructor too:
-    // const course = await Course.findById(courseId).populate('category').populate('instructor');
+    const course = await Course.findById(courseId).populate('category').populate('instructor');
 
     if (!course) {
       return res.status(404).json({
@@ -989,6 +986,49 @@ export const getApprovedCourse = async(req,res,next)=>{
     });
   }
 }
+export const getInstructorById = async (req, res) => {
+  try {
+    const { instructorId } = req.params;
+
+    const instructor = await User.findById(instructorId).select(
+      "fullName email profileImage role"
+    );
+
+    if (!instructor) {
+      return res.status(404).json({
+        success: false,
+        message: "Instructor not found",
+      });
+    }
+
+    if (instructor.role !== "instructor") {
+      return res.status(400).json({
+        success: false,
+        message: "User is not an instructor",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Instructor details fetched successfully",
+      instructor: {
+        id: instructor._id,
+        name: instructor.fullName,
+        email: instructor.email,
+        profileImage: instructor.profileImage,
+        role: instructor.role,
+      },
+    });
+
+  } catch (error) {
+    console.log("Get Instructor Error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
+};
 
 
 

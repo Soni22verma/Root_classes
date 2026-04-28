@@ -1,5 +1,5 @@
 import axios from 'axios';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import api from '../../services/endpoints';
 import useStudentStore from '../../Store/studentstore';
 
@@ -26,13 +26,16 @@ const StudentTestPanel = () => {
   const [submitting, setSubmitting] = useState(false);
   const [existingAttemptId, setExistingAttemptId] = useState(null);
 
-  // Exit blocking after 2 minutes
+  // Exit blocking after 10 minutes (server time based)
   const [testStartTime, setTestStartTime] = useState(null);
   const [isExitBlocked, setIsExitBlocked] = useState(false);
 
   // Result modal
   const [showResultModal, setShowResultModal] = useState(false);
   const [viewingResult, setViewingResult] = useState(null);
+  
+  // Sync interval reference
+  const syncIntervalRef = useRef(null);
 
   // Helper: extract numeric class from string like "12th" -> 12
   const extractClassNumber = (className) => {
@@ -241,7 +244,10 @@ const StudentTestPanel = () => {
         testId,
       });
       if (response.data?.success) {
-        return response.data.data;
+        return { 
+          ...response.data.data, 
+          isExitBlocked: response.data.isExitBlocked 
+        };
       }
       throw new Error(response.data?.message || 'Failed to start test');
     } catch (error) {
@@ -250,7 +256,30 @@ const StudentTestPanel = () => {
     }
   };
 
-  // ----- 8. Submit test API call (backend must NOT block after 2 minutes) -----
+  // ----- Function to sync exit blocked status from server (called periodically) -----
+  const syncExitBlockedStatus = useCallback(async () => {
+    if (!selectedTest || !studentId || !testStarted || testCompleted) return;
+    try {
+      const response = await axios.post(api.result.startTest, {
+        studentId,
+        testId: selectedTest.id,
+      });
+      if (response.data?.success) {
+        setIsExitBlocked(response.data.isExitBlocked);
+        // Also update testStartTime if needed (in case of server mismatch)
+        if (response.data.data?.testStartTime) {
+          const serverStartTime = new Date(response.data.data.testStartTime);
+          if (testStartTime && serverStartTime.getTime() !== testStartTime.getTime()) {
+            setTestStartTime(serverStartTime);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error syncing exit blocked status:', error);
+    }
+  }, [selectedTest, studentId, testStarted, testCompleted, testStartTime]);
+
+  // ----- 8. Submit test API call -----
   const submitTestAPI = async (testId, answersObj) => {
     if (!studentId) return { success: false, error: 'Student not found' };
     try {
@@ -268,7 +297,7 @@ const StudentTestPanel = () => {
     }
   };
 
-  // ----- 9. Start test handler (with resume support & capture start time) -----
+  // ----- 9. Start test handler (with resume support & capture server start time) -----
   const handleStartTest = async (test) => {
     if (test.isCompleted) {
       alert('⚠️ You have already taken this test!');
@@ -281,8 +310,10 @@ const StudentTestPanel = () => {
     try {
       const attempt = await callStartTestAPI(test.id);
       setExistingAttemptId(attempt._id);
-      // Store the exact test start time from backend
-      setTestStartTime(new Date(attempt.testStartTime));
+      // Store the exact test start time from backend (server time)
+      const serverStartTime = new Date(attempt.testStartTime);
+      setTestStartTime(serverStartTime);
+      setIsExitBlocked(attempt.isExitBlocked || false);
 
       const testQuestions = await fetchTestQuestions(test.id);
       setQuestions(testQuestions);
@@ -296,7 +327,6 @@ const StudentTestPanel = () => {
         });
         setAnswers(savedAnswers);
       } else {
-        // Try to load from localStorage if available
         const localSaved = localStorage.getItem(`test_answers_${studentId}_${test.id}`);
         if (localSaved) {
           try {
@@ -318,7 +348,6 @@ const StudentTestPanel = () => {
       setCurrentQuestion(0);
       setTestCompleted(false);
       setScoreDetails(null);
-      setIsExitBlocked(false);
     } catch (error) {
       console.error('Error starting test:', error);
       alert(error.message || 'Failed to start test. Please try again.');
@@ -327,23 +356,25 @@ const StudentTestPanel = () => {
     }
   };
 
-  // ----- Monitor elapsed time to block exit after 10 minutes -----
+  // ----- 10. Periodic sync with server to update exit blocked status (every 30 seconds) -----
   useEffect(() => {
-    if (testStarted && testStartTime && !testCompleted) {
-      const interval = setInterval(() => {
-        const elapsedMinutes = (new Date() - testStartTime) / (1000 * 60);
-        if (elapsedMinutes > 10) {
-          setIsExitBlocked(true);
-          clearInterval(interval);
-        } else {
-          setIsExitBlocked(false);
-        }
-      }, 1000);
-      return () => clearInterval(interval);
+    if (testStarted && !testCompleted && selectedTest) {
+      syncExitBlockedStatus(); // initial sync
+      syncIntervalRef.current = setInterval(syncExitBlockedStatus, 30000); // every 30 sec
+    } else {
+      if (syncIntervalRef.current) {
+        clearInterval(syncIntervalRef.current);
+        syncIntervalRef.current = null;
+      }
     }
-  }, [testStarted, testStartTime, testCompleted]);
+    return () => {
+      if (syncIntervalRef.current) {
+        clearInterval(syncIntervalRef.current);
+      }
+    };
+  }, [testStarted, testCompleted, selectedTest, syncExitBlockedStatus]);
 
-  // ----- Browser Exit Restrictions (10 minutes) -----
+  // ----- 11. Browser Exit Restrictions (based on server isExitBlocked flag) -----
   useEffect(() => {
     const handleBeforeUnload = (e) => {
       if (isExitBlocked && !testCompleted) {
@@ -355,11 +386,11 @@ const StudentTestPanel = () => {
     const handlePopState = (e) => {
       if (isExitBlocked && !testCompleted) {
         window.history.pushState(null, '', window.location.href);
-        alert("❌ You cannot exit after 10 minutes of starting the test.\nPlease complete and submit the test.");
+        alert("You cannot exit the test after 10 minutes of starting the test.");
       }
     };
 
-    if (testStarted && !testCompleted) {
+    if (testStarted && !testCompleted && isExitBlocked) {
       window.addEventListener('beforeunload', handleBeforeUnload);
       window.history.pushState(null, '', window.location.href);
       window.addEventListener('popstate', handlePopState);
@@ -371,7 +402,7 @@ const StudentTestPanel = () => {
     };
   }, [testStarted, isExitBlocked, testCompleted]);
 
-  // ----- 10. Submit automatically on timer end -----
+  // ----- 12. Timer countdown (does NOT auto‑submit) -----
   useEffect(() => {
     let interval;
     if (timerActive && timeRemaining > 0 && !testCompleted && !submitting) {
@@ -380,8 +411,6 @@ const StudentTestPanel = () => {
           if (prev <= 1) {
             clearInterval(interval);
             setTimerActive(false);
-            // Replaced auto-submit with a simple notification or just stopping.
-            // User requested ONLY explicit manual submission.
             alert("⏰ Time is up! Please click 'Submit Test' now to save your results.");
             return 0;
           }
@@ -391,31 +420,6 @@ const StudentTestPanel = () => {
     }
     return () => clearInterval(interval);
   }, [timerActive, timeRemaining, testCompleted, submitting]);
-
-  const handleAutoSubmit = async () => {
-    if (submitting || testCompleted) return;
-    const formattedAnswers = {};
-    questions.forEach((q) => {
-      const ans = answers[q.id];
-      if (ans !== undefined && ans !== null) {
-        formattedAnswers[q.id] = Number(ans);
-      }
-    });
-    if (Object.keys(formattedAnswers).length === 0) {
-      alert('Please answer at least one question before time runs out.');
-      return;
-    }
-    const result = await submitTestAPI(selectedTest.id, formattedAnswers);
-    if (result.success) {
-      setTestCompleted(true);
-      setTimerActive(false);
-      setScoreDetails(result.data);
-      localStorage.removeItem(`test_answers_${studentId}_${selectedTest.id}`);
-      await getTestsForStudent();
-    } else {
-      alert(result.error || 'Failed to submit test');
-    }
-  };
 
   const handleSubmitManually = async () => {
     if (submitting || testCompleted) return;
@@ -442,17 +446,21 @@ const StudentTestPanel = () => {
     }
   };
 
-  // ----- 11. Navigation inside test - BLOCK EXIT AFTER 10 MINUTES -----
+  // ----- 13. Exit handler with block check -----
   const handleBackToTests = () => {
     if (testStarted && !testCompleted) {
-      // Check if exit is blocked (>=10 minutes elapsed)
       if (isExitBlocked) {
-        alert("You cannot exit/submit the test after 10 minutes of starting the test.");
+        alert("You cannot exit the test after 10 minutes of starting the test.");
         return;
       }
       if (!window.confirm('Are you sure you want to exit? Your progress will be saved and you can resume later.')) {
         return;
       }
+    }
+    // Cleanup
+    if (syncIntervalRef.current) {
+      clearInterval(syncIntervalRef.current);
+      syncIntervalRef.current = null;
     }
     setTestStarted(false);
     setSelectedTest(null);
@@ -468,7 +476,7 @@ const StudentTestPanel = () => {
     setIsExitBlocked(false);
   };
 
-  // FIX: Only update answers & save to localStorage – NO AUTO-SUBMIT!
+  // Handle answer selection – NO AUTO-SUBMIT
   const handleAnswerSelect = (questionId, answerIndex) => {
     setAnswers((prev) => {
       const newAnswers = { ...prev, [questionId]: answerIndex };
@@ -491,13 +499,13 @@ const StudentTestPanel = () => {
     if (currentQuestion > 0) setCurrentQuestion(currentQuestion - 1);
   };
 
-  // ----- 12. View result modal -----
+  // ----- 14. View result modal -----
   const handleViewResult = (test) => {
     setViewingResult(test.completedResult);
     setShowResultModal(true);
   };
 
-  // ----- 13. Helper functions for UI -----
+  // ----- 15. Helper functions for UI -----
   const formatTime = (seconds) => {
     if (!seconds && seconds !== 0) return '00:00';
     const mins = Math.floor(seconds / 60);
@@ -524,7 +532,7 @@ const StudentTestPanel = () => {
     return questions.length > 0 ? (answeredCount / questions.length) * 100 : 0;
   };
 
-  // ----- 14. RENDER -----
+  // ----- 16. RENDER -----
   if (loading && !testStarted) {
     return (
       <div className="min-h-screen bg-dot-grid flex items-center justify-center">
@@ -832,9 +840,10 @@ const StudentTestPanel = () => {
                   disabled={isExitBlocked}
                   className={`text-xs font-medium px-3 py-1.5 rounded-lg transition ${
                     isExitBlocked
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-70'
                       : 'text-gray-400 hover:text-gray-700 hover:bg-gray-100'
                   }`}
+                  title={isExitBlocked ? "You cannot exit the test after 10 minutes" : "Exit Test"}
                 >
                   ✕ Exit
                 </button>

@@ -1,5 +1,5 @@
 import express, { Router } from "express"
-import {  createCourse, DeleteCourse, DeleteTopic, GetCategory, GetCreatedCourse, UpdateCourse, handleAddChapter, handleAddModule, handleAddTopic, handleDeleteChapter, handleDeleteModule, handleEditTopic, handleGetCourseById, handleUpdateChapter, handleUpdateModule, getFullCourseDetails, approvedCourse, getApprovedCourse } from "./createCourse.controller.js"
+import {  createCourse, DeleteCourse, DeleteTopic, GetCategory, GetCreatedCourse, UpdateCourse, handleAddChapter, handleAddModule, handleAddTopic, handleDeleteChapter, handleDeleteModule, handleEditTopic, handleGetCourseById, handleUpdateChapter, handleUpdateModule, getFullCourseDetails, approvedCourse, getApprovedCourse, getInstructorById } from "./createCourse.controller.js"
 import multer from "multer";
 
 import { authMiddleware } from "../../../middleware/auth.js"
@@ -33,5 +33,6 @@ createcourseRouter.post("/delete-topic",DeleteTopic)
 createcourseRouter.get("/get-full-course",getFullCourseDetails)
 createcourseRouter.post("/approved-course",approvedCourse)
 createcourseRouter.get("/get-approved-course",getApprovedCourse)
+createcourseRouter.get("/get-instructor/:instructorId",getInstructorById)
 
 export default createcourseRouter 

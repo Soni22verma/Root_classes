@@ -35,7 +35,8 @@ const api = {
         getTestimonial:Base_Url+"/testimonial/get_testimonial",
     },
      fullcourse:{
-        getApprovedcourse:Base_Url+"/course/get-approved-course"
+        getApprovedcourse:Base_Url+"/course/get-approved-course",
+        getInstructor:Base_Url+"/course/get-instructor/"
     },
     test:{
       publishTest:Base_Url+"/test/get_isPublish",

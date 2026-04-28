@@ -140,6 +140,7 @@ const CourseDetails = () => {
   const [fetchingPrice, setFetchingPrice] = useState(false);
   const [hasPreviousPurchase, setHasPreviousPurchase] = useState(false);
   const [scholarship, setScholarship] = useState(null);
+  const [instructor, setInstructor] = useState(null);
 
   useEffect(() => {
     if (location.state?.course) {
@@ -164,6 +165,44 @@ const CourseDetails = () => {
     setTimeout(() => setToast({ show: false, message: '', type: '' }), 3000);
   };
 
+  const fatchInstructor = async () => {
+    try {
+      const instructorId = typeof course?.instructor === 'object' ? course?.instructor?._id : course?.instructor;
+
+      if (!instructorId) {
+        console.log("Instructor ID not found");
+        return;
+      }
+
+      console.log(instructorId, "Instructor ID");
+
+      const url = `${api.fullcourse.getInstructor}${instructorId}`;
+      console.log(url, "Final API URL");
+
+      const res = await axios.get(url);
+
+      console.log(res.data, "Instructor Response");
+      if (res.data?.success) {
+        setInstructor(res.data.instructor);
+      }
+    } catch (error) {
+      console.log(
+        error.response?.data || error.message,
+        "API Error"
+      );
+    }
+  };
+
+  useEffect(() => {
+    if (course?.instructor) {
+      fatchInstructor();
+    }
+  }, [course?.instructor]);
+
+  useEffect(() => {
+    fatchInstructor();
+  }, [course]);
+
   const checkEnrollment = async () => {
     setCheckingEnrollment(true);
     try {
@@ -187,16 +226,16 @@ const CourseDetails = () => {
         courseId: course._id,
         studentId: studentId
       });
-      
+
       if (response.data?.success) {
         // Extract data from response (handling nested data structure)
         const resData = response.data?.data || response.data;
-        
+
         // Extract discount and validity dates (look for both discount and discountApplied)
         const discountApplied = resData.discountApplied || resData.discount || 0;
         const validFrom = resData.validFrom || resData.discountValidFrom || null;
         const validUntil = resData.validUntil || resData.discountValidUntil || null;
-        
+
         setPriceDetails({
           originalPrice: resData.originalPrice || course.price || 0,
           finalPrice: resData.finalPrice || course.price || 0,
@@ -270,10 +309,10 @@ const CourseDetails = () => {
     if (!dateString) return null;
     try {
       const date = new Date(dateString);
-      return date.toLocaleDateString('en-IN', { 
-        day: 'numeric', 
-        month: 'short', 
-        year: 'numeric' 
+      return date.toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
       });
     } catch (e) {
       return dateString;
@@ -283,18 +322,18 @@ const CourseDetails = () => {
   // FIX: Compare only dates (YYYY-MM-DD) to avoid timezone issues
   const isDiscountActive = () => {
     if (!priceDetails?.discountApplied || priceDetails.discountApplied === 0) return false;
-    
+
     const validFromStr = priceDetails.discountValidFrom;
     const validUntilStr = priceDetails.discountValidUntil;
-    
+
     if (!validFromStr && !validUntilStr) return true;
-    
+
     // Get today's date in UTC (YYYY-MM-DD)
     const todayUTC = new Date().toISOString().split('T')[0];
-    
+
     if (validFromStr && validFromStr.split('T')[0] > todayUTC) return false;
     if (validUntilStr && validUntilStr.split('T')[0] < todayUTC) return false;
-    
+
     return true;
   };
 
@@ -302,15 +341,15 @@ const CourseDetails = () => {
     if (isEnrolled) return { action: 'Already Enrolled ✓', type: 'enrolled', disabled: true };
     if (isCompletelyFree()) return { action: 'Start Learning — Free', type: 'free', disabled: false };
     const finalPrice = priceDetails?.finalPrice ?? (course?.price || 0);
-    
+
     if (isDiscountActive() && priceDetails?.discountApplied > 0 && !hasPreviousPurchase) {
-      return { 
-        action: `Enroll Now — ₹${finalPrice.toLocaleString('en-IN')} (${priceDetails.discountApplied}% off)`, 
-        type: 'paid', 
-        disabled: false 
+      return {
+        action: `Enroll Now — ₹${finalPrice.toLocaleString('en-IN')} (${priceDetails.discountApplied}% off)`,
+        type: 'paid',
+        disabled: false
       };
     }
-    
+
     return { action: `Enroll Now — ₹${finalPrice.toLocaleString('en-IN')}`, type: 'paid', disabled: false };
   };
 
@@ -359,19 +398,19 @@ const CourseDetails = () => {
       showToast('Payment gateway failed to load', 'error');
       return;
     }
-    
+
     setPaymentProcessing(true);
-    
+
     try {
-      const { data } = await axios.post(api.payment.createPayment, { 
-        courseId: course._id, 
-        studentId 
+      const { data } = await axios.post(api.payment.createPayment, {
+        courseId: course._id,
+        studentId
       });
-      
+
       if (!data.success) throw new Error(data.message);
-      
+
       const enrollmentId = data.enrollmentId;
-      
+
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         amount: data.order.amount,
@@ -382,22 +421,22 @@ const CourseDetails = () => {
         handler: async (response) => {
           try {
             showToast('Verifying payment...', 'info');
-            
+
             const verifyPromise = axios.post(api.payment.verifyPayment, {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
-              enrollmentId: enrollmentId, 
+              enrollmentId: enrollmentId,
             }, {
-              timeout: 10000 
+              timeout: 10000
             });
-            
-            const timeoutPromise = new Promise((_, reject) => 
+
+            const timeoutPromise = new Promise((_, reject) =>
               setTimeout(() => reject(new Error('Verification timeout')), 25000)
             );
-            
+
             const verifyResponse = await Promise.race([verifyPromise, timeoutPromise]);
-            
+
             if (verifyResponse.data.success) {
               setIsEnrolled(true);
               showToast('Payment successful! 🎉', 'success');
@@ -416,21 +455,21 @@ const CourseDetails = () => {
             setShowPaymentModal(false);
           }
         },
-        prefill: { 
-          name: student?.fullName || student?.name || '', 
-          email: student?.email || '', 
-          contact: student?.phone || '' 
+        prefill: {
+          name: student?.fullName || student?.name || '',
+          email: student?.email || '',
+          contact: student?.phone || ''
         },
         theme: { color: '#2563EB' },
-        modal: { 
-          ondismiss: () => { 
-            setPaymentProcessing(false); 
+        modal: {
+          ondismiss: () => {
+            setPaymentProcessing(false);
             setShowPaymentModal(false);
-            showToast('Payment cancelled', 'info'); 
-          } 
+            showToast('Payment cancelled', 'info');
+          }
         },
       };
-      
+
       const razorpay = new window.Razorpay(options);
       razorpay.on('payment.failed', (response) => {
         console.error("Payment failed:", response);
@@ -439,7 +478,7 @@ const CourseDetails = () => {
         setShowPaymentModal(false);
       });
       razorpay.open();
-      
+
     } catch (err) {
       console.error("Payment error:", err);
       showToast(err.response?.data?.message || 'Payment failed. Try again.', 'error');
@@ -447,7 +486,7 @@ const CourseDetails = () => {
     }
   };
 
-  const handleSchollerShip = async() => {
+  const handleSchollerShip = async () => {
     if (!studentId) return;
     try {
       const response = await axios.post(api.scholarship.getSchollership, {
@@ -461,7 +500,7 @@ const CourseDetails = () => {
       console.log(error);
     }
   };
-  
+
   useEffect(() => {
     handleSchollerShip();
   }, [studentId]);
@@ -637,9 +676,8 @@ const CourseDetails = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Toast */}
       {toast.show && (
-        <div className={`fixed top-5 right-4 z-[9999] px-5 py-3 rounded-xl shadow-lg text-sm font-medium text-white flex items-center gap-2 transition-all ${
-          toast.type === 'success' ? 'bg-green-500' : toast.type === 'error' ? 'bg-red-500' : 'bg-blue-500'
-        }`}>
+        <div className={`fixed top-5 right-4 z-[9999] px-5 py-3 rounded-xl shadow-lg text-sm font-medium text-white flex items-center gap-2 transition-all ${toast.type === 'success' ? 'bg-green-500' : toast.type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+          }`}>
           {toast.type === 'success' && <CheckCircle size={15} />}
           {toast.type === 'error' && <X size={15} />}
           {toast.message}
@@ -659,7 +697,7 @@ const CourseDetails = () => {
             <div className="p-6">
               <div className="text-center mb-5">
                 <p className="text-sm text-gray-500 mb-1">{course.title}</p>
-                
+
                 {hasPreviousPurchase ? (
                   <div>
                     <p className="text-3xl font-bold text-gray-900">₹{finalPrice.toLocaleString('en-IN')}</p>
@@ -689,10 +727,10 @@ const CourseDetails = () => {
                 ) : (
                   <p className="text-3xl font-bold text-gray-900">₹{finalPrice.toLocaleString('en-IN')}</p>
                 )}
-                
+
                 <p className="text-xs text-gray-500 mt-2">✓ Receipt will be sent to your email</p>
               </div>
-              
+
               <div className="bg-gray-50 rounded-xl p-4 mb-5 space-y-2 text-sm">
                 <div className="flex justify-between text-gray-600">
                   <span>Total lessons</span>
@@ -709,28 +747,28 @@ const CourseDetails = () => {
                   </div>
                 )}
               </div>
-              
+
               <div className="flex items-center gap-2 px-4 py-3 border border-gray-200 rounded-xl mb-5">
                 <CreditCard size={16} className="text-gray-400" />
                 <span className="text-sm font-medium text-gray-700">Razorpay — Secure Payment</span>
               </div>
-              
-              <button 
-                onClick={handlePayment} 
-                disabled={paymentProcessing} 
+
+              <button
+                onClick={handlePayment}
+                disabled={paymentProcessing}
                 className="w-full py-3 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-60 transition-colors"
               >
                 {paymentProcessing ? 'Processing...' : `Pay ₹${finalPrice.toLocaleString('en-IN')} & Enroll`}
               </button>
-              
-              <button 
-                onClick={() => setShowPaymentModal(false)} 
-                disabled={paymentProcessing} 
+
+              <button
+                onClick={() => setShowPaymentModal(false)}
+                disabled={paymentProcessing}
                 className="w-full mt-2 py-2.5 text-sm text-gray-500 hover:text-gray-700 transition-colors"
               >
                 Cancel
               </button>
-              
+
               <p className="text-xs text-gray-400 text-center mt-3">
                 After payment, you'll receive a receipt via email
               </p>
@@ -750,7 +788,7 @@ const CourseDetails = () => {
           {/* LEFT COLUMN */}
           <div className="flex-1 min-w-0">
             {/* Scholarship Banner */}
-            {scholarship && !isEnrolled && course?.price > 0 && !isCompletelyFree() && (
+            {scholarship && !hasPreviousPurchase && !isEnrolled && course?.price > 0 && !isCompletelyFree() && (
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-xl p-5 mb-5 flex items-start gap-4">
                 <div className="bg-blue-100 p-2.5 rounded-full flex-shrink-0 mt-0.5">
                   <Tag size={20} className="text-blue-600" />
@@ -763,7 +801,7 @@ const CourseDetails = () => {
                     </span>
                   </h3>
                   <p className="text-sm text-gray-600 mt-1.5 leading-relaxed">
-                    You have a special scholarship discount of <span className="font-semibold text-gray-800">{scholarship.discount}%</span> on this course. 
+                    You have a special scholarship discount of <span className="font-semibold text-gray-800">{scholarship.discount}%</span> on this course.
                     Enroll now to claim your discount!
                   </p>
                   {(scholarship.validFrom || scholarship.validUntil) && (
@@ -813,7 +851,7 @@ const CourseDetails = () => {
                 </div>
                 <div className="flex items-center gap-1.5 text-sm text-gray-500">
                   <GraduationCap size={15} className="text-green-500" />
-                  {course.instructor?.name || 'Expert Instructor'}
+                  {instructor?.name || course.instructorName || 'Expert Instructor'}
                 </div>
               </div>
             </div>
@@ -824,9 +862,8 @@ const CourseDetails = () => {
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`px-5 py-2 text-sm font-medium rounded-lg transition-colors capitalize ${
-                    activeTab === tab ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-                  }`}
+                  className={`px-5 py-2 text-sm font-medium rounded-lg transition-colors capitalize ${activeTab === tab ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                    }`}
                 >
                   {tab}
                 </button>
@@ -840,6 +877,27 @@ const CourseDetails = () => {
                   <h2 className="text-base font-bold text-gray-900 mb-3">About this course</h2>
                   <p className="text-sm text-gray-600 leading-relaxed">{course.description || 'No description available.'}</p>
                 </div>
+
+                {/* Instructor Section */}
+                {(instructor || course.instructorName) && (
+                  <div className="bg-white rounded-xl border border-gray-100 p-5">
+                    <h2 className="text-base font-bold text-gray-900 mb-4">Meet your instructor</h2>
+                    <div className="flex items-center gap-4">
+                      {instructor?.profileImage ? (
+                        <img src={instructor.profileImage} alt={instructor.name} className="w-16 h-16 rounded-full object-cover border-2 border-blue-50" />
+                      ) : (
+                        <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xl">
+                          {(instructor?.name || course.instructorName || 'I')[0]}
+                        </div>
+                      )}
+                      <div>
+                        <h3 className="text-lg font-bold text-gray-900">{instructor?.name || course.instructorName}</h3>
+                        <p className="text-sm text-gray-500 capitalize">{instructor?.role || 'Expert Instructor'}</p>
+                        {instructor?.email && <p className="text-xs text-gray-400 mt-0.5">{instructor.email}</p>}
+                      </div>
+                    </div>
+                  </div>
+                )}
                 {course.whatYouWillLearn?.length > 0 && (
                   <div className="bg-white rounded-xl border border-gray-100 p-5">
                     <h2 className="text-base font-bold text-gray-900 mb-3">What you'll learn</h2>
@@ -944,11 +1002,10 @@ const CourseDetails = () => {
                                                 <button
                                                   onClick={() => playVideo(topic)}
                                                   disabled={!hasAccess}
-                                                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                                                    hasAccess
-                                                      ? 'bg-blue-600 text-white hover:bg-blue-700'
-                                                      : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                                  }`}
+                                                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${hasAccess
+                                                    ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                                    : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                    }`}
                                                 >
                                                   <Play size={11} /> Watch
                                                 </button>
@@ -967,11 +1024,10 @@ const CourseDetails = () => {
                                                 <button
                                                   onClick={() => handleDownloadNotesPDF(topic)}
                                                   disabled={!hasAccess}
-                                                  className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 ${
-                                                    hasAccess
-                                                      ? 'bg-purple-100 text-purple-700 hover:bg-purple-200'
-                                                      : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                                  }`}
+                                                  className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 ${hasAccess
+                                                    ? 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+                                                    : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                    }`}
                                                 >
                                                   <Download size={11} /> Notes
                                                 </button>
@@ -1080,11 +1136,10 @@ const CourseDetails = () => {
                     <button
                       onClick={handleEnrollClick}
                       disabled={enrollmentLoading || paymentProcessing || fetchingPrice || info.disabled}
-                      className={`w-full py-3 text-sm font-semibold rounded-xl transition-colors ${
-                        info.disabled
-                          ? 'bg-gray-400 text-white cursor-not-allowed'
-                          : 'bg-blue-600 text-white hover:bg-blue-700'
-                      } disabled:opacity-60`}
+                      className={`w-full py-3 text-sm font-semibold rounded-xl transition-colors ${info.disabled
+                        ? 'bg-gray-400 text-white cursor-not-allowed'
+                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                        } disabled:opacity-60`}
                     >
                       {enrollmentLoading || paymentProcessing || fetchingPrice ? 'Processing...' : info.action}
                     </button>
