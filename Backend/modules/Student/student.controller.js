@@ -159,43 +159,48 @@ export const handleLogin = async (req, res) => {
 
 export const handleStdProfile = async (req, res) => {
   try {
-    let imageUrl = "";
+    let updateData = {};
 
     if (req.file) {
       const result = await cloudinary.uploader.upload(req.file.path);
-      imageUrl = result.secure_url;
-      console.log(imageUrl, " skkkskskskskskskskssk")
+      updateData.profileImage = result.secure_url;
 
+      console.log(result.secure_url, "uploaded image url");
     }
+
     const studentId = req.body.studentId;
 
+    if (!studentId) {
+      return res.status(400).json({
+        message: "Student ID is required",
+        error: true,
+        success: false
+      });
+    }
 
-
-    const updateduser = await User.findByIdAndUpdate(
+    const updatedUser = await User.findByIdAndUpdate(
       studentId,
-      {
-        profileImage: imageUrl,
-
-      },
+      updateData,
       { new: true }
     );
-
 
     return res.status(200).json({
       message: "Profile Updated successfully",
       error: false,
       success: true,
-      updateduser,
-    })
+      updatedUser,
+    });
 
   } catch (error) {
+    console.log(error);
+
     return res.status(500).json({
-      message: "something error",
+      message: "Something went wrong",
       error: true,
       success: false
-    })
+    });
   }
-}
+};
 
 export const Getuser = async (req, res) => {
   try {

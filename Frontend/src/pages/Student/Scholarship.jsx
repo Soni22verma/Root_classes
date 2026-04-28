@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import api from '../../services/endpoints.js';
 import axios from 'axios';
 import useStudentStore from '../../Store/studentstore.js';
 import { toast } from 'react-toastify';
+import { Loader2 } from 'lucide-react';
 
 /* ── data ─────────────────────────────────────────────────────────────────── */
 const tiers = [
@@ -42,30 +43,73 @@ const eligibility = [
   { icon: '🏅', text: 'State/national olympiad medal holders get direct 50% scholarship' },
 ];
 
-const inputCls = 'w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:border-[#0078FF] focus:ring-2 focus:ring-blue-100 transition';
+const inputCls = 'w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:border-[#0078FF] focus:ring-2 focus:ring-blue-100 transition disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed';
 const selectCls = inputCls + ' bg-white appearance-none cursor-pointer';
 const labelCls = 'block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2';
 
 /* ── component ───────────────────────────────────────────────────────────── */
 const ScholarshipForm = () => {
   const { student } = useStudentStore();
+  const [loadingData, setLoadingData] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     program: '', studentClass: '', lookingForCategory: '', email: '', phone: ''
   });
 
+  useEffect(() => {
+    const fetchStudentData = async () => {
+      if (!student?._id) {
+        toast.info("Please login to auto-fill your details");
+        return;
+      }
+
+      setLoadingData(true);
+      try {
+        const res = await axios.post(api.student.getStudent, { studentId: student._id });
+        if (res.data.success && res.data.user) {
+          const userData = res.data.user;
+          setFormData(prev => ({
+            ...prev,
+            email: userData.email || '',
+            phone: userData.phone || '',
+            studentClass: userData.currentClass || ''
+          }));
+        }
+      } catch (error) {
+        console.error("Error fetching student data:", error);
+        toast.error("Failed to fetch registration data. Please fill details manually if needed.");
+      } finally {
+        setLoadingData(false);
+      }
+    };
+
+    fetchStudentData();
+  }, [student?._id]);
+
   const handleChange = (e) => setFormData(p => ({ ...p, [e.target.name]: e.target.value }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!student?._id) {
+      toast.error("Please login to apply for scholarship");
+      return;
+    }
+
+    setSubmitting(true);
+    
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
     try {
       const res = await axios.post(api.scholarship.apply, { ...formData, studentId: student?._id });
-      toast.success(res?.data?.message || 'Applied Successfully');
+      toast.success(res?.data?.message || 'Scholarship Applied Successfully');
     } catch (error) {
       const message = error?.response?.data?.message || '';
       if (message.toLowerCase().includes('already applied')) toast.error('⚠️ You have already applied for scholarship');
       else if (message.toLowerCase().includes('not eligible')) toast.error('❌ You are not eligible for scholarship');
       else toast.error(message || 'Something went wrong');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -308,82 +352,132 @@ const ScholarshipForm = () => {
 
                 <form onSubmit={handleSubmit} className="p-8 space-y-6">
 
-                  {/* Program selection */}
-                  <div>
-                    <label className={labelCls}>Select Program <span className="text-[#FB0500]">*</span></label>
-                    <div className="grid grid-cols-3 gap-3">
-                      {['Foundation', 'Medical', 'Engineering'].map(p => (
-                        <button key={p} type="button"
-                          onClick={() => setFormData(prev => ({ ...prev, program: p }))}
-                          className={`py-3 rounded-xl text-sm font-bold border-2 transition-all ${formData.program === p
-                            ? 'bg-[#FB0500] text-white border-[#FB0500] shadow-sm shadow-red-100'
-                            : 'bg-white text-gray-600 border-gray-200 hover:border-[#FB0500]/40'
-                            }`}
-                        >
-                          {p}
-                        </button>
-                      ))}
+                  {/* Loading Overlay */}
+                  {loadingData && (
+                    <div className="flex flex-col items-center justify-center py-12 gap-3">
+                      <Loader2 className="w-8 h-8 text-[#FB0500] animate-spin" />
+                      <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Fetching your data...</p>
                     </div>
-                  </div>
+                  )}
 
-                  {/* Class + Looking For */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    <div>
-                      <label className={labelCls}>Your Class <span className="text-[#FB0500]">*</span></label>
-                      <select name="studentClass" value={formData.studentClass} onChange={handleChange} required className={selectCls}>
-                        <option value="">Select class</option>
-                        <option value="class-10">Class 10</option>
-                        <option value="class-11">Class 11</option>
-                        <option value="class-12">Class 12</option>
-                        <option value="graduate">Graduate</option>
-                        <option value="postgraduate">Postgraduate</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className={labelCls}>Looking For <span className="text-[#FB0500]">*</span></label>
-                      <select name="lookingForCategory" value={formData.lookingForCategory} onChange={handleChange} required className={selectCls}>
-                        <option value="">Select option</option>
-                        <option value="scholarship">Scholarship Programs</option>
-                        <option value="admission">Admission Guidance</option>
-                        <option value="counseling">Career Counseling</option>
-                        <option value="exam-prep">Exam Preparation</option>
-                      </select>
-                    </div>
-                  </div>
+                  {!loadingData && (
+                    <>
+                      {/* Program selection */}
+                      <div>
+                        <label className={labelCls}>Select Program <span className="text-[#FB0500]">*</span></label>
+                        <div className="grid grid-cols-3 gap-3">
+                          {['Foundation', 'Medical', 'Engineering'].map(p => (
+                            <button key={p} type="button"
+                              onClick={() => setFormData(prev => ({ ...prev, program: p }))}
+                              className={`py-3 rounded-xl text-sm font-bold border-2 transition-all ${formData.program === p
+                                ? 'bg-[#FB0500] text-white border-[#FB0500] shadow-sm shadow-red-100'
+                                : 'bg-white text-gray-600 border-gray-200 hover:border-[#FB0500]/40'
+                                }`}
+                            >
+                              {p}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
 
-                  {/* Email + Phone */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    <div>
-                      <label className={labelCls}>Email ID <span className="text-[#FB0500]">*</span></label>
-                      <input type="email" name="email" value={formData.email} onChange={handleChange}
-                        placeholder="your@email.com" required className={inputCls} />
-                    </div>
-                    <div>
-                      <label className={labelCls}>Phone Number <span className="text-[#FB0500]">*</span></label>
-                      <input type="tel" name="phone" value={formData.phone} onChange={handleChange}
-                        placeholder="10-digit mobile" maxLength={10} required className={inputCls} />
-                    </div>
-                  </div>
+                      {/* Class + Looking For */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <div>
+                          <label className={labelCls}>Your Class <span className="text-[#FB0500]">*</span></label>
+                          <select 
+                            name="studentClass" 
+                            value={formData.studentClass} 
+                            onChange={handleChange} 
+                            required 
+                            disabled={!!student?._id}
+                            className={selectCls}
+                          >
+                            <option value="">Select class</option>
+                            {['8th', '9th', '10th', '11th', '12th', 'Dropper'].map(c => (
+                              <option key={c} value={c}>{c} Class</option>
+                            ))}
+                            {/* Keep legacy options for compatibility if needed, though updated registration uses above */}
+                            {!['8th', '9th', '10th', '11th', '12th', 'Dropper'].includes(formData.studentClass) && formData.studentClass && (
+                                <option value={formData.studentClass}>{formData.studentClass}</option>
+                            )}
+                          </select>
+                        </div>
+                        <div>
+                          <label className={labelCls}>Looking For <span className="text-[#FB0500]">*</span></label>
+                          <select name="lookingForCategory" value={formData.lookingForCategory} onChange={handleChange} required className={selectCls}>
+                            <option value="">Select option</option>
+                            <option value="scholarship">Scholarship Programs</option>
+                            <option value="admission">Admission Guidance</option>
+                            <option value="counseling">Career Counseling</option>
+                            <option value="exam-prep">Exam Preparation</option>
+                          </select>
+                        </div>
+                      </div>
 
-                  {/* Terms */}
-                  <div className="flex items-start gap-3 py-2">
-                    <input type="checkbox" id="sch-terms" required className="mt-0.5 w-4 h-4 accent-[#FB0500]" />
-                    <label htmlFor="sch-terms" className="text-xs text-gray-500 leading-relaxed">
-                      I agree to receive test information and scholarship updates via WhatsApp/Email. I accept Roots Classes'{' '}
-                      <a href="/termsandconditions" className="text-[#FB0500] hover:underline">Terms & Conditions</a>.
-                    </label>
-                  </div>
+                      {/* Email + Phone */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <div>
+                          <label className={labelCls}>Email ID <span className="text-[#FB0500]">*</span></label>
+                          <input 
+                            type="email" 
+                            name="email" 
+                            value={formData.email} 
+                            onChange={handleChange}
+                            readOnly={!!student?._id}
+                            placeholder="your@email.com" 
+                            required 
+                            className={inputCls} 
+                          />
+                        </div>
+                        <div>
+                          <label className={labelCls}>Phone Number <span className="text-[#FB0500]">*</span></label>
+                          <input 
+                            type="tel" 
+                            name="phone" 
+                            value={formData.phone} 
+                            onChange={handleChange}
+                            readOnly={!!student?._id}
+                            placeholder="10-digit mobile" 
+                            maxLength={10} 
+                            required 
+                            className={inputCls} 
+                          />
+                        </div>
+                      </div>
 
-                  {/* Submit */}
-                  <button type="submit"
-                    className="w-full py-4 bg-[#FB0500] text-white font-black rounded-xl text-base hover:opacity-90 transition flex items-center justify-center gap-2">
-                    Apply for Scholarship — It's Free
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                    </svg>
-                  </button>
+                      {/* Terms */}
+                      <div className="flex items-start gap-3 py-2">
+                        <input type="checkbox" id="sch-terms" required className="mt-0.5 w-4 h-4 accent-[#FB0500]" />
+                        <label htmlFor="sch-terms" className="text-xs text-gray-500 leading-relaxed">
+                          I agree to receive test information and scholarship updates via WhatsApp/Email. I accept Roots Classes'{' '}
+                          <a href="/termsandconditions" className="text-[#FB0500] hover:underline">Terms & Conditions</a>.
+                        </label>
+                      </div>
 
-                  <p className="text-center text-xs text-gray-400">🔒 Your information is safe and will never be shared.</p>
+                      {/* Submit */}
+                      <button 
+                        type="submit"
+                        disabled={submitting}
+                        className="w-full py-4 bg-[#FB0500] text-white font-black rounded-xl text-base hover:opacity-90 transition flex items-center justify-center gap-2 disabled:bg-gray-400"
+                      >
+                        {submitting ? (
+                          <>
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                            Processing...
+                          </>
+                        ) : (
+                          <>
+                            Apply for Scholarship — It's Free
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                            </svg>
+                          </>
+                        )}
+                      </button>
+
+                      <p className="text-center text-xs text-gray-400">🔒 Your information is safe and will never be shared.</p>
+                    </>
+                  )}
                 </form>
               </div>
             </div>

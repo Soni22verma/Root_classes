@@ -4,22 +4,22 @@ import React, { useEffect, useState } from 'react';
 import api from '../../services/endpoints';
 import useStudentStore from '../../Store/studentstore';
 import { toast } from 'react-toastify';
-import { useNavigate } from 'react-router-dom';
-import { 
-  User, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Calendar, 
-  GraduationCap, 
-  Heart, 
-  Camera, 
-  Edit3, 
-  ChevronRight,
-  ArrowLeft,
-  ShieldCheck,
-  BookOpen,
-  Award
+import { Link, useNavigate } from 'react-router-dom';
+import {
+    User,
+    Mail,
+    Phone,
+    MapPin,
+    Calendar,
+    GraduationCap,
+    Heart,
+    Camera,
+    Edit3,
+    ChevronRight,
+    ArrowLeft,
+    ShieldCheck,
+    BookOpen,
+    Award
 } from 'lucide-react';
 
 const StudentProfile = () => {
@@ -133,7 +133,7 @@ const StudentProfile = () => {
                     "Content-Type": "multipart/form-data",
                 },
             });
-
+           console.log(response)
             if (response.data.success) {
                 setStudentData(prev => ({
                     ...prev,
@@ -277,9 +277,9 @@ const StudentProfile = () => {
                     <div className="h-48 md:h-64 w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-[40px] shadow-2xl shadow-blue-600/20 overflow-hidden relative">
                         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
                         <div className="absolute top-6 right-6">
-                             <div className="px-4 py-2 bg-white/20 backdrop-blur-md rounded-full text-white text-[10px] font-black uppercase tracking-[0.2em]">
-                                 ID: {studentData._id?.slice(-8).toUpperCase()}
-                             </div>
+                            <div className="px-4 py-2 bg-white/20 backdrop-blur-md rounded-full text-white text-[10px] font-black uppercase tracking-[0.2em]">
+                                ID: {studentData._id?.slice(-8).toUpperCase()}
+                            </div>
                         </div>
                     </div>
 
@@ -359,7 +359,7 @@ const StudentProfile = () => {
                                     <User className="text-blue-600" size={20} />
                                 </div>
                             </div>
-                            
+
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
                                 <InfoItem icon={<Mail />} label="Email Address" value={studentData.email} />
                                 <InfoItem icon={<Phone />} label="Phone Number" value={studentData.phone ? String(studentData.phone) : 'Not registered'} />
@@ -370,7 +370,7 @@ const StudentProfile = () => {
                         </div>
 
                         <div className="bg-white p-8 rounded-[40px] shadow-2xl shadow-slate-900/[0.02] border border-slate-50">
-                             <div className="flex items-center justify-between mb-8">
+                            <div className="flex items-center justify-between mb-8">
                                 <h3 className="text-xl font-black text-slate-900">Academic Trajectory</h3>
                                 <div className="w-10 h-10 bg-purple-50 rounded-2xl flex items-center justify-center">
                                     <GraduationCap className="text-purple-600" size={20} />
@@ -407,12 +407,15 @@ const StudentProfile = () => {
                                                 <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm group-hover:scale-90 transition-transform">
                                                     <BookOpen className="text-blue-600" size={20} />
                                                 </div>
-                                                <div className="flex-1">
-                                                    <p className="text-xs font-black text-slate-900 group-hover:text-white line-clamp-1">
-                                                        {course.title || 'Course ' + (idx + 1)}
-                                                    </p>
-                                                    <p className="text-[10px] font-bold text-slate-400 group-hover:text-blue-200">Enrolled</p>
-                                                </div>
+
+                                                <Link to="/purchescourse">
+                                                    <div className="flex-1">
+                                                        <p className="text-xs font-black text-slate-900 group-hover:text-white line-clamp-1">
+                                                            {course.title || 'Course ' + (idx + 1)}
+                                                        </p>
+                                                        <p className="text-[10px] font-bold text-slate-400 group-hover:text-blue-200">Enrolled</p>
+                                                    </div>
+                                                </Link>
                                                 <ChevronRight size={16} className="text-slate-300 group-hover:text-white" />
                                             </div>
                                         </div>
@@ -445,7 +448,7 @@ const StudentProfile = () => {
                                 <ArrowLeft size={20} className="text-slate-600" />
                             </button>
                         </div>
-                        
+
                         <form onSubmit={editDetails} className="p-8 md:p-10 max-h-[70vh] overflow-y-auto custom-scrollbar">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <FormInput label="Full Name" name="fullName" value={formData.fullName} onChange={handleInputChange} icon={<User size={16} />} />
@@ -454,7 +457,7 @@ const StudentProfile = () => {
                                 <FormInput label="Current Class" name="currentClass" value={formData.currentClass} onChange={handleInputChange} icon={<GraduationCap size={16} />} />
                                 <FormInput label="Interested Course" name="interestedCourse" value={formData.interestedCourse} onChange={handleInputChange} icon={<BookOpen size={16} />} />
                                 <FormInput label="Date of Birth" name="dateofBirth" value={formData.dateofBirth} onChange={handleInputChange} icon={<Calendar size={16} />} type="date" />
-                                
+
                                 <div className="space-y-2">
                                     <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Gender Identity</label>
                                     <div className="relative">
