@@ -40,8 +40,8 @@ const StudentRoutes = [
                 element: <Courses />,
             },
             {
-                path:"/coursedetails",
-                element: <CourseDetails/>
+                path: "/coursedetails",
+                element: <CourseDetails />
             },
            {
             path:"/topicinfo/:topicId",

@@ -5,98 +5,98 @@ import cloudinary from "../../../config/cloudinary.js";
 import User from "../../Student/student.model.js"
 
 
-  export const createCourse = async (req, res) => {
-    try {
-      const { title, description, category, level,price } = req.body;
-      console.log(req.body,"dfffffffffffffffffffff")
+export const createCourse = async (req, res) => {
+  try {
+    const { title, description, category, level, price } = req.body;
+    console.log(req.body, "dfffffffffffffffffffff")
 
-      if (!title || !category) {
-        return res.status(400).json({
-          success: false,
-          message: "Title and Category are required",
-        });
-      }
-
-    
-
-      if (!mongoose.Types.ObjectId.isValid(category)) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid Category ID",
-        });
-      }
-
-      const categoryExists = await Category.findById(category);
-      if (!categoryExists) {
-        return res.status(404).json({
-          success: false,
-          message: "Category not found",
-        });
-      }
-     console.log(req.user)
-      const course = await Course.create({
-        title,
-        description,
-        category,
-        price,
-        level: level || "beginner",
-        instructor: req.user?._id, 
-        instructorName: req.user?.fullName || "Instructor Name Not Available",
-        modules: [],
-        status:"pending"
-      });
-
-
-      console.log("USER:", req.user);
-
-      res.status(201).json({
-        success: true,
-        message: "Course created successfully",
-        data: course,
-      });
-
-    } catch (error) {
-      res.status(500).json({
+    if (!title || !category) {
+      return res.status(400).json({
         success: false,
-        message: error.message,
+        message: "Title and Category are required",
       });
     }
-  };
 
-export const GetCategory = async(req,res,next)=>{
-    try {
-        const categories = await Category.find().select("name")
-        return res.status(200).json({
-            message:"this is categories",
-            success:true,
-            data:categories
-        })
-        
-    } catch (error) {
-        next(error)
+
+
+    if (!mongoose.Types.ObjectId.isValid(category)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid Category ID",
+      });
     }
+
+    const categoryExists = await Category.findById(category);
+    if (!categoryExists) {
+      return res.status(404).json({
+        success: false,
+        message: "Category not found",
+      });
+    }
+    console.log(req.user)
+    const course = await Course.create({
+      title,
+      description,
+      category,
+      price,
+      level: level || "beginner",
+      instructor: req.user?._id,
+      instructorName: req.user?.fullName || "Instructor Name Not Available",
+      modules: [],
+      status: "pending"
+    });
+
+
+    console.log("USER:", req.user);
+
+    res.status(201).json({
+      success: true,
+      message: "Course created successfully",
+      data: course,
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const GetCategory = async (req, res, next) => {
+  try {
+    const categories = await Category.find().select("name")
+    return res.status(200).json({
+      message: "this is categories",
+      success: true,
+      data: categories
+    })
+
+  } catch (error) {
+    next(error)
+  }
 }
-export const GetCreatedCourse = async(req,res,next)=>{
-    try {
-        const CreatedCourse = await Course.find()
-        .populate("instructor","fullName email")
-        return res.status(200).json({
-            message:"fatch all course successfully",
-            error:false,
-            success:true,
-            data:CreatedCourse
-        })
-        
-    } catch (error) {
-        next(error)
-    }
+export const GetCreatedCourse = async (req, res, next) => {
+  try {
+    const CreatedCourse = await Course.find()
+      .populate("instructor", "fullName email")
+    return res.status(200).json({
+      message: "fatch all course successfully",
+      error: false,
+      success: true,
+      data: CreatedCourse
+    })
+
+  } catch (error) {
+    next(error)
+  }
 }
 
 
 
 export const UpdateCourse = async (req, res, next) => {
   try {
-    const { courseId, title, description, category, level,price } = req.body;
+    const { courseId, title, description, category, level, price } = req.body;
 
     // 🔥 1. Check courseId
     if (!courseId) {
@@ -153,21 +153,21 @@ export const UpdateCourse = async (req, res, next) => {
   }
 };
 
-export const DeleteCourse = async(req,res,next)=>{
-    try {
-        const {courseId} = req.body;
-        const deletecourse = await Course.findByIdAndDelete(courseId)
-        return res.status(200).json({
-            message:"course deleted successfully",
-            error:false,
-            success:true,
-            data:deletecourse
-        })
+export const DeleteCourse = async (req, res, next) => {
+  try {
+    const { courseId } = req.body;
+    const deletecourse = await Course.findByIdAndDelete(courseId)
+    return res.status(200).json({
+      message: "course deleted successfully",
+      error: false,
+      success: true,
+      data: deletecourse
+    })
 
-        
-    } catch (error) {
-       next(error)  
-    }
+
+  } catch (error) {
+    next(error)
+  }
 }
 
 
@@ -175,7 +175,7 @@ export const handleGetCourseById = async (req, res, next) => {
   try {
     console.log("Fetching course by ID");
     const { courseId } = req.body;
-    
+
     if (!courseId) {
       return res.status(400).json({
         message: "courseId is required",
@@ -184,7 +184,7 @@ export const handleGetCourseById = async (req, res, next) => {
     }
 
     // ✅ CORRECT: Use lowercase 'category' (field name from schema)
-    const course = await Course.findById(courseId).populate('category').populate('instructor');
+    const course = await Course.findById(courseId).populate('category').populate('instructor', "fullName email profileImage role");
 
     if (!course) {
       return res.status(404).json({
@@ -225,7 +225,7 @@ export const handleAddModule = async (req, res, next) => {
 
     // Find the course by ID
     const course = await Course.findById(courseId);
-    
+
     if (!course) {
       return res.status(404).json({
         message: "Course not found",
@@ -241,7 +241,7 @@ export const handleAddModule = async (req, res, next) => {
 
     // Push the new module to the course modules array
     course.modules.push(newModule);
-    
+
     // Save the course
     await course.save();
 
@@ -279,7 +279,7 @@ export const handleUpdateModule = async (req, res, next) => {
     }
 
     const course = await Course.findById(courseId);
-    
+
     if (!course) {
       return res.status(404).json({
         message: "Course not found",
@@ -369,7 +369,7 @@ export const handleAddChapter = async (req, res, next) => {
     }
 
     const course = await Course.findById(courseId);
-    
+
     if (!course) {
       return res.status(404).json({
         message: "Course not found",
@@ -391,7 +391,7 @@ export const handleAddChapter = async (req, res, next) => {
       title: title,
       topics: []
     };
-    
+
     module.chapters.push(newChapter);
     await course.save();
 
@@ -428,7 +428,7 @@ export const handleUpdateChapter = async (req, res, next) => {
     }
 
     const course = await Course.findById(courseId);
-    
+
     if (!course) {
       return res.status(404).json({
         message: "Course not found",
@@ -764,7 +764,7 @@ export const handleEditTopic = async (req, res) => {
       topic.videoUrl = youtubeUrl;
       topic.videoPublicId = "";
 
-    } 
+    }
     else if (req.files?.video) {
       const videoUpload = await cloudinary.uploader.upload(
         req.files.video[0].path,
@@ -894,8 +894,15 @@ export const DeleteTopic = async (req, res) => {
 export const getFullCourseDetails = async (req, res) => {
   try {
     const course = await Course.find()
-      .populate("category", "name") 
-      .populate("instructor","fullName email");
+      .populate({
+        path: "category",
+        select: "name"
+      })
+      .populate({
+        path: "instructor",
+      });
+
+    console.log(JSON.stringify(course, null, 2));
 
     if (!course) {
       return res.status(404).json({
@@ -921,10 +928,10 @@ export const getFullCourseDetails = async (req, res) => {
 };
 
 
-export const approvedCourse = async(req,res,next)=>{
+export const approvedCourse = async (req, res, next) => {
   try {
-    const {courseId,status} = req.body;
-       if (!["approved", "rejected"].includes(status)) {
+    const { courseId, status } = req.body;
+    if (!["approved", "rejected"].includes(status)) {
       return res.status(400).json({
         success: false,
         message: "Invalid status",
@@ -933,35 +940,35 @@ export const approvedCourse = async(req,res,next)=>{
 
     const course = await Course.findByIdAndUpdate(
       courseId,
-      {status},
-      {new:true}
+      { status },
+      { new: true }
     )
 
-    if(!course){
+    if (!course) {
       return res.status(404).json({
-        success:true,
-        message:"course not found"
+        success: true,
+        message: "course not found"
       })
     }
 
-     res.status(200).json({
+    res.status(200).json({
       success: true,
       message: `Course ${status} successfully`,
       data: course,
     });
-    
+
   } catch (error) {
     next(error)
   }
 }
 
-export const getApprovedCourse = async(req,res,next)=>{
-   try {
+export const getApprovedCourse = async (req, res, next) => {
+  try {
     const course = await Course.find({
       status: "approved",
     })
       .populate("category", "name")
-      .populate("instructor", "fullName email");
+      .populate("instructor", "fullName email phone role");
 
     if (!course || course.length === 0) {
       return res.status(404).json({
@@ -988,7 +995,7 @@ export const getApprovedCourse = async(req,res,next)=>{
 }
 export const getInstructorById = async (req, res) => {
   try {
-    const { instructorId } = req.params;
+    const { instructorId } = req.body;
 
     const instructor = await User.findById(instructorId).select(
       "fullName email profileImage role"

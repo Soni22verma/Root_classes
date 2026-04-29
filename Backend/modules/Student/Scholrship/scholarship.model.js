@@ -6,83 +6,67 @@ const scholarshipSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
-      unique: true, // ✔ 1 student = 1 scholarship
+      unique: true,
     },
-
     program: {
       type: String,
       enum: ["Foundation", "Medical", "Engineering"],
-      required: true
+      required: true,
     },
-
     studentClass: {
       type: String,
-      enum: ["class-10", "class-11", "class-12", "graduate", "postgraduate"],
-      required: true
+     enum: ["class-8", "class-9", "class-10", "class-11", "class-12", "dropper"],
+      required: true,
     },
-
     lookingForCategory: {
       type: String,
       enum: ["scholarship", "admission", "counseling", "exam-prep"],
-      required: true
+      required: true,
     },
-
     email: {
       type: String,
       required: true,
       lowercase: true,
-      trim: true
+      trim: true,
     },
-
     phone: {
       type: String,
-      required: true
+      required: true,
     },
-
     status: {
       type: String,
       enum: ["pending", "approved", "rejected"],
-      default: "pending"
+      default: "pending",
     },
-
     discount: {
       type: Number,
-      default: 0
+      default: 0,
     },
-       
     discountType: {
       type: String,
       enum: ["percentage", "fixed"],
       default: "percentage",
     },
-
-    
     validFrom: {
       type: Date,
     },
-
     validUntil: {
       type: Date,
     },
-
     adminRemark: {
-      type: String
+      type: String,
     },
-
     isUsed: {
       type: Boolean,
-      default: false   
+      default: false,
     },
-
     usedAt: {
-      type: Date       
+      type: Date,
     },
-
     usedForCourse: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Course"   
-    }
-
+      ref: "Course",
+    },
   },
   { timestamps: true }
 );

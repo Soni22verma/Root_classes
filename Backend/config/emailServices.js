@@ -209,4 +209,24 @@ const sendContactEmail = async (userData) => {
   }
 };
 
-export { sendOTP, sendCallbackEmail, sendContactEmail,sendReceiptEmail  };
+
+ const sendScholarshipEmail = async (studentEmail, studentName) => {
+  try {
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: studentEmail,
+      subject: "Scholarship Approved 🎉",
+      html: `
+        <h2>Congratulations ${studentName}!</h2>
+        <p>Your scholarship application has been <b>approved</b>.</p>
+        <p>“You can now purchase courses with a discount. Go to the Courses page where all the details are available.” </p>
+      `
+    });
+
+    console.log("Email sent successfully");
+  } catch (error) {
+    console.log("Email error:", error);
+  }
+};
+
+export { sendOTP, sendCallbackEmail, sendContactEmail,sendReceiptEmail,sendScholarshipEmail  };

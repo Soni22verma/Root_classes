@@ -1,3 +1,4 @@
+import { sendScholarshipEmail } from '../../../config/emailServices.js';
 import { Result } from '../Result/result.model.js';
 import User from '../student.model.js';
 import Scholarship from './scholarship.model.js';
@@ -92,7 +93,6 @@ export const handleApplyScholarship = async (req, res) => {
         });
     }
 };
-
 export const approveScholarship = async (req, res) => {
     try {
         const { scholarshipId, discount, validFrom, validUntil } = req.body;
@@ -116,9 +116,14 @@ export const approveScholarship = async (req, res) => {
 
         const updated = await scholarship.save();
 
+        await sendScholarshipEmail(
+            scholarship.email,
+            "Student" 
+        );
+
         return res.json({
             success: true,
-            message: "Scholarship approved",
+            message: "Scholarship approved and email sent",
             scholarship: updated
         });
 

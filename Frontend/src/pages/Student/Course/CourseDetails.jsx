@@ -6,7 +6,7 @@ import api from '../../../services/endpoints';
 import {
   ArrowLeft, BookOpen, Clock, ChevronDown, ChevronRight,
   Play, FileText, Lock, Unlock, CheckCircle, X, CreditCard,
-  GraduationCap, Users, Info, Download, Tag, Percent, Calendar
+  GraduationCap, Users, Info, Download, Tag, Percent, Calendar, Mail, Phone, User
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 
@@ -116,6 +116,23 @@ const downloadNotesAsPDF = (topic) => {
   }
 };
 
+// ─── Helper to get instructor object ─────────────────────────────────────────
+const getInstructorDetails = (course) => {
+  if (!course) return { name: 'Instructor Name Not Available', email: null, phone: null, role: null };
+  if (course.instructor && course.instructor.fullName) {
+    return {
+      name: course.instructor.fullName,
+      email: course.instructor.email,
+      phone: course.instructor.phone,
+      role: course.instructor.role || 'Instructor'
+    };
+  }
+  if (course.instructorName && course.instructorName !== 'Instructor Name Not Available') {
+    return { name: course.instructorName, email: null, phone: null, role: null };
+  }
+  return { name: 'Instructor Name Not Available', email: null, phone: null, role: null };
+};
+
 // ─── Component ────────────────────────────────────────────────────────────────
 const CourseDetails = () => {
   const location = useLocation();
@@ -140,15 +157,26 @@ const CourseDetails = () => {
   const [fetchingPrice, setFetchingPrice] = useState(false);
   const [hasPreviousPurchase, setHasPreviousPurchase] = useState(false);
   const [scholarship, setScholarship] = useState(null);
-  const [instructor, setInstructor] = useState(null);
 
   useEffect(() => {
-    if (location.state?.course) {
-      setCourse(location.state.course);
-      setLoading(false);
-    } else {
-      setLoading(false);
-    }
+    const initCourse = async () => {
+      if (location.state?.course) {
+        let courseData = location.state.course;
+        if ((!courseData.instructor || !courseData.instructor.fullName) && courseData._id) {
+          try {
+            const res = await axios.post(api.fullcourse.getCourseById, { courseId: courseData._id });
+            if (res.data?.success) {
+              courseData = res.data.data;
+            }
+          } catch (e) { console.log("Error fetching full course details", e); }
+        }
+        setCourse(courseData);
+        setLoading(false);
+      } else {
+        setLoading(false);
+      }
+    };
+    initCourse();
   }, [location.state]);
 
   useEffect(() => {
@@ -160,48 +188,17 @@ const CourseDetails = () => {
     }
   }, [studentId, course]);
 
+  // Clear scholarship card if student has already made a purchase (first purchase discount used)
+  useEffect(() => {
+    if (hasPreviousPurchase) {
+      setScholarship(null);
+    }
+  }, [hasPreviousPurchase]);
+
   const showToast = (message, type = 'info') => {
     setToast({ show: true, message, type });
     setTimeout(() => setToast({ show: false, message: '', type: '' }), 3000);
   };
-
-  const fatchInstructor = async () => {
-    try {
-      const instructorId = typeof course?.instructor === 'object' ? course?.instructor?._id : course?.instructor;
-
-      if (!instructorId) {
-        console.log("Instructor ID not found");
-        return;
-      }
-
-      console.log(instructorId, "Instructor ID");
-
-      const url = `${api.fullcourse.getInstructor}${instructorId}`;
-      console.log(url, "Final API URL");
-
-      const res = await axios.get(url);
-
-      console.log(res.data, "Instructor Response");
-      if (res.data?.success) {
-        setInstructor(res.data.instructor);
-      }
-    } catch (error) {
-      console.log(
-        error.response?.data || error.message,
-        "API Error"
-      );
-    }
-  };
-
-  useEffect(() => {
-    if (course?.instructor) {
-      fatchInstructor();
-    }
-  }, [course?.instructor]);
-
-  useEffect(() => {
-    fatchInstructor();
-  }, [course]);
 
   const checkEnrollment = async () => {
     setCheckingEnrollment(true);
@@ -228,10 +225,7 @@ const CourseDetails = () => {
       });
 
       if (response.data?.success) {
-        // Extract data from response (handling nested data structure)
         const resData = response.data?.data || response.data;
-
-        // Extract discount and validity dates (look for both discount and discountApplied)
         const discountApplied = resData.discountApplied || resData.discount || 0;
         const validFrom = resData.validFrom || resData.discountValidFrom || null;
         const validUntil = resData.validUntil || resData.discountValidUntil || null;
@@ -304,7 +298,6 @@ const CourseDetails = () => {
   const paidTopics = () =>
     course?.modules?.reduce((s, m) => s + (m.chapters?.reduce((cs, c) => cs + c.topics?.filter(t => !t.isPreviewFree).length, 0) || 0), 0) || 0;
 
-  // Helper function to format date
   const formatDate = (dateString) => {
     if (!dateString) return null;
     try {
@@ -319,21 +312,14 @@ const CourseDetails = () => {
     }
   };
 
-  // FIX: Compare only dates (YYYY-MM-DD) to avoid timezone issues
   const isDiscountActive = () => {
     if (!priceDetails?.discountApplied || priceDetails.discountApplied === 0) return false;
-
     const validFromStr = priceDetails.discountValidFrom;
     const validUntilStr = priceDetails.discountValidUntil;
-
     if (!validFromStr && !validUntilStr) return true;
-
-    // Get today's date in UTC (YYYY-MM-DD)
     const todayUTC = new Date().toISOString().split('T')[0];
-
     if (validFromStr && validFromStr.split('T')[0] > todayUTC) return false;
     if (validUntilStr && validUntilStr.split('T')[0] < todayUTC) return false;
-
     return true;
   };
 
@@ -341,7 +327,6 @@ const CourseDetails = () => {
     if (isEnrolled) return { action: 'Already Enrolled ✓', type: 'enrolled', disabled: true };
     if (isCompletelyFree()) return { action: 'Start Learning — Free', type: 'free', disabled: false };
     const finalPrice = priceDetails?.finalPrice ?? (course?.price || 0);
-
     if (isDiscountActive() && priceDetails?.discountApplied > 0 && !hasPreviousPurchase) {
       return {
         action: `Enroll Now — ₹${finalPrice.toLocaleString('en-IN')} (${priceDetails.discountApplied}% off)`,
@@ -349,7 +334,6 @@ const CourseDetails = () => {
         disabled: false
       };
     }
-
     return { action: `Enroll Now — ₹${finalPrice.toLocaleString('en-IN')}`, type: 'paid', disabled: false };
   };
 
@@ -439,6 +423,11 @@ const CourseDetails = () => {
 
             if (verifyResponse.data.success) {
               setIsEnrolled(true);
+              // After successful purchase, mark that student has made a purchase (so discount card disappears)
+              setHasPreviousPurchase(true);
+              setScholarship(null); // explicitly remove any scholarship banner
+              // Refresh price details to reflect updated first-purchase status
+              await fetchPriceDetails();
               showToast('Payment successful! 🎉', 'success');
               setShowPaymentModal(false);
               setPaymentProcessing(false);
@@ -488,6 +477,11 @@ const CourseDetails = () => {
 
   const handleSchollerShip = async () => {
     if (!studentId) return;
+    // Only fetch scholarship if student has not made any previous purchase
+    if (hasPreviousPurchase) {
+      setScholarship(null);
+      return;
+    }
     try {
       const response = await axios.post(api.scholarship.getSchollership, {
         studentId: studentId
@@ -503,7 +497,7 @@ const CourseDetails = () => {
 
   useEffect(() => {
     handleSchollerShip();
-  }, [studentId]);
+  }, [studentId, hasPreviousPurchase]);
 
   const handlePayment = async () => {
     if (isEnrolled) {
@@ -525,13 +519,12 @@ const CourseDetails = () => {
       return;
     }
     if (isCompletelyFree()) {
-      navigate(`/course-content/${course._id}`, { state: { course } });
+      // navigate(`/course-content/${course._id}`, { state: { course } }); // Uncomment when course-content page is ready
     } else if (isPaidCourse()) {
       setShowPaymentModal(true);
     }
   };
 
-  // Video
   const playVideo = (topic) => {
     const hasAccess = isEnrolled || topic.isPreviewFree || isCompletelyFree();
     if (!hasAccess) return showToast('Enroll to access this lesson', 'error');
@@ -624,14 +617,12 @@ const CourseDetails = () => {
     });
   };
 
-  // Expand toggles
   const toggleModule = (idx) => setExpandedModules(p => ({ ...p, [idx]: !p[idx] }));
   const toggleChapter = (mIdx, cIdx) => {
     const k = `${mIdx}-${cIdx}`;
     setExpandedChapters(p => ({ ...p, [k]: !p[k] }));
   };
 
-  // Loading / error
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -668,9 +659,10 @@ const CourseDetails = () => {
   const discountValidFrom = priceDetails?.discountValidFrom ? formatDate(priceDetails.discountValidFrom) : null;
   const discountValidUntil = priceDetails?.discountValidUntil ? formatDate(priceDetails.discountValidUntil) : null;
   const discountMessage = getDiscountMessage();
-
-  // Determine if the discount block should be shown in the right card
   const showDiscountBlock = !hasPreviousPurchase && discountActive && discountApplied > 0;
+
+  // Get instructor details
+  const instructor = getInstructorDetails(course);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -787,7 +779,7 @@ const CourseDetails = () => {
         <div className="flex flex-col lg:flex-row gap-6 items-start">
           {/* LEFT COLUMN */}
           <div className="flex-1 min-w-0">
-            {/* Scholarship Banner */}
+            {/* Scholarship Banner - only shown if no previous purchase, not enrolled, course has price, and scholarship exists */}
             {scholarship && !hasPreviousPurchase && !isEnrolled && course?.price > 0 && !isCompletelyFree() && (
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-xl p-5 mb-5 flex items-start gap-4">
                 <div className="bg-blue-100 p-2.5 rounded-full flex-shrink-0 mt-0.5">
@@ -849,10 +841,6 @@ const CourseDetails = () => {
                   <Play size={15} className="text-purple-500" />
                   {tt} Lessons
                 </div>
-                <div className="flex items-center gap-1.5 text-sm text-gray-500">
-                  <GraduationCap size={15} className="text-green-500" />
-                  {instructor?.name || course.instructorName || 'Expert Instructor'}
-                </div>
               </div>
             </div>
 
@@ -878,26 +866,6 @@ const CourseDetails = () => {
                   <p className="text-sm text-gray-600 leading-relaxed">{course.description || 'No description available.'}</p>
                 </div>
 
-                {/* Instructor Section */}
-                {(instructor || course.instructorName) && (
-                  <div className="bg-white rounded-xl border border-gray-100 p-5">
-                    <h2 className="text-base font-bold text-gray-900 mb-4">Meet your instructor</h2>
-                    <div className="flex items-center gap-4">
-                      {instructor?.profileImage ? (
-                        <img src={instructor.profileImage} alt={instructor.name} className="w-16 h-16 rounded-full object-cover border-2 border-blue-50" />
-                      ) : (
-                        <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xl">
-                          {(instructor?.name || course.instructorName || 'I')[0]}
-                        </div>
-                      )}
-                      <div>
-                        <h3 className="text-lg font-bold text-gray-900">{instructor?.name || course.instructorName}</h3>
-                        <p className="text-sm text-gray-500 capitalize">{instructor?.role || 'Expert Instructor'}</p>
-                        {instructor?.email && <p className="text-xs text-gray-400 mt-0.5">{instructor.email}</p>}
-                      </div>
-                    </div>
-                  </div>
-                )}
                 {course.whatYouWillLearn?.length > 0 && (
                   <div className="bg-white rounded-xl border border-gray-100 p-5">
                     <h2 className="text-base font-bold text-gray-900 mb-3">What you'll learn</h2>
@@ -1056,9 +1024,10 @@ const CourseDetails = () => {
             )}
           </div>
 
-          {/* RIGHT COLUMN - Enrollment card */}
-          <div className="w-full lg:w-72 flex-shrink-0">
-            <div className="sticky top-5 bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm">
+          {/* RIGHT COLUMN - Enrollment card + Instructor Sidebar */}
+          <div className="w-full lg:w-72 flex-shrink-0 space-y-5">
+            {/* Enrollment Card */}
+            <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm">
               {checkingEnrollment ? (
                 <div className="p-8 text-center">
                   <div className="w-8 h-8 border-3 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-2" />
@@ -1155,6 +1124,45 @@ const CourseDetails = () => {
                   </div>
                 </>
               )}
+            </div>
+
+            {/* INSTRUCTOR CARD - Now in sidebar */}
+            <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
+              <h3 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <User size={18} className="text-blue-500" />
+                Meet your instructor
+              </h3>
+              <div className="flex flex-col items-center text-center sm:flex-row sm:text-left sm:items-start gap-4">
+                <div className="flex-shrink-0">
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xl font-bold shadow-md">
+                    {instructor.name.charAt(0).toUpperCase()}
+                  </div>
+                </div>
+                <div className="flex-1 space-y-2">
+                  <div className="font-semibold text-gray-800">{instructor.name}</div>
+                  {instructor.role && (
+                    <div className="flex items-center justify-center sm:justify-start gap-1.5 text-xs text-gray-500">
+                      <GraduationCap size={12} />
+                      <span className="capitalize">{instructor.role}</span>
+                    </div>
+                  )}
+                  {instructor.email && (
+                    <div className="flex items-center justify-center sm:justify-start gap-1.5 text-xs">
+                      <Mail size={12} className="text-gray-400" />
+                      <a href={`mailto:${instructor.email}`} className="text-blue-600 hover:underline break-all">{instructor.email}</a>
+                    </div>
+                  )}
+                  {instructor.phone && (
+                    <div className="flex items-center justify-center sm:justify-start gap-1.5 text-xs text-gray-600">
+                      <Phone size={12} className="text-gray-400" />
+                      <a href={`tel:${instructor.phone}`}>{instructor.phone}</a>
+                    </div>
+                  )}
+                  {!instructor.email && !instructor.phone && !instructor.role && (
+                    <p className="text-xs text-gray-400">Contact details not available</p>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>

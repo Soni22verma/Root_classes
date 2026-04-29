@@ -50,6 +50,7 @@ const ClassroomCourses = () => {
     try {
       setLoading(true);
       const res = await axios.get(api.fullcourse.getApprovedcourse);
+      console.log(res)
       let data = res.data?.data?.data || res.data?.data || (Array.isArray(res.data) ? res.data : res.data?.courses) || [];
       setCourses(data);
       setCategories(['All', ...new Set(data.map(c => c.category?.name || 'Uncategorized'))]);

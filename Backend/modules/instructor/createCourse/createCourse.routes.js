@@ -33,6 +33,6 @@ createcourseRouter.post("/delete-topic",DeleteTopic)
 createcourseRouter.get("/get-full-course",getFullCourseDetails)
 createcourseRouter.post("/approved-course",approvedCourse)
 createcourseRouter.get("/get-approved-course",getApprovedCourse)
-createcourseRouter.get("/get-instructor/:instructorId",getInstructorById)
+createcourseRouter.post("/get-instructor",getInstructorById)
 
 export default createcourseRouter 

@@ -1,9 +1,9 @@
 import mongoose from "mongoose";
 
 const questionSchema = new mongoose.Schema({
-  question: { type: String, required: true },
-  options: [{ type: String, required: true }],
-  correctAnswer: { type: String, required: true },
+  question: { type: mongoose.Schema.Types.Mixed, required: true },
+  options: [{ type: mongoose.Schema.Types.Mixed, required: true }],
+  correctAnswer: { type: mongoose.Schema.Types.Mixed, required: true },
   marks: { type: Number, default: 1 }
 });
 

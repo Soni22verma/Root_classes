@@ -268,7 +268,7 @@ const AllCourse = () => {
                           <h4 className="text-lg font-bold text-gray-900 group-hover:text-indigo-600 transition-colors line-clamp-1">{course.title}</h4>
                           <p className="text-xs font-medium text-gray-400 mt-1 flex items-center gap-1">
                             <Users size={12} className="text-gray-300" />
-                            {course.instructorName || "Instructor Name Not Available"}
+                            {course.instructor?.fullName || (course.instructorName !== "Instructor Name Not Available" ? course.instructorName : "Instructor")}
                           </p>
                         </div>
                         <div className="text-right">
@@ -330,7 +330,7 @@ const AllCourse = () => {
                                 <p className="text-xs text-gray-400 line-clamp-1">{course.description}</p>
                                 <p className="text-[10px] font-semibold text-indigo-500 flex items-center gap-1">
                                   <Users size={10} />
-                                  {course.instructorName || "Instructor Name Not Available"}
+                                  {course.instructor?.fullName || (course.instructorName !== "Instructor Name Not Available" ? course.instructorName : "Instructor")}
                                 </p>
                               </div>
                             </div>
@@ -412,7 +412,7 @@ const AllCourse = () => {
                           </p>
                           <span className="text-gray-300">•</span>
                           <p className="text-[10px] font-medium text-gray-400 italic">
-                            By {course.instructorName || "Instructor Name Not Available"}
+                            By {course.instructor?.fullName || (course.instructorName !== "Instructor Name Not Available" ? course.instructorName : "Instructor")}
                           </p>
                         </div>
                       </div>

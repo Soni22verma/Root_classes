@@ -36,6 +36,8 @@ const StudentTestPanel = () => {
   
   // Sync interval reference
   const syncIntervalRef = useRef(null);
+  // Timer reference for exit blocking after 10 minutes
+  const exitBlockTimerRef = useRef(null);
 
   // Helper: extract numeric class from string like "12th" -> 12
   const extractClassNumber = (className) => {
@@ -69,7 +71,6 @@ const StudentTestPanel = () => {
     setIsLoggedIn(!!id);
   }, [student]);
 
-  // ----- 2. If logged in but class missing, fetch full profile -----
   const fetchFullProfile = async () => {
     if (isLoggedIn && studentId && !studentClass) {
       try {
@@ -94,7 +95,6 @@ const StudentTestPanel = () => {
     fetchFullProfile();
   }, [isLoggedIn, studentId, studentClass]);
 
-  // ----- 3. Fetch completed tests for this student -----
   const fetchCompletedTests = async () => {
     if (!studentId) return [];
     try {
@@ -117,7 +117,6 @@ const StudentTestPanel = () => {
     return [];
   };
 
-  // ----- 4. Check if a specific test has been attempted (fallback) -----
   const checkAttemptStatus = async (testId) => {
     if (!studentId) return false;
     try {
@@ -356,7 +355,41 @@ const StudentTestPanel = () => {
     }
   };
 
-  // ----- 10. Periodic sync with server to update exit blocked status (every 30 seconds) -----
+  // ----- 10. Local timer to block exit exactly after 10 minutes (without waiting for sync) -----
+  useEffect(() => {
+    if (testStarted && !testCompleted && testStartTime) {
+      // Clear any existing timer
+      if (exitBlockTimerRef.current) {
+        clearTimeout(exitBlockTimerRef.current);
+      }
+
+      const now = new Date();
+      const start = new Date(testStartTime);
+      const elapsedMs = now - start;
+      const tenMinutesMs = 10 * 60 * 1000;
+
+      if (elapsedMs >= tenMinutesMs) {
+        // Already past 10 minutes -> block immediately
+        setIsExitBlocked(true);
+      } else {
+        // Schedule blocking at the exact 10-minute mark
+        const remainingMs = tenMinutesMs - elapsedMs;
+        exitBlockTimerRef.current = setTimeout(() => {
+          setIsExitBlocked(true);
+        }, remainingMs);
+      }
+
+      // Cleanup when test ends or component unmounts
+      return () => {
+        if (exitBlockTimerRef.current) {
+          clearTimeout(exitBlockTimerRef.current);
+          exitBlockTimerRef.current = null;
+        }
+      };
+    }
+  }, [testStarted, testCompleted, testStartTime]);
+
+  // ----- 11. Periodic sync with server to update exit blocked status (every 30 seconds) -----
   useEffect(() => {
     if (testStarted && !testCompleted && selectedTest) {
       syncExitBlockedStatus(); // initial sync
@@ -374,7 +407,7 @@ const StudentTestPanel = () => {
     };
   }, [testStarted, testCompleted, selectedTest, syncExitBlockedStatus]);
 
-  // ----- 11. Browser Exit Restrictions (based on server isExitBlocked flag) -----
+  // ----- 12. Browser Exit Restrictions (based on server isExitBlocked flag) -----
   useEffect(() => {
     const handleBeforeUnload = (e) => {
       if (isExitBlocked && !testCompleted) {
@@ -402,7 +435,7 @@ const StudentTestPanel = () => {
     };
   }, [testStarted, isExitBlocked, testCompleted]);
 
-  // ----- 12. Timer countdown (does NOT auto‑submit) -----
+  // ----- 13. Timer countdown (does NOT auto‑submit) -----
   useEffect(() => {
     let interval;
     if (timerActive && timeRemaining > 0 && !testCompleted && !submitting) {
@@ -446,7 +479,7 @@ const StudentTestPanel = () => {
     }
   };
 
-  // ----- 13. Exit handler with block check -----
+  // ----- 14. Exit handler with block check -----
   const handleBackToTests = () => {
     if (testStarted && !testCompleted) {
       if (isExitBlocked) {
@@ -461,6 +494,10 @@ const StudentTestPanel = () => {
     if (syncIntervalRef.current) {
       clearInterval(syncIntervalRef.current);
       syncIntervalRef.current = null;
+    }
+    if (exitBlockTimerRef.current) {
+      clearTimeout(exitBlockTimerRef.current);
+      exitBlockTimerRef.current = null;
     }
     setTestStarted(false);
     setSelectedTest(null);
@@ -499,13 +536,13 @@ const StudentTestPanel = () => {
     if (currentQuestion > 0) setCurrentQuestion(currentQuestion - 1);
   };
 
-  // ----- 14. View result modal -----
+  // ----- 15. View result modal -----
   const handleViewResult = (test) => {
     setViewingResult(test.completedResult);
     setShowResultModal(true);
   };
 
-  // ----- 15. Helper functions for UI -----
+  // ----- 16. Helper functions for UI -----
   const formatTime = (seconds) => {
     if (!seconds && seconds !== 0) return '00:00';
     const mins = Math.floor(seconds / 60);
@@ -532,7 +569,7 @@ const StudentTestPanel = () => {
     return questions.length > 0 ? (answeredCount / questions.length) * 100 : 0;
   };
 
-  // ----- 16. RENDER -----
+  // ----- 17. RENDER -----
   if (loading && !testStarted) {
     return (
       <div className="min-h-screen bg-dot-grid flex items-center justify-center">
@@ -1083,4 +1120,4 @@ const StudentTestPanel = () => {
   return null;
 };
 
-export default StudentTestPanel;
+export default StudentTestPanel;   

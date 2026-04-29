@@ -193,18 +193,27 @@ export const submitTest = async (req, res) => {
       let isCorrect = false;
       if (userAnswer !== undefined && q.options[Number(userAnswer)]) {
         const selectedOption = q.options[Number(userAnswer)];
-        // Compare English version by default as it's more standard
-        const correctEng = q.correctAnswer?.english?.trim();
-        const selectedEng = selectedOption?.english?.trim();
         
-        if (correctEng && selectedEng && correctEng === selectedEng) {
-          isCorrect = true;
-        } else {
-          // Fallback to Hindi if English doesn't match or is missing
-          const correctHindi = q.correctAnswer?.hindi?.trim();
-          const selectedHindi = selectedOption?.hindi?.trim();
-          if (correctHindi && selectedHindi && correctHindi === selectedHindi) {
+        // 1. Try plain string comparison (if both are strings)
+        if (typeof q.correctAnswer === 'string' && typeof selectedOption === 'string') {
+          if (q.correctAnswer.trim() === selectedOption.trim()) {
             isCorrect = true;
+          }
+        }
+        
+        // 2. Try bilingual object comparison (if strings didn't match or were objects)
+        if (!isCorrect) {
+          const correctEng = q.correctAnswer?.english?.trim();
+          const selectedEng = selectedOption?.english?.trim();
+          
+          if (correctEng && selectedEng && correctEng === selectedEng) {
+            isCorrect = true;
+          } else {
+            const correctHindi = q.correctAnswer?.hindi?.trim();
+            const selectedHindi = selectedOption?.hindi?.trim();
+            if (correctHindi && selectedHindi && correctHindi === selectedHindi) {
+              isCorrect = true;
+            }
           }
         }
       }

@@ -10,6 +10,15 @@ const RenderHTML = ({ htmlContent, className = "" }) => {
   return <div className={className} dangerouslySetInnerHTML={{ __html: sanitizedHtml }} />;
 };
 
+// Helper function to get instructor name from course object
+const getInstructorName = (course) => {
+  if (!course) return 'N/A';
+  // Check for instructorName field first, then instructor.fullName
+  if (course.instructorName) return course.instructorName;
+  if (course.instructor && course.instructor.fullName) return course.instructor.fullName;
+  return 'N/A';
+};
+
 const AllCourses = () => {
   const [loading, setLoading] = useState(true);
   const [courses, setCourses] = useState([]);
@@ -25,6 +34,7 @@ const AllCourses = () => {
       setLoading(true);
       setError(null);
       const res = await axios.get(api.fullcourse.getfullcourse);
+      console.log(res)
       let coursesData = [];
       if (res.data?.success && res.data?.data) {
         coursesData = Array.isArray(res.data.data) ? res.data.data : [res.data.data];
@@ -184,6 +194,12 @@ const AllCourses = () => {
                   </span>
                 </div>
 
+                {/* Instructor Name - Mobile View */}
+                <div className="flex items-center gap-2 text-xs text-gray-500 mb-3">
+                  <span className="font-medium">Instructor:</span>
+                  <span className="text-gray-700">{getInstructorName(course)}</span>
+                </div>
+
                 <div className="flex flex-wrap justify-between items-center gap-2 pt-2 border-t border-gray-100">
                   <span className="text-xs text-gray-400">
                     {new Date(course.createdAt).toLocaleDateString()}
@@ -229,6 +245,7 @@ const AllCourses = () => {
                   <th className="px-4 py-3 text-left text-xs font-semibold">Course Name</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold">Category</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold">Level</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold">Instructor</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold">Modules</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold">Status</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold">Created Date</th>
@@ -260,6 +277,10 @@ const AllCourses = () => {
                       }`}>
                         {course.level}
                       </span>
+                    </td>
+                    {/* Instructor Name - Desktop View */}
+                    <td className="px-4 py-3 text-sm text-gray-700">
+                      {getInstructorName(course)}
                     </td>
                     <td className="px-4 py-3">
                       <span className="font-medium text-sm">{course.modules?.length || 0} modules</span>
@@ -330,6 +351,11 @@ const AllCourses = () => {
                       <span className="px-2 sm:px-3 py-0.5 sm:py-1 bg-blue-500 rounded-full text-xs sm:text-sm">
                         {selectedCourse.modules?.length || 0} Modules
                       </span>
+                    </div>
+                    {/* Instructor Name - Modal */}
+                    <div className="flex flex-wrap items-center gap-2 mt-3 text-blue-100 text-sm">
+                      <span className="font-semibold">Instructor:</span>
+                      <span>{getInstructorName(selectedCourse)}</span>
                     </div>
                   </div>
                   <button onClick={closeModal} className="text-white hover:text-gray-200 transition-colors flex-shrink-0">
