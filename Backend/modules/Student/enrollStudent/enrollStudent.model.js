@@ -47,6 +47,19 @@ const EnrollStudentSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+
+    originalPrice: {
+      type: Number,
+    },
+
+    discountApplied: {
+      type: Number,
+      default: 0,
+    },
+
+    receiptUrl: {
+      type: String,
+    },
   },
   { timestamps: true }
 );

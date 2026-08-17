@@ -412,11 +412,11 @@ const CourseDetails = () => {
               razorpay_signature: response.razorpay_signature,
               enrollmentId: enrollmentId,
             }, {
-              timeout: 10000
+              timeout: 30000
             });
 
             const timeoutPromise = new Promise((_, reject) =>
-              setTimeout(() => reject(new Error('Verification timeout')), 25000)
+              setTimeout(() => reject(new Error('Verification timeout')), 30000)
             );
 
             const verifyResponse = await Promise.race([verifyPromise, timeoutPromise]);

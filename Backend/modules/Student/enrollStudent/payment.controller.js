@@ -9,6 +9,49 @@ import { sendReceiptEmail } from "../../../config/emailServices.js";
 import path  from "path";
 import fs from 'fs'
 
+const generateAndSendReceipt = async (enrollmentId, razorpayPaymentId) => {
+  try {
+    const enrollment = await EnrollStudent.findById(enrollmentId);
+    if (!enrollment) return;
+
+    const [student, course] = await Promise.all([
+      User.findById(enrollment.student),
+      Course.findById(enrollment.course)
+    ]);
+
+    if (!student || !course) {
+      console.error("Receipt skipped: Student or Course not found");
+      return;
+    }
+
+    const dir = path.join(process.cwd(), "receipts");
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+
+    const fileName = `receipt_${enrollment._id}.pdf`;
+    const filePath = path.join(dir, fileName);
+
+    await generateReceipt(filePath, {
+      name: student.fullName || student.name,
+      course: course.title,
+      originalPrice: enrollment.originalPrice ?? enrollment.amount,
+      discount: enrollment.discountApplied || 0,
+      finalPrice: enrollment.amount,
+      orderId: enrollment.orderId,
+      paymentId: razorpayPaymentId,
+      date: new Date().toLocaleString()
+    });
+
+    enrollment.receiptUrl = `/receipts/${fileName}`;
+    await enrollment.save();
+
+    await sendReceiptEmail(student, enrollment, course, filePath);
+  } catch (err) {
+    console.error("Receipt/email failed:", err);
+  }
+};
+
 export const createPayment = async (req, res) => {
   try {
     const { courseId, studentId } = req.body;
@@ -223,47 +266,11 @@ export const verifyPayment = async (req, res) => {
       await scholarship.save();
     }
 
-    const student = await User.findById(enrollment.student);
-    const course = await Course.findById(enrollment.course);
-
-    if (!student || !course) {
-      return res.status(404).json({
-        success: false,
-        message: "Student or Course not found",
-      });
-    }
-
-    // Create receipts directory
-    const dir = path.join(process.cwd(), "receipts");
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-
-    // Generate receipt PDF
-    const fileName = `receipt_${enrollment._id}.pdf`;
-    const filePath = path.join(dir, fileName);
-
-    // Generate receipt with all data
-    await generateReceipt(filePath, {
-      name: student.fullName || student.name,
-      course: course.title,
-      originalPrice: enrollment.originalPrice,
-      discount: enrollment.discountApplied || 0,
-      finalPrice: enrollment.amount,
-      orderId: enrollment.orderId,
-      paymentId: razorpay_payment_id,
-      date: new Date().toLocaleString()
-    });
-
-    enrollment.receiptUrl = `/receipts/${fileName}`;
-    await enrollment.save();
-
-    await sendReceiptEmail(student, enrollment, course, filePath)
-      .catch(err => console.error("Email failed:", err));
+    generateAndSendReceipt(enrollment._id, razorpay_payment_id);
 
     return res.json({
       success: true,
-      message: "Payment successful and enrollment completed",
+      message: "Payment successful and enrollment completed. Receipt will be emailed shortly.",
       data: enrollment
     });
 
