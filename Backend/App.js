@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import path from "path";
+import fs from "fs";
 import { fileURLToPath } from "url";
 import connectdb from "./config/connectdb.js";
 
@@ -62,7 +63,14 @@ app.use("/progress", progressRouter)
 
 
 
-const frontendPath = path.join(__dirname, "../Frontend/dist");
+let frontendPath = path.join(__dirname, "../Frontend/dist");
+if (!fs.existsSync(frontendPath)) {
+  frontendPath = path.join(__dirname, "./dist");
+}
+if (!fs.existsSync(frontendPath)) {
+  frontendPath = path.join(__dirname, "./public");
+}
+
 app.use(express.static(frontendPath));
 
 app.use((req, res) => {
