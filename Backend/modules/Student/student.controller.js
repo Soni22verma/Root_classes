@@ -447,20 +447,26 @@ export const getScholarshipTestforStudent = async (req, res, next) => {
       });
     }
 
+    let tests = [];
+    if (student.currentClass) {
+      tests = await Test.find({
+        className: student.currentClass,
+        isPublished: true
+      });
+    }
 
-    const tests = await Test.find({
-      className: student.currentClass,
-      isPublished: true
-    });
+    if (!tests || tests.length === 0) {
+      tests = await Test.find({ isPublished: true });
+    }
 
     return res.status(200).json({
       success: true,
       tests,
-    })
+    });
 
   } catch (error) {
-    next(error)
+    next(error);
   }
-}
+};
 
 

@@ -71,3 +71,54 @@ export const InstructorLogin = async (req, res, next) => {
     next(error);
   }
 };
+
+export const RegisterInstructor = async (req, res, next) => {
+  try {
+    const { fullName, email, password, phone, address } = req.body;
+
+    if (!fullName || !email || !password || !phone) {
+      return res.status(400).json({
+        message: "Full Name, Email, Password, and Phone are required",
+        error: true,
+        success: false,
+      });
+    }
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({
+        message: "Email is already registered",
+        error: true,
+        success: false,
+      });
+    }
+
+    const hash = await bcrypt.hash(password, 10);
+    const user = await User.create({
+      fullName,
+      email,
+      password: hash,
+      role: "instructor",
+      phone,
+      address: address || ""
+    });
+
+    const token = generateToken(user._id);
+
+    return res.status(201).json({
+      message: "Teacher account created successfully!",
+      error: false,
+      success: true,
+      token,
+      user: {
+        _id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        role: user.role,
+      }
+    });
+  } catch (error) {
+    console.error("Register Instructor Error:", error);
+    next(error);
+  }
+};
