@@ -1,6 +1,7 @@
 import { Outlet, useLocation } from "react-router-dom";
 import Navbar from "../src/components/mainLayout/Navbar";
 import Footer from "../src/components/mainLayout/Footer";
+import FloatingContact from "../src/components/mainLayout/FloatingContact";
 import { useEffect } from "react";
 import socketService from "./services/socket";
 import { toast } from "react-toastify";
@@ -46,6 +47,7 @@ const StudentLayout = () => {
       <Outlet />
 
       {!shouldHideLayout && <Footer />}
+      {!shouldHideLayout && <FloatingContact />}
     </>
   );
 };
