@@ -10,43 +10,43 @@ const reasons = [
 const WhyChooseUs = () => (
   <div className="bg-line-grid py-16 px-4 sm:px-6 lg:px-8">
     <div className="max-w-7xl mx-auto">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-start">
 
         {/* Left sticky */}
         <div className="lg:col-span-4 lg:sticky lg:top-28">
           <p className="text-xs font-bold text-[#0078FF] uppercase tracking-widest mb-3">Why Roots Classes</p>
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 leading-tight">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 leading-tight">
             Everything you need to
             <span className="block mt-1 relative w-fit">
               crack your exam
-              <span className="absolute left-0 -bottom-1 w-full h-[3px] bg-[#FB0500] rounded-full" />
+              <span className="absolute left-0 -bottom-1 w-full h-1 bg-[#FB0500] rounded-sm" />
             </span>
           </h2>
-          <p className="text-sm text-gray-400 mt-8 leading-relaxed">
+          <p className="text-sm text-gray-500 mt-6 leading-relaxed">
             Structured, focused, and results-driven programs trusted by thousands of students across Punjab.
           </p>
-          <div className="mt-8 grid grid-cols-2 gap-3">
-            <div className="bg-white rounded-xl p-4 border border-red-100 shadow-sm">
-              <div className="text-xl font-black text-[#FB0500]">10K+</div>
-              <div className="text-xs text-gray-400 mt-0.5">Students</div>
+          <div className="mt-8 grid grid-cols-2 gap-4">
+            <div className="bg-white rounded-md p-4 border border-gray-200 shadow-sm hover:border-[#FB0500]/40 transition-all">
+              <div className="text-2xl font-black text-[#FB0500]">10K+</div>
+              <div className="text-xs font-medium text-gray-500 mt-0.5">Students</div>
             </div>
-            <div className="bg-white rounded-xl p-4 border border-blue-100 shadow-sm">
-              <div className="text-xl font-black text-[#0078FF]">98%</div>
-              <div className="text-xs text-gray-400 mt-0.5">Success Rate</div>
+            <div className="bg-white rounded-md p-4 border border-gray-200 shadow-sm hover:border-[#0078FF]/40 transition-all">
+              <div className="text-2xl font-black text-[#0078FF]">98%</div>
+              <div className="text-xs font-medium text-gray-500 mt-0.5">Success Rate</div>
             </div>
           </div>
         </div>
 
         {/* Right numbered list */}
-        <div className="lg:col-span-8 divide-y divide-gray-200">
+        <div className="lg:col-span-8 space-y-4">
           {reasons.map((r) => (
-            <div key={r.num} className="flex items-start gap-5 py-6 group px-2 hover:bg-white/70 rounded-xl transition-colors">
-              <div className={`flex-shrink-0 w-12 h-12 rounded-xl ${r.bg} border ${r.border} flex items-center justify-center mt-0.5`}>
+            <div key={r.num} className="bg-white rounded-md p-5 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all flex items-start gap-5 group">
+              <div className={`flex-shrink-0 w-11 h-11 rounded-md ${r.bg} border ${r.border} flex items-center justify-center mt-0.5`}>
                 <span className="text-sm font-black" style={{ color: r.accent }}>{r.num}</span>
               </div>
-              <div>
-                <h3 className="text-base font-semibold text-gray-900 mb-1.5">{r.title}</h3>
-                <p className="text-sm text-gray-500 leading-relaxed">{r.desc}</p>
+              <div className="flex-1">
+                <h3 className="text-base font-bold text-gray-900 mb-1 group-hover:text-[#FB0500] transition-colors">{r.title}</h3>
+                <p className="text-sm text-gray-600 leading-relaxed">{r.desc}</p>
               </div>
             </div>
           ))}

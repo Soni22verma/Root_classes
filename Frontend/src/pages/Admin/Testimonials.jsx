@@ -220,38 +220,38 @@ export default function AdminTestimonials() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            {/* Notification - Responsive */}
+        <div className="min-h-screen bg-[#F8FAFC] font-sans pb-12">
+            {/* Header */}
+            <div className="bg-white border-b border-gray-200/80 sticky top-0 z-20 shadow-xs">
+                <div className="max-w-7xl mx-auto px-4 md:px-8 py-5 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                    <div>
+                        <h1 className="text-xl font-bold text-gray-900 tracking-tight">Testimonials Management</h1>
+                        <p className="text-xs text-gray-500 mt-1">Manage student testimonials, reviews, and success stories.</p>
+                    </div>
+                    <button
+                        onClick={() => setIsModalOpen(true)}
+                        className="flex items-center justify-center gap-1.5 bg-gray-900 hover:bg-[#0078FF] text-white px-4 py-2 rounded-md transition-all text-xs font-semibold shadow-xs"
+                    >
+                        <Plus size={16} />
+                        <span>Add Testimonial</span>
+                    </button>
+                </div>
+            </div>
+
+            {/* Notification */}
             {notification.show && (
                 <div
-                    className={`fixed top-4 right-4 left-4 sm:left-auto sm:right-4 z-50 px-3 sm:px-6 py-2 sm:py-3 rounded-lg shadow-lg animate-slide-in text-xs sm:text-sm md:text-base ${
+                    className={`fixed top-4 right-4 z-50 px-4 py-2.5 rounded-md shadow-md text-xs font-semibold ${
                         notification.type === "success"
-                            ? "bg-green-500 text-white"
-                            : "bg-red-500 text-white"
+                            ? "bg-emerald-600 text-white"
+                            : "bg-rose-600 text-white"
                     }`}
                 >
                     {notification.message}
                 </div>
             )}
 
-            <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
-                {/* Header - Responsive */}
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4 mb-5 sm:mb-6 md:mb-8">
-                    <div>
-                        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">Testimonials Management</h1>
-                        <p className="text-xs sm:text-sm md:text-base text-gray-600 mt-0.5 sm:mt-1 md:mt-2">
-                            Manage student testimonials, reviews, and feedback
-                        </p>
-                    </div>
-                    <button
-                        onClick={() => setIsModalOpen(true)}
-                        className="flex items-center justify-center gap-1 sm:gap-2 bg-blue-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-sm text-xs sm:text-sm md:text-base"
-                    >
-                        <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5" />
-                        <span className="hidden xs:inline">Add New Testimonial</span>
-                        <span className="xs:hidden">Add</span>
-                    </button>
-                </div>
+            <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
 
                 {/* Stats Cards - Responsive Grid */}
                 <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-5 sm:mb-6 md:mb-8">

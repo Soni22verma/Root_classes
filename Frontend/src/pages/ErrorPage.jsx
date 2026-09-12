@@ -6,71 +6,76 @@ const ErrorPage = () => {
   const error = useRouteError();
   const navigate = useNavigate();
   
-  const is404 = error?.status === 404;
+  const is404 = !error || error?.status === 404;
 
   return (
-    <div className="min-h-screen bg-[#f8faff] bg-line-grid font-poppins flex items-center justify-center p-6">
-      <div className="max-w-xl w-full text-center">
-        {/* Brand Icon */}
-        <div className="mb-8 flex justify-center">
-          <div className="w-24 h-24 rounded-[32px] bg-white border border-gray-100 flex items-center justify-center shadow-2xl shadow-blue-900/5 relative group">
-             <div className="absolute inset-0 bg-red-50 rounded-[32px] scale-0 group-hover:scale-100 transition-transform duration-500 opacity-50" />
-             <AlertCircle size={48} className="text-[#FB0500] relative z-10" />
+    <div className="min-h-screen bg-[#F8FAFC] font-sans flex items-center justify-center p-4 sm:p-6">
+      <div className="max-w-lg w-full bg-white border border-gray-200 rounded-2xl p-8 sm:p-10 text-center shadow-xs">
+        
+        {/* Warning Icon */}
+        <div className="mb-6 flex justify-center">
+          <div className="w-20 h-20 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center shadow-sm relative group">
+            <AlertCircle size={42} className="text-[#FB0500] transition-transform duration-300 group-hover:scale-110" />
           </div>
         </div>
 
         {/* Error Info */}
-        <div className="space-y-4 mb-12">
-          <div className="flex items-center justify-center gap-2 mb-2">
-             <div className="w-2 h-2 rounded-full bg-[#FB0500]" />
-             <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">
-               {is404 ? 'Resource Not Found' : 'Application Error'}
-             </p>
+        <div className="space-y-3 mb-8">
+          <div className="flex items-center justify-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#FB0500] animate-ping" />
+            <span className="text-[11px] font-bold text-[#FB0500] uppercase tracking-widest">
+              {is404 ? 'Resource Not Found' : 'Application Error'}
+            </span>
           </div>
-          <h1 className="text-4xl font-black text-gray-900 tracking-tight leading-none">
-            {is404 ? '404' : 'Oops! Something broke.'}
+
+          <h1 className="text-5xl font-black text-gray-900 tracking-tight">
+            {is404 ? '404' : 'Oops! An Error Occurred'}
           </h1>
-          <p className="text-[13px] font-bold text-gray-400 uppercase tracking-tight max-w-sm mx-auto leading-relaxed">
+
+          <p className="text-sm font-medium text-gray-500 max-w-sm mx-auto leading-relaxed">
             {is404 
-              ? "The section you're looking for doesn't exist or has been moved to a different sector."
-              : "We've encountered a technical anomaly in the portal. Our system is monitoring the event."}
+              ? "The page or section you're looking for doesn't exist or has been moved."
+              : "We've encountered a temporary technical issue. Please try refreshing or returning home."}
           </p>
-          {error?.statusText || error?.message ? (
-             <div className="mt-4 px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl inline-block">
-                <p className="text-[10px] font-mono text-gray-400 uppercase">{error.statusText || error.message}</p>
-             </div>
-          ) : null}
+
+          {(error?.statusText || error?.message) && (
+            <div className="mt-3 px-3.5 py-1.5 bg-gray-50 border border-gray-200/60 rounded-lg inline-block">
+              <p className="text-xs font-mono text-gray-500">{error.statusText || error.message}</p>
+            </div>
+          )}
         </div>
 
-        {/* Actions */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
           <button 
             onClick={() => navigate(-1)}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 bg-[#0a1628] text-white rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-[#0078FF] transition-all shadow-lg shadow-gray-200"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-[#FB0500] transition-all shadow-sm group"
           >
-            <ArrowLeft size={16} /> Go Back
+            <ArrowLeft size={16} className="transition-transform group-hover:-translate-x-1" /> Go Back
           </button>
+          
           <Link 
             to="/"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 bg-white border border-gray-100 text-gray-900 rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-gray-50 transition-all shadow-xl shadow-blue-900/5"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-white border border-gray-200/80 text-gray-700 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-gray-50 hover:border-gray-300 transition-all shadow-xs"
           >
-            <Home size={16} /> Dashboard
+            <Home size={16} className="text-gray-500" /> Return Home
           </Link>
+
           {!is404 && (
             <button 
               onClick={() => window.location.reload()}
-              className="p-4 text-gray-400 hover:text-[#0078FF] transition-colors"
-              title="Refresh Portal"
+              className="p-3 text-gray-400 hover:text-gray-700 transition-colors rounded-xl border border-gray-200 hover:bg-gray-50"
+              title="Refresh Page"
             >
-              <RefreshCw size={18} />
+              <RefreshCw size={16} />
             </button>
           )}
         </div>
 
-        {/* Footer Brand */}
-        <div className="mt-16 pt-8 border-t border-gray-50 flex items-center justify-center gap-3">
-           <img src="/logo.svg" alt="Roots" className="h-5 w-auto grayscale opacity-30" />
-           <p className="text-[9px] font-black text-gray-300 uppercase tracking-[0.4em]">Roots Systems</p>
+        {/* Footer Branding */}
+        <div className="mt-10 pt-6 border-t border-gray-100 flex items-center justify-center gap-2">
+          <img src="/logo.svg" alt="Roots Classes" className="h-5 w-auto" />
+          <span className="text-xs font-bold text-gray-400 tracking-wide">Roots Classes</span>
         </div>
       </div>
     </div>

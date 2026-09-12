@@ -163,23 +163,41 @@ const AdminCourseManager = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-[#F8FAFC] p-4 sm:p-6 md:p-8 space-y-6">
+      <div className="max-w-4xl mx-auto space-y-6">
+        
+        {/* Sticky Header */}
+        <div className="bg-white rounded-lg border border-gray-200/80 p-4 sm:p-5 shadow-xs flex items-center justify-between sticky top-0 z-20">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="w-2 h-2 rounded-full bg-[#0078FF]"></span>
+              <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Course Management</span>
+            </div>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">Create New Course</h1>
+            <p className="text-xs text-gray-500 mt-0.5">Fill in the course parameters to publish a new course</p>
+          </div>
+          <button 
+            onClick={() => navigate('/admin/allcourses')} 
+            className="px-3.5 py-1.5 bg-gray-50 border border-gray-200 text-gray-700 rounded-md text-xs font-bold uppercase tracking-wider hover:bg-gray-100 transition-all shadow-xs"
+          >
+            ← Back to Courses
+          </button>
+        </div>
 
-
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Alert Message */}
         {message.text && (
-          <div className={`mb-6 p-4 rounded-lg ${message.type === 'success'
-              ? 'bg-green-100 border border-green-400 text-green-700'
-              : 'bg-red-100 border border-red-400 text-red-700'
-            }`}>
+          <div className={`p-4 rounded-md border text-xs font-medium ${
+            message.type === 'success'
+              ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+              : 'bg-rose-50 border-rose-200 text-rose-700'
+          }`}>
             <div className="flex items-center">
               {message.type === 'success' ? (
-                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
               ) : (
-                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                 </svg>
               )}
@@ -189,57 +207,52 @@ const AdminCourseManager = () => {
         )}
 
         {/* Create Course Form */}
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-          <div className="bg-gradient-to-r from-indigo-500 to-purple-500 px-6 py-4">
-            <h2 className="text-xl font-semibold text-white">Create New Course</h2>
-            <p className="text-indigo-100 text-sm">Fill in the details to add a new course</p>
-          </div>
-
-          <form className="p-6 space-y-5" onSubmit={CreateCourse}>
+        <div className="bg-white rounded-lg border border-gray-200/80 shadow-xs overflow-hidden">
+          <form className="p-6 space-y-5 text-xs" onSubmit={CreateCourse}>
             {/* Course Title */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Course Title <span className="text-red-500">*</span>
+              <label className="block font-semibold text-gray-700 mb-1.5">
+                Course Title <span className="text-rose-500">*</span>
               </label>
               <input
                 type="text"
                 name="title"
                 value={courseData.title}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                placeholder="e.g., Advanced React Development"
+                className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-md focus:ring-2 focus:ring-[#0078FF]/20 focus:border-[#0078FF] outline-none text-xs font-medium transition-all"
+                placeholder="e.g., Advanced React & Next.js Development"
                 disabled={loading}
               />
             </div>
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Description <span className="text-red-500">*</span>
+              <label className="block font-semibold text-gray-700 mb-1.5">
+                Course Description <span className="text-rose-500">*</span>
               </label>
               <textarea
                 name="discreption"
                 value={courseData.discreption}
                 onChange={handleInputChange}
                 rows="4"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                placeholder="Brief description of the course..."
+                className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-md focus:ring-2 focus:ring-[#0078FF]/20 focus:border-[#0078FF] outline-none text-xs font-medium transition-all"
+                placeholder="Detailed explanation of course curriculum, modules, and target audience..."
                 disabled={loading}
               />
             </div>
 
             {/* Instructor */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Instructor <span className="text-red-500">*</span>
+              <label className="block font-semibold text-gray-700 mb-1.5">
+                Lead Instructor <span className="text-rose-500">*</span>
               </label>
               <input
                 type="text"
                 name="instructor"
                 value={courseData.instructor}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                placeholder="e.g., John Doe"
+                className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-md focus:ring-2 focus:ring-[#0078FF]/20 focus:border-[#0078FF] outline-none text-xs font-medium transition-all"
+                placeholder="e.g., Dr. Rajesh Sharma"
                 disabled={loading}
               />
             </div>
@@ -247,30 +260,30 @@ const AdminCourseManager = () => {
             {/* Duration and Price - Two Columns */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Duration <span className="text-red-500">*</span>
+                <label className="block font-semibold text-gray-700 mb-1.5">
+                  Course Duration <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="text"
                   name="duration"
                   value={courseData.duration}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                  placeholder="e.g., 10 weeks"
+                  className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-md focus:ring-2 focus:ring-[#0078FF]/20 focus:border-[#0078FF] outline-none text-xs font-medium transition-all"
+                  placeholder="e.g., 6 Months"
                   disabled={loading}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Price <span className="text-red-500">*</span>
+                <label className="block font-semibold text-gray-700 mb-1.5">
+                  Course Price (₹) <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="text"
                   name="price"
                   value={courseData.price}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                  placeholder="e.g., $49.99"
+                  className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-md focus:ring-2 focus:ring-[#0078FF]/20 focus:border-[#0078FF] outline-none text-xs font-medium transition-all"
+                  placeholder="e.g., 4999"
                   disabled={loading}
                 />
               </div>
@@ -279,52 +292,51 @@ const AdminCourseManager = () => {
             {/* Level and Tags */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Level
+                <label className="block font-semibold text-gray-700 mb-1.5">
+                  Skill Level
                 </label>
                 <select
                   name="level"
                   value={courseData.level}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                  className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-md focus:ring-2 focus:ring-[#0078FF]/20 focus:border-[#0078FF] outline-none text-xs font-medium transition-all"
                   disabled={loading}
                 >
-                  <option>beginner</option>
-                  <option>intermediate</option>
-                  <option>advanced</option>
+                  <option value="beginner">Beginner</option>
+                  <option value="intermediate">Intermediate</option>
+                  <option value="advanced">Advanced</option>
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tags
+                <label className="block font-semibold text-gray-700 mb-1.5">
+                  Tags (Comma separated)
                 </label>
                 <input
                   type="text"
                   name="tags"
                   value={courseData.tags}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                  placeholder="React, JavaScript, etc. (comma separated)"
+                  className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-md focus:ring-2 focus:ring-[#0078FF]/20 focus:border-[#0078FF] outline-none text-xs font-medium transition-all"
+                  placeholder="e.g., JEE, Class 12, Physics"
                   disabled={loading}
                 />
-                <p className="text-xs text-gray-500 mt-1">Separate tags with commas</p>
               </div>
             </div>
 
             {/* Thumbnail Upload */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Course Thumbnail <span className="text-red-500">*</span>
+              <label className="block font-semibold text-gray-700 mb-1.5">
+                Course Cover Image <span className="text-rose-500">*</span>
               </label>
-              <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-indigo-500 transition-colors">
+              <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border border-gray-200 border-dashed rounded-md hover:border-[#0078FF] transition-all bg-gray-50/50">
                 <div className="space-y-1 text-center">
                   {previewUrl ? (
                     <div className="mb-3">
-                      <img src={previewUrl} alt="Preview" className="h-40 w-full object-cover rounded-lg" />
+                      <img src={previewUrl} alt="Preview" className="h-40 w-full object-cover rounded-md border border-gray-200" />
                       <button
                         type="button"
                         onClick={removeImage}
-                        className="mt-2 text-sm text-red-600 hover:text-red-800 font-medium"
+                        className="mt-2 text-xs text-rose-600 hover:text-rose-800 font-semibold"
                         disabled={loading}
                       >
                         Remove Image
@@ -332,12 +344,12 @@ const AdminCourseManager = () => {
                     </div>
                   ) : (
                     <>
-                      <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                      <svg className="mx-auto h-10 w-10 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
                         <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
-                      <div className="flex text-sm text-gray-600">
-                        <label className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none">
-                          <span>Upload a file</span>
+                      <div className="flex text-xs text-gray-600 justify-center">
+                        <label className="relative cursor-pointer bg-white rounded-md font-bold text-[#0078FF] hover:text-blue-700">
+                          <span>Upload Cover Image</span>
                           <input
                             type="file"
                             name="image"
@@ -348,7 +360,7 @@ const AdminCourseManager = () => {
                           />
                         </label>
                       </div>
-                      <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+                      <p className="text-[11px] text-gray-400">PNG, JPG, GIF up to 10MB</p>
                     </>
                   )}
                 </div>
@@ -356,39 +368,33 @@ const AdminCourseManager = () => {
             </div>
 
             {/* Featured Checkbox */}
-            <div className="flex items-center">
+            <div className="flex items-center space-x-2 pt-1">
               <input
                 type="checkbox"
                 name="featured"
+                id="featured"
                 checked={courseData.featured}
                 onChange={handleInputChange}
-                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                className="h-4 w-4 text-[#0078FF] focus:ring-[#0078FF] border-gray-300 rounded"
                 disabled={loading}
               />
-              <label className="ml-2 block text-sm text-gray-700">
-                Feature this course (show on homepage)
+              <label htmlFor="featured" className="block text-xs font-semibold text-gray-700 select-none">
+                Feature this course on the student homepage
               </label>
             </div>
 
             {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className={`w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 px-4 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all transform hover:scale-[1.02] font-medium shadow-lg ${loading ? 'opacity-50 cursor-not-allowed' : ''
+            <div className="pt-3 border-t border-gray-100">
+              <button
+                type="submit"
+                disabled={loading}
+                className={`w-full bg-[#0078FF] text-white py-2.5 px-4 rounded-md hover:bg-blue-600 transition-all font-bold text-xs uppercase tracking-wider shadow-xs ${
+                  loading ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
-            >
-              {loading ? (
-                <div className="flex items-center justify-center">
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Creating Course...
-                </div>
-              ) : (
-                'Create Course'
-              )}
-            </button>
+              >
+                {loading ? 'Publishing Course...' : 'Create & Publish Course'}
+              </button>
+            </div>
           </form>
         </div>
       </div>

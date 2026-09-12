@@ -66,6 +66,14 @@ const Navbar = () => {
     try { return JSON.parse(localStorage.getItem('student') || '{}').email || ''; } catch { return ''; }
   };
 
+  const getProfileImage = () => {
+    if (student?.profileImage) return student.profileImage;
+    try {
+      const s = JSON.parse(localStorage.getItem('student') || localStorage.getItem('user') || '{}');
+      return s.profileImage || '';
+    } catch { return ''; }
+  };
+
   const isAdminOrInstructor = () => ['admin', 'instructor'].includes(student?.role);
   const isStudent = () => student?.role === 'student' || (!student?.role && isLoggedIn);
 
@@ -124,9 +132,9 @@ const Navbar = () => {
                 <Link
                   key={item.name}
                   to={item.path}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive(item.path)
-                    ? 'text-[#FB0500] bg-red-50'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  className={`px-3 py-2 text-sm font-medium transition-colors ${isActive(item.path)
+                    ? 'text-[#FB0500] font-semibold'
+                    : 'text-gray-600 hover:text-gray-900'
                     }`}
                 >
                   {item.name}
@@ -142,21 +150,29 @@ const Navbar = () => {
                   <div className="relative" ref={dropdownRef}>
                     <button
                       onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                      className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 hover:border-gray-300 bg-white transition-colors text-sm"
+                      className="flex items-center gap-2.5 px-3 py-1.5 rounded-md border border-gray-100 hover:border-gray-200 bg-white hover:bg-gray-50/50 transition-all text-sm"
                     >
-                      <div className="w-6 h-6 rounded-full bg-[#FB0500] flex items-center justify-center flex-shrink-0">
-                        <User size={13} className="text-white" />
+                      <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-[#FB0500] to-red-500 flex items-center justify-center flex-shrink-0 text-white text-xs font-bold shadow-xs overflow-hidden">
+                        {getProfileImage() ? (
+                          <img src={getProfileImage()} alt={getName()} className="w-full h-full object-cover" />
+                        ) : (
+                          getName()?.charAt(0)?.toUpperCase() || <User size={13} className="text-white" />
+                        )}
                       </div>
-                      <span className="text-gray-700 font-medium max-w-[120px] truncate">{getName()}</span>
-                      <ChevronDown size={14} className={`text-gray-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                      <span className="text-gray-800 font-semibold text-xs sm:text-sm max-w-[120px] truncate">{getName()}</span>
+                      <ChevronDown size={14} className={`text-gray-400 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
                     </button>
 
                     {isDropdownOpen && (
-                      <div className="absolute right-0 mt-2 w-60 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-50">
+                      <div className="absolute right-0 mt-2 w-60 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
                         <div className="px-4 py-3 border-b border-gray-100">
                           <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 bg-[#FB0500] rounded-full flex items-center justify-center">
-                              <User size={16} className="text-white" />
+                            <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#FB0500] to-red-500 flex items-center justify-center flex-shrink-0 text-white text-sm font-bold shadow-xs overflow-hidden">
+                              {getProfileImage() ? (
+                                <img src={getProfileImage()} alt={getName()} className="w-full h-full object-cover" />
+                              ) : (
+                                getName()?.charAt(0)?.toUpperCase() || <User size={16} className="text-white" />
+                              )}
                             </div>
                             <div className="min-w-0">
                               <p className="text-sm font-semibold text-gray-900 truncate">{getName()}</p>
@@ -167,18 +183,18 @@ const Navbar = () => {
                         <div className="py-1">
                           {isAdminOrInstructor() && (
                             <button onClick={() => { navigate('/admin/'); setIsDropdownOpen(false); }}
-                              className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                              className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                               <LayoutDashboard size={16} className="text-gray-400" />Dashboard
                             </button>
                           )}
                           {isStudent() && (
                             <>
                               <button onClick={() => { navigate('/stdprofile'); setIsDropdownOpen(false); }}
-                                className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                                className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                                 <UserCircle size={16} className="text-gray-400" />My Profile
                               </button>
                               <button onClick={() => { navigate('/purchescourse'); setIsDropdownOpen(false); }}
-                                className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                                className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                                 <SiCoursera size={16} className="text-gray-400" />My Courses
                               </button>
                             </>
@@ -186,7 +202,7 @@ const Navbar = () => {
                         </div>
                         <div className="border-t border-gray-100 pt-1">
                           <button onClick={handleLogout}
-                            className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                            className="flex items-center gap-3 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors font-medium">
                             <LogOut size={16} />Logout
                           </button>
                         </div>
@@ -195,14 +211,14 @@ const Navbar = () => {
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2.5">
                   <Link to="/stdlogin">
-                    <button className="px-4 py-2 text-sm font-semibold text-gray-700 hover:text-gray-900 border border-gray-200 rounded-xl hover:border-gray-300 transition-colors">
+                    <button className="px-4 py-1.5 text-sm font-semibold text-gray-700 hover:text-gray-900 border border-gray-200 hover:border-gray-300 hover:bg-gray-50/80 rounded-md transition-all">
                       Login
                     </button>
                   </Link>
                   <Link to="/register">
-                    <button className="px-4 py-2 text-sm font-semibold text-white bg-[#0078FF] hover:bg-[#0066DD] rounded-xl transition-colors shadow-sm shadow-blue-200">
+                    <button className="px-4 py-1.5 text-sm font-semibold text-white bg-[#0078FF] hover:bg-[#0066DD] rounded-md transition-all shadow-xs">
                       Sign Up Free
                     </button>
                   </Link>
@@ -227,7 +243,7 @@ const Navbar = () => {
               {navItems.map((item) => (
                 <Link key={item.name} to={item.path}
                   onClick={() => setIsMenuOpen(false)}
-                  className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${isActive(item.path) ? 'text-[#FB0500] bg-red-50' : 'text-gray-600 hover:bg-gray-50'
+                  className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive(item.path) ? 'text-[#FB0500] font-semibold' : 'text-gray-600 hover:bg-gray-50'
                     }`}
                 >
                   {item.name}
@@ -238,8 +254,12 @@ const Navbar = () => {
                 {isLoggedIn ? (
                   <div className="space-y-1">
                     <div className="flex items-center gap-3 px-4 py-2">
-                      <div className="w-8 h-8 bg-[#FB0500] rounded-full flex items-center justify-center">
-                        <User size={14} className="text-white" />
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#FB0500] to-red-500 flex items-center justify-center flex-shrink-0 text-white text-xs font-bold shadow-xs overflow-hidden">
+                        {getProfileImage() ? (
+                          <img src={getProfileImage()} alt={getName()} className="w-full h-full object-cover" />
+                        ) : (
+                          getName()?.charAt(0)?.toUpperCase() || <User size={14} className="text-white" />
+                        )}
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-gray-900">{getName()}</p>
@@ -268,10 +288,10 @@ const Navbar = () => {
                 ) : (
                   <div className="grid grid-cols-2 gap-3 px-1">
                     <Link to="/stdlogin" onClick={() => setIsMenuOpen(false)}>
-                      <button className="w-full py-2.5 text-sm font-semibold text-gray-700 border border-gray-200 rounded-xl">Login</button>
+                      <button className="w-full py-2 text-sm font-semibold text-gray-700 border border-gray-200 rounded-md hover:bg-gray-50">Login</button>
                     </Link>
                     <Link to="/register" onClick={() => setIsMenuOpen(false)}>
-                      <button className="w-full py-2.5 text-sm font-semibold text-white bg-[#0078FF] rounded-xl">Sign Up Free</button>
+                      <button className="w-full py-2 text-sm font-semibold text-white bg-[#0078FF] hover:bg-[#0066DD] rounded-md shadow-xs">Sign Up Free</button>
                     </Link>
                   </div>
                 )}

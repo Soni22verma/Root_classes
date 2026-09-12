@@ -17,8 +17,41 @@ const StudentRegistration = () => {
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
+  const validateStep = (currentStep) => {
+    if (currentStep === 1) {
+      if (!formData.fullName.trim() || !formData.email.trim() || !formData.password.trim()) {
+        toast.error("Please fill in Name, Email and Password");
+        return false;
+      }
+    } else if (currentStep === 2) {
+      if (!formData.dateofBirth || !formData.gender || !formData.currentClass) {
+        toast.error("Please select Date of Birth, Gender, and Class");
+        return false;
+      }
+    } else if (currentStep === 3) {
+      if (!formData.phone.trim() || !formData.interestedCourse || !formData.address.trim()) {
+        toast.error("Please fill in Phone, Course, and Address");
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const handleNextStep = () => {
+    if (validateStep(step)) {
+      setStep(prev => Math.min(prev + 1, 3));
+    }
+  };
+
   const handleRegister = async (e) => {
     e.preventDefault();
+    if (step < 3) {
+      handleNextStep();
+      return;
+    }
+    if (!validateStep(1) || !validateStep(2) || !validateStep(3)) {
+      return;
+    }
     setLoading(true);
     try {
       await axios.post(api.student.register, formData);
@@ -32,17 +65,19 @@ const StudentRegistration = () => {
   };
 
   return (
-    <div className="h-screen w-full bg-[#f8faff] bg-line-grid flex items-center justify-center p-4 md:p-8 overflow-hidden font-poppins">
+    <div className="min-h-screen w-full bg-[#f8faff] bg-line-grid flex items-center justify-center p-4 md:p-8 font-poppins">
 
       {/* Main Container - Sharp & Pro */}
-      <div className="w-full max-w-[1100px] h-full max-h-[720px] bg-white rounded-[40px] border border-gray-100 flex overflow-hidden relative">
+      <div className="w-full max-w-[1050px] bg-white rounded-2xl border border-gray-100 flex overflow-hidden shadow-2xl shadow-blue-900/5">
 
         {/* Left Side: Multi-Step Form */}
-        <div className="w-full md:w-[45%] p-8 md:p-14 flex flex-col justify-between relative z-10 border-r border-gray-50">
+        <div className="w-full md:w-[48%] p-8 md:p-12 flex flex-col justify-between relative z-10 border-r border-gray-50">
           <div>
             <div className="mb-6 flex justify-between items-center">
               <div className="flex items-center gap-3">
-                <img src="/logo.svg" alt="Roots Classes" className="h-8 w-auto" />
+                <Link to="/" title="Go to Home">
+                  <img src="/logo.svg" alt="Roots Classes" className="h-8 w-auto hover:opacity-90 transition-all cursor-pointer" />
+                </Link>
                 <div className="h-4 w-[1px] bg-gray-200" />
                 <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Step {step}/3</span>
               </div>
@@ -52,7 +87,7 @@ const StudentRegistration = () => {
             </div>
 
             <div className="mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2 tracking-tight">Create account</h1>
+              <h1 className="text-3xl font-bold text-gray-900 mb-1 tracking-tight">Create account</h1>
               <p className="text-sm text-gray-400">Join the Roots Classes community.</p>
             </div>
 
@@ -61,16 +96,16 @@ const StudentRegistration = () => {
               {step === 1 && (
                 <div className="animate-slideIn space-y-5">
                   <div className="space-y-1">
-                    <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-4">Full Name</label>
-                    <input type="text" name="fullName" required value={formData.fullName} onChange={handleChange} className="w-full bg-gray-50 border border-gray-100 rounded-full py-3.5 px-6 focus:ring-2 focus:ring-[#0078FF]/20 focus:border-[#0078FF] transition-all text-sm outline-none" placeholder="John Doe" />
+                    <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-3">Full Name</label>
+                    <input type="text" name="fullName" required value={formData.fullName} onChange={handleChange} className="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 px-5 focus:outline-none focus:border-[#0078FF] transition-all text-xs font-bold" placeholder="John Doe" />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-4">Email</label>
-                    <input type="email" name="email" required value={formData.email} onChange={handleChange} className="w-full bg-gray-50 border border-gray-100 rounded-full py-3.5 px-6 focus:ring-2 focus:ring-[#0078FF]/20 focus:border-[#0078FF] transition-all text-sm outline-none" placeholder="name@example.com" />
+                    <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-3">Email</label>
+                    <input type="email" name="email" required value={formData.email} onChange={handleChange} className="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 px-5 focus:outline-none focus:border-[#0078FF] transition-all text-xs font-bold" placeholder="name@example.com" />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-4">Password</label>
-                    <input type="password" name="password" required value={formData.password} onChange={handleChange} className="w-full bg-gray-50 border border-gray-100 rounded-full py-3.5 px-6 focus:ring-2 focus:ring-[#0078FF]/20 focus:border-[#0078FF] transition-all text-sm outline-none" placeholder="••••••••" />
+                    <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-3">Password</label>
+                    <input type="password" name="password" required value={formData.password} onChange={handleChange} className="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 px-5 focus:outline-none focus:border-[#0078FF] transition-all text-xs font-bold" placeholder="••••••••" />
                   </div>
                 </div>
               )}
@@ -80,12 +115,12 @@ const StudentRegistration = () => {
                 <div className="animate-slideIn space-y-5">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-4">DOB</label>
-                      <input type="date" name="dateofBirth" required value={formData.dateofBirth} onChange={handleChange} className="w-full bg-gray-50 border border-gray-100 rounded-full py-3.5 px-6 focus:ring-2 focus:ring-[#0078FF]/20 focus:border-[#0078FF] text-sm outline-none" />
+                      <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-3">DOB</label>
+                      <input type="date" name="dateofBirth" required value={formData.dateofBirth} onChange={handleChange} className="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 px-5 focus:outline-none focus:border-[#0078FF] text-xs font-bold" />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-4">Gender</label>
-                      <select name="gender" required value={formData.gender} onChange={handleChange} className="w-full bg-gray-50 border border-gray-100 rounded-full py-3.5 px-6 focus:ring-2 focus:ring-[#0078FF]/20 focus:border-[#0078FF] text-sm outline-none appearance-none">
+                      <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-3">Gender</label>
+                      <select name="gender" required value={formData.gender} onChange={handleChange} className="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 px-5 focus:outline-none focus:border-[#0078FF] text-xs font-bold appearance-none">
                         <option value="">Select</option>
                         <option value="male">Male</option>
                         <option value="female">Female</option>
@@ -93,8 +128,8 @@ const StudentRegistration = () => {
                     </div>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-4">Current Class</label>
-                    <select name="currentClass" required value={formData.currentClass} onChange={handleChange} className="w-full bg-gray-50 border border-gray-100 rounded-full py-3.5 px-6 focus:ring-2 focus:ring-[#0078FF]/20 focus:border-[#0078FF] text-sm outline-none appearance-none">
+                    <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-3">Current Class</label>
+                    <select name="currentClass" required value={formData.currentClass} onChange={handleChange} className="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 px-5 focus:outline-none focus:border-[#0078FF] text-xs font-bold appearance-none">
                       <option value="">Select Class</option>
                       {['8th', '9th', '10th', '11th', '12th', 'Dropper'].map(c => <option key={c} value={c}>{c} Class</option>)}
                     </select>
@@ -107,12 +142,12 @@ const StudentRegistration = () => {
                 <div className="animate-slideIn space-y-5">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-4">Phone</label>
-                      <input type="tel" name="phone" required value={formData.phone} onChange={handleChange} className="w-full bg-gray-50 border border-gray-100 rounded-full py-3.5 px-6 focus:ring-2 focus:ring-[#0078FF]/20 focus:border-[#0078FF] text-sm outline-none" placeholder="10-digit mobile" />
+                      <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-3">Phone</label>
+                      <input type="tel" name="phone" required value={formData.phone} onChange={handleChange} className="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 px-5 focus:outline-none focus:border-[#0078FF] text-xs font-bold" placeholder="10-digit mobile" />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-4">Course</label>
-                      <select name="interestedCourse" required value={formData.interestedCourse} onChange={handleChange} className="w-full bg-gray-50 border border-gray-100 rounded-full py-3.5 px-6 focus:ring-2 focus:ring-[#0078FF]/20 focus:border-[#0078FF] text-sm outline-none appearance-none">
+                      <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-3">Course</label>
+                      <select name="interestedCourse" required value={formData.interestedCourse} onChange={handleChange} className="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 px-5 focus:outline-none focus:border-[#0078FF] text-xs font-bold appearance-none">
                         <option value="">Select Course</option>
                         <option value="foundation">Foundation</option>
                         <option value="medical">NEET</option>
@@ -121,24 +156,24 @@ const StudentRegistration = () => {
                     </div>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-4">Address</label>
-                    <textarea name="address" value={formData.address} onChange={handleChange} rows="1" className="w-full bg-gray-50 border border-gray-100 rounded-[20px] py-3 px-6 focus:ring-2 focus:ring-[#0078FF]/20 focus:border-[#0078FF] text-sm outline-none resize-none" placeholder="Enter full address" />
+                    <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-3">Address</label>
+                    <textarea name="address" required value={formData.address} onChange={handleChange} rows="1" className="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 px-5 focus:outline-none focus:border-[#0078FF] text-xs font-bold resize-none" placeholder="Enter full address" />
                   </div>
                 </div>
               )}
 
               <div className="flex gap-4 mt-6">
                 {step > 1 && (
-                  <button type="button" onClick={() => setStep(step - 1)} className="flex-1 border border-gray-100 text-gray-400 py-3.5 rounded-full font-bold hover:text-gray-900 transition-all flex items-center justify-center gap-2 text-xs">
+                  <button type="button" onClick={() => setStep(step - 1)} className="flex-1 border border-gray-100 text-gray-400 py-3 rounded-xl font-bold hover:text-gray-900 transition-all flex items-center justify-center gap-2 text-xs">
                     <ChevronLeft size={16} /> Back
                   </button>
                 )}
                 {step < 3 ? (
-                  <button type="button" onClick={() => setStep(step + 1)} className="flex-[2] bg-[#0a1628] text-white py-3.5 rounded-full font-bold hover:bg-[#0078FF] transition-all flex items-center justify-center gap-2 text-xs">
+                  <button type="button" onClick={handleNextStep} className="flex-[2] bg-[#0a1628] text-white py-3 rounded-xl font-bold hover:bg-[#0078FF] transition-all flex items-center justify-center gap-2 text-xs">
                     Continue <ChevronRight size={16} />
                   </button>
                 ) : (
-                  <button type="submit" disabled={loading} className="flex-[2] bg-[#FB0500] text-white py-3.5 rounded-full font-bold hover:bg-red-700 transition-all flex items-center justify-center gap-2 text-xs">
+                  <button type="submit" disabled={loading} className="flex-[2] bg-[#FB0500] text-white py-3 rounded-xl font-bold hover:bg-red-700 transition-all flex items-center justify-center gap-2 text-xs">
                     {loading ? 'Processing...' : 'Register Account'} <Check size={16} />
                   </button>
                 )}

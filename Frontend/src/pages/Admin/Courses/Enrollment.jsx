@@ -105,24 +105,26 @@ const Enrollment = () => {
     }, []);
 
     const getStatusBadge = (status) => {
-        const statusConfig = {
-            'Active': 'bg-green-100 text-green-800',
-            'Pending': 'bg-yellow-100 text-yellow-800',
-            'Completed': 'bg-blue-100 text-blue-800',
-            'Cancelled': 'bg-red-100 text-red-800',
-            'Dropped': 'bg-gray-100 text-gray-800'
-        };
-        return statusConfig[status] || 'bg-gray-100 text-gray-800';
+        switch (status?.toLowerCase()) {
+            case 'active':
+                return 'bg-emerald-50 text-emerald-700 border border-emerald-200/60 rounded-md';
+            case 'pending':
+                return 'bg-amber-50 text-amber-700 border border-amber-200/60 rounded-md';
+            case 'cancelled':
+                return 'bg-rose-50 text-rose-700 border border-rose-200/60 rounded-md';
+            default:
+                return 'bg-gray-50 text-gray-700 border border-gray-200/60 rounded-md';
+        }
     };
 
     const getPaymentBadge = (status) => {
         const paymentConfig = {
-            'Paid': 'bg-green-100 text-green-800',
-            'Pending': 'bg-yellow-100 text-yellow-800',
-            'Failed': 'bg-red-100 text-red-800',
-            'Refunded': 'bg-purple-100 text-purple-800'
+            'Paid': 'bg-emerald-50 text-emerald-700 border border-emerald-200/60 rounded-md',
+            'Pending': 'bg-amber-50 text-amber-700 border border-amber-200/60 rounded-md',
+            'Failed': 'bg-rose-50 text-rose-700 border border-rose-200/60 rounded-md',
+            'Refunded': 'bg-purple-50 text-purple-700 border border-purple-200/60 rounded-md'
         };
-        return paymentConfig[status] || 'bg-gray-100 text-gray-800';
+        return paymentConfig[status] || 'bg-gray-50 text-gray-700 border border-gray-200/60 rounded-md';
     };
 
     const getFilteredAndSortedEnrollments = () => {
@@ -206,29 +208,30 @@ const Enrollment = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
-            {/* Header Section - Responsive */}
-            <div className="bg-white/80 backdrop-blur-sm border-b border-slate-200 sticky top-0 z-10">
-                <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
-                    <div>
-                        <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
-                            Enrollment Management
-                        </h1>
-                        <p className="text-xs sm:text-sm text-slate-500 mt-0.5 sm:mt-1">
-                            Track and manage all course enrollments
-                        </p>
+        <div className="min-h-screen bg-[#F8FAFC] p-4 sm:p-6 md:p-8 space-y-6">
+            {/* Header Section */}
+            <div className="bg-white rounded-lg border border-gray-200/80 p-4 sm:p-5 shadow-xs flex items-center justify-between sticky top-0 z-20">
+                <div>
+                    <div className="flex items-center gap-2 mb-1">
+                        <span className="w-2 h-2 rounded-full bg-[#0078FF]"></span>
+                        <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Registrations</span>
                     </div>
+                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">Enrollment Management</h1>
+                    <p className="text-xs text-gray-500 mt-0.5">Track and manage all course enrollments and payment statuses</p>
                 </div>
+                <button onClick={GetAllPurchesCourse} className="px-4 py-2 bg-gray-50 border border-gray-200 text-gray-700 rounded-md text-xs font-bold uppercase tracking-wider hover:bg-gray-100 transition-all shadow-xs">
+                    🔄 Refresh
+                </button>
             </div>
 
-            <div className="px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
-                {/* Filters Section - Responsive Grid */}
+            <div className="space-y-6">
+                {/* Filters Section */}
                 {enrollments.length > 0 && (
-                    <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 mb-4 sm:mb-6">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                    <div className="bg-white rounded-lg border border-gray-200/80 shadow-xs p-4 sm:p-5">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                             {/* Search Bar */}
                             <div className="sm:col-span-2">
-                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                                <label className="block text-xs font-semibold text-gray-700 mb-1.5">
                                     Search Enrollments
                                 </label>
                                 <div className="relative">
@@ -237,10 +240,10 @@ const Enrollment = () => {
                                         placeholder="Search by student, course, or enrollment ID..."
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
-                                        className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-1.5 sm:py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                        className="w-full pl-9 pr-4 py-2 text-xs font-medium border border-gray-200 rounded-md focus:ring-2 focus:ring-[#0078FF]/20 focus:border-[#0078FF] outline-none transition-all"
                                     />
                                     <svg
-                                        className="absolute left-2.5 sm:left-3 top-2 sm:top-2.5 h-4 w-4 sm:h-5 sm:w-5 text-gray-400"
+                                        className="absolute left-3 top-2.5 h-4 w-4 text-gray-400"
                                         fill="none"
                                         stroke="currentColor"
                                         viewBox="0 0 24 24"
@@ -257,13 +260,13 @@ const Enrollment = () => {
 
                             {/* Status Filter */}
                             <div>
-                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                                <label className="block text-xs font-semibold text-gray-700 mb-1.5">
                                     Enrollment Status
                                 </label>
                                 <select
                                     value={selectedStatus}
                                     onChange={(e) => setSelectedStatus(e.target.value)}
-                                    className="w-full px-3 sm:px-4 py-1.5 sm:py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                    className="w-full px-3 py-2 text-xs font-medium border border-gray-200 rounded-md focus:ring-2 focus:ring-[#0078FF]/20 focus:border-[#0078FF] outline-none transition-all"
                                 >
                                     {statuses.map(status => (
                                         <option key={status} value={status}>{status}</option>
@@ -273,13 +276,13 @@ const Enrollment = () => {
 
                             {/* Sort By */}
                             <div>
-                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                                <label className="block text-xs font-semibold text-gray-700 mb-1.5">
                                     Sort By
                                 </label>
                                 <select
                                     value={sortBy}
                                     onChange={(e) => setSortBy(e.target.value)}
-                                    className="w-full px-3 sm:px-4 py-1.5 sm:py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                    className="w-full px-3 py-2 text-xs font-medium border border-gray-200 rounded-md focus:ring-2 focus:ring-[#0078FF]/20 focus:border-[#0078FF] outline-none transition-all"
                                 >
                                     <option value="newest">Newest First</option>
                                     <option value="oldest">Oldest First</option>

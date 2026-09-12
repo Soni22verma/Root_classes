@@ -1,6 +1,10 @@
-const Base_Url = import.meta.env.VITE_BASE_URL
+const Base_Url = import.meta.env.VITE_BASE_URL || "http://localhost:5050";
 
 const api = {
+    instructor: {
+        register: Base_Url + "/instructor/register",
+        login: Base_Url + "/instructor/instructor_login"
+    },
     course:{
         getCategory:Base_Url+"/course/get_category",
         createCourse:Base_Url+"/course/create_course",

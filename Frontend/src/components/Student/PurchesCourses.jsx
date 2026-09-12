@@ -4,6 +4,7 @@ import api from '../../services/endpoints';
 import useStudentStore from '../../Store/studentstore';
 import { useCourseStore } from '../../Store/courseStore';
 import { toast } from 'react-toastify';
+import { BookOpen, Library, GraduationCap, Award, PlayCircle, CheckCircle, ChevronRight, ArrowLeft } from 'lucide-react';
 
 // ========== LOCALSTORAGE HELPERS ==========
 const STORAGE_KEY = 'video_completed_topics';
@@ -502,56 +503,67 @@ const PurchasedCourse = () => {
         }
     };
 
+// Helper to format instructor name cleanly
+const getInstructorName = (instructor) => {
+    if (!instructor) return 'Roots Faculty';
+    if (typeof instructor === 'string') {
+        if (/^[0-9a-fA-F]{24}$/.test(instructor)) return 'Roots Faculty';
+        return instructor;
+    }
+    return instructor.fullName || instructor.name || 'Roots Faculty';
+};
+
     // Loading State
     if (loading) return (
-        <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center font-poppins">
             <div className="text-center">
-                <div className="w-12 h-12 border-3 border-gray-200 border-t-gray-800 rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-gray-500 font-medium">Loading your courses...</p>
+                <div className="w-12 h-12 border-3 border-blue-600/20 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-slate-500 font-bold animate-pulse">Loading your courses...</p>
             </div>
         </div>
     );
 
     if (error) return (
-        <div className="min-h-screen bg-white flex items-center justify-center p-6">
-            <div className="bg-gray-50 border border-gray-200 rounded-2xl p-8 text-center max-w-md">
-                <p className="text-red-500 mb-4">{error}</p>
-                <button onClick={handlePurchasedCourses} className="px-6 py-2 bg-black hover:bg-gray-800 rounded-xl text-white font-medium transition">Try Again</button>
+        <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-6 font-poppins">
+            <div className="bg-white border border-slate-200 rounded-sm p-8 text-center max-w-md shadow-sm">
+                <p className="text-red-500 font-bold mb-4">{error}</p>
+                <button onClick={handlePurchasedCourses} className="px-6 py-3 bg-slate-900 hover:bg-blue-600 rounded-sm text-white font-black text-xs uppercase tracking-widest transition-all">Try Again</button>
             </div>
         </div>
     );
 
     if (courses.length === 0) return (
-        <div className="min-h-screen bg-white flex items-center justify-center p-6">
-            <div className="text-center">
-                <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gray-100 flex items-center justify-center">
-                    <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-6 font-poppins">
+            <div className="text-center max-w-md bg-white p-8 border border-slate-200 rounded-sm shadow-sm">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-sm bg-blue-50 flex items-center justify-center">
+                    <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                     </svg>
                 </div>
-                <h2 className="text-2xl font-bold text-gray-800 mb-2">No Courses Yet</h2>
-                <p className="text-gray-500">You haven't purchased any courses yet.</p>
+                <h2 className="text-2xl font-black text-slate-900 mb-2">No Enrolled Courses</h2>
+                <p className="text-slate-500 font-medium text-sm mb-6">You haven't enrolled in any courses yet. Explore our courses to start learning.</p>
             </div>
         </div>
     );
 
     if (!selectedCourse) {
         return (
-            <div className="min-h-screen bg-white">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-8">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-12">
+            <div className="min-h-screen bg-[#F8FAFC] font-poppins pb-16">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-8">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10 pb-6 border-b border-slate-200">
                         <div>
-                            <span className="text-gray-500 text-sm font-semibold tracking-wide uppercase bg-gray-100 px-4 py-1.5 rounded-full">
-                                📚 My Library
+                            <span className="text-blue-700 text-[10px] font-black tracking-widest uppercase bg-blue-50 border border-blue-100 px-3.5 py-1.5 rounded-sm inline-flex items-center gap-1.5">
+                                <Library size={14} className="text-blue-600" />
+                                MY LIBRARY
                             </span>
-                            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mt-4 tracking-tight">
-                                Learning <span className="text-gray-700">Journey</span>
+                            <h1 className="text-3xl md:text-4xl font-black text-slate-900 mt-3 tracking-tight">
+                                Learning <span className="text-blue-600">Journey</span>
                             </h1>
-                            <p className="text-gray-500 mt-2 max-w-xl">Master subjects with interactive modules.</p>
+                            <p className="text-slate-500 text-xs font-bold mt-1">Master subjects with interactive modules and video lectures.</p>
                         </div>
-                        <div className="bg-gray-100 px-6 py-3 rounded-2xl border border-gray-200">
-                            <strong className="text-3xl font-bold text-gray-800">{courses.length}</strong>
-                            <span className="text-gray-500 ml-2 font-medium">Course{courses.length !== 1 ? 's' : ''} Enrolled</span>
+                        <div className="bg-white px-6 py-3 rounded-sm border border-slate-200 shadow-sm flex items-center gap-3">
+                            <strong className="text-2xl font-black text-slate-900">{courses.length}</strong>
+                            <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Course{courses.length !== 1 ? 's' : ''} Enrolled</span>
                         </div>
                     </div>
 
@@ -569,95 +581,97 @@ const PurchasedCourse = () => {
                                 <div
                                     key={courseItem.course._id}
                                     onClick={() => handleCourseSelect(courseItem)}
-                                    className="group relative bg-white border border-gray-200 rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer"
+                                    className="group relative bg-white border border-slate-200 rounded-sm overflow-hidden shadow-xs hover:shadow-md transition-all duration-300 cursor-pointer flex flex-col justify-between"
                                 >
-                                    <div className="relative h-52 overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200">
-                                        <img
-                                            src={dummyImage}
-                                            alt={courseItem.course.title}
-                                            className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                                        />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
+                                    <div>
+                                        <div className="relative h-48 overflow-hidden bg-slate-100">
+                                            <img
+                                                src={dummyImage}
+                                                alt={courseItem.course.title}
+                                                className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                                            />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent"></div>
 
-                                        <div className="absolute top-3 left-3">
-                                            <span className="px-2.5 py-1 text-xs font-bold rounded-lg bg-black/80 text-white shadow-sm backdrop-blur-sm">
-                                                {courseItem.course.level || 'Beginner'}
-                                            </span>
-                                        </div>
-
-                                        {courseItem.price && (
-                                            <div className="absolute top-3 right-3 px-2.5 py-1 text-sm font-bold rounded-lg bg-white/95 backdrop-blur-sm text-gray-800 border border-gray-200 shadow-sm">
-                                                ₹{courseItem.price}
-                                            </div>
-                                        )}
-
-                                        {courseItem.course.category?.name && (
-                                            <div className="absolute bottom-3 left-3">
-                                                <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-white/90 text-gray-700 backdrop-blur-sm border border-gray-200">
-                                                    {courseItem.course.category.name}
+                                            <div className="absolute top-3 left-3">
+                                                <span className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded-sm bg-slate-900/90 text-white shadow-sm backdrop-blur-sm">
+                                                    {courseItem.course.level || 'Beginner'}
                                                 </span>
                                             </div>
-                                        )}
 
-                                        {progressPercent > 0 && (
-                                            <div className="absolute bottom-3 right-3">
-                                                <div className="px-2 py-1 rounded-lg bg-black/80 backdrop-blur-sm text-white text-xs font-medium">
-                                                    {Math.round(progressPercent)}% Complete
+                                            {courseItem.price && (
+                                                <div className="absolute top-3 right-3 px-2.5 py-1 text-xs font-black rounded-sm bg-white/95 backdrop-blur-sm text-slate-900 border border-slate-200 shadow-sm">
+                                                    ₹{courseItem.price}
                                                 </div>
-                                            </div>
-                                        )}
-                                    </div>
+                                            )}
 
-                                    <div className="p-5">
-                                        <h3 className="text-xl font-bold text-gray-800 mt-1 line-clamp-1 group-hover:text-gray-600 transition">
-                                            {courseItem.course.title}
-                                        </h3>
-                                        <p className="text-gray-500 text-sm mt-2 line-clamp-2 leading-relaxed">
-                                            {courseItem.course.description || 'No description available'}
-                                        </p>
+                                            {courseItem.course.category?.name && (
+                                                <div className="absolute bottom-3 left-3">
+                                                    <span className="px-2.5 py-1 text-[10px] font-bold rounded-sm bg-white/90 text-slate-700 backdrop-blur-sm border border-slate-200">
+                                                        {courseItem.course.category.name}
+                                                    </span>
+                                                </div>
+                                            )}
 
-                                        <div className="flex items-center gap-4 mt-4 pt-3 border-t border-gray-100">
-                                            <div className="flex items-center gap-1.5 text-gray-500 text-sm">
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                                                </svg>
-                                                <span><strong className="text-gray-700">{courseItem.course?.modules?.length || 0}</strong> Modules</span>
-                                            </div>
-                                            <div className="flex items-center gap-1.5 text-gray-500 text-sm">
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                                </svg>
-                                                <span><strong className="text-gray-700">{totalCourseTopics}</strong> Topics</span>
-                                            </div>
+                                            {progressPercent > 0 && (
+                                                <div className="absolute bottom-3 right-3">
+                                                    <div className="px-2.5 py-1 rounded-sm bg-blue-600 backdrop-blur-sm text-white text-[10px] font-black uppercase tracking-wider">
+                                                        {Math.round(progressPercent)}% Complete
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
 
-                                        {progressPercent > 0 && (
-                                            <div className="mt-4">
-                                                <div className="flex justify-between text-xs text-gray-500 mb-1">
-                                                    <span>Progress</span>
-                                                    <span>{completedCount}/{totalCourseTopics} topics</span>
+                                        <div className="p-6">
+                                            <h3 className="text-lg font-black text-slate-900 line-clamp-1 group-hover:text-blue-600 transition-colors">
+                                                {courseItem.course.title}
+                                            </h3>
+                                            <p className="text-slate-500 text-xs font-medium mt-2 line-clamp-2 leading-relaxed">
+                                                {courseItem.course.description || 'No description available'}
+                                            </p>
+
+                                            <div className="flex items-center gap-4 mt-4 pt-3 border-t border-slate-100">
+                                                <div className="flex items-center gap-1.5 text-slate-500 text-xs font-bold">
+                                                    <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                                    </svg>
+                                                    <span><strong className="text-slate-900">{courseItem.course?.modules?.length || 0}</strong> Modules</span>
                                                 </div>
-                                                <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                                                    <div 
-                                                        className="h-full bg-gray-600 rounded-full transition-all duration-300" 
-                                                        style={{ width: `${progressPercent}%` }}
-                                                    ></div>
+                                                <div className="flex items-center gap-1.5 text-slate-500 text-xs font-bold">
+                                                    <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                                    </svg>
+                                                    <span><strong className="text-slate-900">{totalCourseTopics}</strong> Topics</span>
                                                 </div>
                                             </div>
-                                        )}
 
-                                        {courseItem.course.instructor && (
-                                            <div className="flex items-center gap-2 mt-3 text-gray-500 text-sm">
-                                                <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
-                                                    <svg className="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            {progressPercent > 0 && (
+                                                <div className="mt-4">
+                                                    <div className="flex justify-between text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
+                                                        <span>Progress</span>
+                                                        <span>{completedCount}/{totalCourseTopics} topics</span>
+                                                    </div>
+                                                    <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                                        <div 
+                                                            className="h-full bg-blue-600 rounded-full transition-all duration-300" 
+                                                            style={{ width: `${progressPercent}%` }}
+                                                        ></div>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            <div className="flex items-center gap-2 mt-4 text-slate-500 text-xs font-bold">
+                                                <div className="w-6 h-6 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center">
+                                                    <svg className="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                                     </svg>
                                                 </div>
-                                                <span>By {courseItem.course.instructor}</span>
+                                                <span>By {getInstructorName(courseItem.course.instructor)}</span>
                                             </div>
-                                        )}
+                                        </div>
+                                    </div>
 
-                                        <button className="mt-5 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-black text-white font-medium hover:bg-gray-800 transition-all group/btn">
+                                    <div className="px-6 pb-6 pt-0">
+                                        <button className="w-full flex items-center justify-center gap-2 py-3 rounded-sm bg-slate-900 text-white font-bold text-xs uppercase tracking-widest group-hover:bg-blue-600 transition-all group/btn">
                                             {progressPercent === 100 ? 'Review Course' : progressPercent > 0 ? 'Continue Learning' : 'Start Learning'}
                                             <svg className="w-4 h-4 group-hover/btn:translate-x-1 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -682,7 +696,7 @@ const PurchasedCourse = () => {
     return (
         <div className="min-h-screen bg-white">
             {/* Topbar */}
-            <div className="fixed top-0 left-0 right-0 z-30 bg-white border-b border-gray-200 shadow-sm">
+            <div className="sticky top-[64px] left-0 right-0 z-30 bg-white border-b border-gray-200 shadow-xs">
                 <div className="flex items-center justify-between px-4 md:px-6 h-14">
                     <button onClick={() => { setSelectedCourse(null); setSelectedTopic(null); }} className="flex items-center gap-2 text-gray-500 hover:text-gray-700 transition">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -701,9 +715,9 @@ const PurchasedCourse = () => {
                 </div>
             </div>
 
-            <div className="flex flex-col lg:flex-row pt-14">
+            <div className="flex flex-col lg:flex-row">
                 {/* SIDEBAR */}
-                <aside className="order-2 lg:order-1 w-full lg:w-80 xl:w-96 bg-gray-50 border-r border-gray-200 h-auto lg:h-[calc(100vh-3.5rem)] lg:sticky top-14 overflow-y-auto">
+                <aside className="order-2 lg:order-1 w-full lg:w-80 xl:w-96 bg-gray-50 border-r border-gray-200 h-auto lg:h-[calc(100vh-7.5rem)] lg:sticky top-[120px] overflow-y-auto">
                     <div className="p-5 border-b border-gray-200">
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-12 h-12 rounded-xl bg-gray-200 flex items-center justify-center shadow-sm overflow-hidden">

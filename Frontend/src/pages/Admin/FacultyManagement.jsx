@@ -154,68 +154,72 @@ const FacultyManagement = () => {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 bg-gray-50 min-h-screen">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+    <div className="min-h-screen bg-[#F8FAFC] p-4 sm:p-6 md:p-8 space-y-6">
+      {/* Sticky Header */}
+      <div className="bg-white rounded-lg border border-gray-200/80 p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 sticky top-0 z-20">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Faculty Management</h1>
-          <p className="text-gray-500 mt-1 text-sm sm:text-base">Manage your expert teaching staff</p>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="w-2 h-2 rounded-full bg-[#0078FF]"></span>
+            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Faculty Directory</span>
+          </div>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">Faculty Management</h1>
+          <p className="text-xs text-gray-500 mt-0.5">Manage your expert teaching staff and instructor profiles</p>
         </div>
         <button
           onClick={() => {
             resetForm();
             setShowModal(true);
           }}
-          className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm gap-2 w-full sm:w-auto"
+          className="inline-flex items-center justify-center px-4 py-2 bg-[#0078FF] text-white rounded-md text-xs font-bold uppercase tracking-wider hover:bg-blue-600 transition-all shadow-xs gap-2 w-full sm:w-auto"
         >
-          <Plus className="w-5 h-5" />
-          <span>Add Member</span>
+          <Plus className="w-4 h-4" />
+          <span>Add Faculty Member</span>
         </button>
       </div>
 
-      {/* Grid */}
+      {/* Faculty Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {faculty.map((member) => (
-          <div key={member._id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden group hover:shadow-md transition-shadow">
-            <div className="aspect-[4/3] relative overflow-hidden">
+          <div key={member._id} className="bg-white rounded-lg border border-gray-200/80 shadow-xs overflow-hidden group hover:border-gray-300 transition-all">
+            <div className="aspect-[4/3] relative overflow-hidden bg-gray-100">
               <img 
                 src={member.image} 
                 alt={member.name}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               />
-              <div className="absolute top-2 right-2 flex gap-2">
+              <div className="absolute top-3 right-3 flex gap-2">
                 <button
                   onClick={() => handleEditClick(member)}
-                  className="p-2 bg-white/90 backdrop-blur-sm rounded-lg text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+                  className="p-2 bg-white/90 backdrop-blur-xs rounded-md text-blue-600 hover:bg-[#0078FF] hover:text-white transition-all shadow-xs"
                 >
                   <Edit2 className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => handleDelete(member._id)}
-                  className="p-2 bg-white/90 backdrop-blur-sm rounded-lg text-red-600 hover:bg-red-600 hover:text-white transition-all shadow-sm"
+                  className="p-2 bg-white/90 backdrop-blur-xs rounded-md text-rose-600 hover:bg-rose-600 hover:text-white transition-all shadow-xs"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
             </div>
-            <div className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="font-bold text-gray-900 truncate">{member.name}</h3>
-                <span className="px-2 py-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded-full">
+            <div className="p-5">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <h3 className="font-bold text-gray-900 text-base truncate">{member.name}</h3>
+                <span className="px-2.5 py-1 bg-blue-50 text-[#0078FF] text-xs font-semibold rounded-md border border-blue-100">
                   {member.subject}
                 </span>
               </div>
-              <p className="text-sm text-gray-600 line-clamp-2 mb-4">
+              <p className="text-xs text-gray-600 line-clamp-2 mb-4 leading-relaxed">
                 {member.description}
               </p>
-              <div className="flex items-center justify-between text-sm text-gray-500 pt-4 border-t border-gray-50">
+              <div className="flex items-center justify-between text-xs text-gray-500 pt-3 border-t border-gray-100">
                 <div className="flex items-center gap-1">
-                  <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                  <span className="font-medium text-gray-900">{member.rating}</span>
+                  <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+                  <span className="font-semibold text-gray-900">{member.rating}</span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <Users className="w-4 h-4" />
-                  <span>{member.experience} Exp.</span>
+                <div className="flex items-center gap-1 font-medium">
+                  <Users className="w-4 h-4 text-gray-400" />
+                  <span>{member.experience} Experience</span>
                 </div>
               </div>
             </div>
@@ -224,29 +228,29 @@ const FacultyManagement = () => {
       </div>
 
       {faculty.length === 0 && !loading && (
-        <div className="text-center py-12 bg-white rounded-2xl border-2 border-dashed border-gray-200 mt-8">
-          <ImageIcon className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-500">No faculty members found. Add your first member!</p>
+        <div className="text-center py-16 bg-white rounded-lg border border-dashed border-gray-200">
+          <ImageIcon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+          <p className="text-xs font-medium text-gray-500">No faculty members found. Click above to add your first instructor!</p>
         </div>
       )}
 
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={() => setShowModal(false)} />
-          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[95vh]">
-            <div className="flex items-center justify-between p-4 border-b flex-shrink-0">
-              <h2 className="text-lg sm:text-xl font-bold text-gray-900">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs" onClick={() => setShowModal(false)} />
+          <div className="relative bg-white rounded-lg border border-gray-200/80 shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[95vh]">
+            <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gray-50/50 flex-shrink-0">
+              <h2 className="text-base font-bold text-gray-900">
                 {isEditing ? 'Edit Faculty Member' : 'Add New Faculty Member'}
               </h2>
-              <button onClick={() => setShowModal(false)} className="p-2 hover:bg-gray-100 rounded-lg">
+              <button onClick={() => setShowModal(false)} className="p-1.5 hover:bg-gray-100 rounded-md text-gray-400 hover:text-gray-600 transition-all">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 overflow-y-auto">
+            <form onSubmit={handleSubmit} className="p-5 space-y-4 overflow-y-auto text-xs">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                <label className="block font-semibold text-gray-700 mb-1">Full Name</label>
                 <input
                   type="text"
                   name="name"

@@ -42,7 +42,7 @@ const eligibility = [
   { icon: '🏅', text: 'State/national olympiad medal holders get direct 50% scholarship' },
 ];
 
-const inputCls = 'w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:border-[#0078FF] focus:ring-2 focus:ring-blue-100 transition disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed';
+const inputCls = 'w-full px-4 py-3 bg-white border border-gray-200 rounded-md text-sm outline-none focus:border-[#0078FF] focus:ring-2 focus:ring-blue-100 transition disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed';
 const selectCls = inputCls + ' bg-white appearance-none cursor-pointer';
 const labelCls = 'block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2';
 
@@ -168,7 +168,7 @@ const ScholarshipForm = () => {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
             <div className="flex-1">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-50 border border-gray-100 mb-3">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-sm bg-gray-50 border border-gray-100 mb-3">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#FB0500] animate-pulse"></span>
                 <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em]">Scholarship 2025</p>
               </div>
@@ -196,7 +196,7 @@ const ScholarshipForm = () => {
             </div>
 
             <div className="md:w-64">
-              <a href="#apply-form" className="group flex items-center justify-between w-full px-5 py-3 bg-gray-600 text-white rounded-xl text-sm font-bold hover:bg-[#FD6003] transition-all shadow-lg shadow-gray-200">
+              <a href="#apply-form" className="group flex items-center justify-between w-full px-5 py-3 bg-gray-900 text-white rounded-md text-sm font-bold hover:bg-[#FB0500] transition-all shadow-sm">
                 Apply Now
                 <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
@@ -217,45 +217,46 @@ const ScholarshipForm = () => {
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
             {tiers.map((t, i) => (
               <div key={t.pct}
-                className={`relative rounded-2xl overflow-hidden border flex flex-col bg-white ${t.border} transition-all hover:shadow-lg ${i === 1 ? 'md:-mt-4 md:mb-4 ring-2 ring-[#FB0500]/10' : ''
-                  }`}
+                className={`relative rounded-md overflow-hidden border flex flex-col bg-white ${t.border} transition-all hover:shadow-md ${
+                  i === 1 ? 'ring-2 ring-[#FB0500]/30 shadow-md' : 'shadow-sm'
+                }`}
               >
                 {i === 1 && (
-                  <div className="bg-[#FB0500] text-white text-center py-1.5 text-[10px] font-black uppercase tracking-[0.2em]">
+                  <div className="bg-[#FB0500] text-white text-center py-2 text-[11px] font-black uppercase tracking-[0.2em]">
                     Most Popular
                   </div>
                 )}
-                <div className="h-1" style={{ backgroundColor: t.color }} />
-                <div className="p-7 flex flex-col flex-1">
-                  <div className="flex items-end gap-1 mb-4">
+                <div className="h-1.5" style={{ backgroundColor: t.color }} />
+                <div className="p-6 md:p-7 flex flex-col flex-1">
+                  <div className="flex items-end gap-1 mb-3">
                     <span className="text-5xl font-black leading-none" style={{ color: t.color }}>{t.pct}</span>
-                    <span className="text-sm font-semibold mb-1.5 text-gray-400">off</span>
+                    <span className="text-sm font-bold mb-1 text-gray-400">off</span>
                   </div>
-                  <div className="mb-1">
-                    <span className="text-xs font-bold uppercase tracking-widest px-2.5 py-1 rounded-full" style={{ backgroundColor: t.color + '15', color: t.color }}>
+                  <div className="mb-2">
+                    <span className="text-xs font-bold uppercase tracking-widest px-2.5 py-1 rounded-sm inline-block" style={{ backgroundColor: t.color + '15', color: t.color }}>
                       {t.label}
                     </span>
                   </div>
-                  <p className="text-sm mt-3 mb-5 leading-relaxed text-gray-500">{t.desc}</p>
+                  <p className="text-sm mt-2 mb-6 leading-relaxed text-gray-500">{t.desc}</p>
 
-                  <ul className="space-y-2.5 flex-1">
+                  <ul className="space-y-3 flex-1 mb-8">
                     {t.perks.map(perk => (
                       <li key={perk} className="flex items-center gap-2.5">
-                        <span className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: t.color + '20' }}>
+                        <span className="w-4 h-4 rounded flex items-center justify-center flex-shrink-0" style={{ backgroundColor: t.color + '20' }}>
                           <svg className="w-2.5 h-2.5" fill="none" stroke={t.color} viewBox="0 0 24 24" strokeWidth={3}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                           </svg>
                         </span>
-                        <span className="text-sm text-gray-600">{perk}</span>
+                        <span className="text-sm text-gray-700 font-medium">{perk}</span>
                       </li>
                     ))}
                   </ul>
 
-                  <a href="#apply-form">
-                    <button className="mt-7 w-full py-2.5 rounded-xl text-sm font-bold text-white transition hover:opacity-90"
+                  <a href="#apply-form" className="mt-auto block w-full">
+                    <button className="w-full py-3 rounded-md text-sm font-bold text-white transition hover:opacity-90 shadow-sm"
                       style={{ backgroundColor: t.color }}
                       onClick={() => { }}>
                       Apply for {t.pct} →
@@ -284,9 +285,9 @@ const ScholarshipForm = () => {
             </div>
             <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
               {steps.map((s) => (
-                <div key={s.num} className="bg-white rounded-2xl p-6 border border-gray-100 hover:border-gray-200 hover:shadow-sm transition-all group">
+                <div key={s.num} className="bg-white rounded-md p-6 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all group">
                   <div className="flex items-center gap-3 mb-3">
-                    <span className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black text-white flex-shrink-0"
+                    <span className="w-10 h-10 rounded-md flex items-center justify-center text-sm font-black text-white flex-shrink-0"
                       style={{ backgroundColor: s.accent }}>
                       {s.num}
                     </span>
@@ -313,15 +314,15 @@ const ScholarshipForm = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {eligibility.map((e, i) => (
               <div key={i}
-                className="rounded-2xl p-5 flex items-start gap-4 border border-gray-100 bg-gray-50 transition-all hover:bg-white hover:shadow-sm group"
+                className="rounded-md p-5 flex items-start gap-4 border border-gray-200 bg-gray-50 transition-all hover:bg-white hover:shadow-sm group"
               >
                 <span className="text-2xl flex-shrink-0 mt-0.5 grayscale group-hover:grayscale-0 transition-all">{e.icon}</span>
-                <p className="text-sm leading-relaxed text-gray-600">{e.text}</p>
+                <p className="text-sm leading-relaxed text-gray-600 font-medium">{e.text}</p>
               </div>
             ))}
           </div>
 
-          <div className="mt-6 bg-blue-50 border border-blue-100 rounded-2xl p-5 flex items-start gap-4">
+          <div className="mt-6 bg-blue-50 border border-blue-100 rounded-md p-5 flex items-start gap-4">
             <span className="text-xl flex-shrink-0">ℹ️</span>
             <p className="text-sm text-blue-700 leading-relaxed">
               <strong>Note:</strong> The Roots Scholarship Test (RST) is conducted online and at our Ludhiana centre. Registration is completely free. Scholarship is applied directly on the admission fee — no reimbursement process.
@@ -368,8 +369,8 @@ const ScholarshipForm = () => {
 
             {/* Form */}
             <div className="lg:col-span-8">
-              <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
-                <div className="bg-gray-50 border-b border-gray-100 px-8 py-6 relative overflow-hidden">
+              <div className="bg-white rounded-md border border-gray-200 overflow-hidden shadow-sm">
+                <div className="bg-gray-50 border-b border-gray-200 px-8 py-6 relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-40 h-40 bg-[#FB0500]/5 rounded-full blur-3xl pointer-events-none" />
                   <div className="relative">
                     <p className="text-xs font-bold text-[#FB0500] uppercase tracking-widest mb-1">RST Application</p>
@@ -395,8 +396,8 @@ const ScholarshipForm = () => {
                           {['Foundation', 'Medical', 'Engineering'].map(p => (
                             <button key={p} type="button"
                               onClick={() => setFormData(prev => ({ ...prev, program: p }))}
-                              className={`py-3 rounded-xl text-sm font-bold border-2 transition-all ${formData.program === p
-                                ? 'bg-[#FB0500] text-white border-[#FB0500] shadow-sm shadow-red-100'
+                              className={`py-3 rounded-md text-sm font-bold border-2 transition-all ${formData.program === p
+                                ? 'bg-[#FB0500] text-white border-[#FB0500] shadow-sm'
                                 : 'bg-white text-gray-600 border-gray-200 hover:border-[#FB0500]/40'
                                 }`}
                             >
@@ -482,7 +483,7 @@ const ScholarshipForm = () => {
                       <button
                         type="submit"
                         disabled={submitting}
-                        className="w-full py-4 bg-[#FB0500] text-white font-black rounded-xl text-base hover:opacity-90 transition flex items-center justify-center gap-2 disabled:bg-gray-400"
+                        className="w-full py-3.5 bg-[#FB0500] text-white font-black rounded-md text-base hover:opacity-90 transition flex items-center justify-center gap-2 disabled:bg-gray-400 shadow-sm"
                       >
                         {submitting ? (
                           <>
@@ -524,11 +525,11 @@ const ScholarshipForm = () => {
           <p className="text-gray-500 text-sm mb-8 leading-relaxed">Call, WhatsApp, or visit us at Ludhiana. We're here to help you navigate your scholarship options and batch details.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a href="tel:+919877515330"
-              className="px-8 py-3.5 bg-[#FB0500] text-white font-black rounded-xl text-sm hover:opacity-90 transition-all shadow-lg shadow-red-100 flex items-center justify-center gap-2">
+              className="px-8 py-3.5 bg-[#FB0500] text-white font-black rounded-md text-sm hover:opacity-90 transition-all shadow-sm flex items-center justify-center gap-2">
               <span>📞</span> Call Now: +91 98775-15330
             </a>
             <a href="https://wa.me/919877515330" target="_blank" rel="noopener noreferrer"
-              className="px-8 py-3.5 bg-[#08B100] text-white font-black rounded-xl text-sm hover:bg-gray-800 transition-all shadow-lg shadow-gray-200 flex items-center justify-center gap-2">
+              className="px-8 py-3.5 bg-[#08B100] text-white font-black rounded-md text-sm hover:opacity-90 transition-all shadow-sm flex items-center justify-center gap-2">
               <span>💬</span> WhatsApp Us
             </a>
           </div>

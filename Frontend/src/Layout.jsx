@@ -35,7 +35,7 @@ const StudentLayout = () => {
     };
   }, []);
 
-  const hideLayoutRoutes = ["/purchescourse"];
+  const hideLayoutRoutes = [];
 
   const shouldHideLayout = hideLayoutRoutes.includes(location.pathname);
 

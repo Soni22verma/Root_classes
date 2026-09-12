@@ -53,7 +53,8 @@ const Settings = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await axios.post(`${import.meta.env.VITE_API_URL}/student/edit-profile-details`, {
+      const BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_BASE_URL || "http://localhost:5050";
+      const response = await axios.post(`${BASE_URL}/student/edit-profile-details`, {
         studentId: student._id,
         fullName: formData.fullName,
         email: formData.email,
@@ -80,7 +81,8 @@ const Settings = () => {
     }
     setLoading(true);
     try {
-      const response = await axios.post(`${import.meta.env.VITE_API_URL}/student/reset-password`, {
+      const BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_BASE_URL || "http://localhost:5050";
+      const response = await axios.post(`${BASE_URL}/student/reset-password`, {
         email: student.email,
         newPassword: formData.newPassword,
         confirmPassword: formData.confirmPassword
@@ -97,38 +99,42 @@ const Settings = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8faff] bg-line-grid font-poppins p-6">
-      <div className="max-w-5xl mx-auto">
+    <div className="min-h-screen bg-[#F8FAFC] p-4 sm:p-6 md:p-8 space-y-6">
+      <div className="max-w-5xl mx-auto space-y-6">
         
-        {/* Header - Industrial Pro */}
-        <div className="flex items-center justify-between mb-8">
+        {/* Sticky Header */}
+        <div className="bg-white rounded-lg border border-gray-200/80 p-4 sm:p-5 shadow-xs flex items-center justify-between sticky top-0 z-20">
           <div>
             <div className="flex items-center gap-2 mb-1">
-               <div className="w-1.5 h-1.5 rounded-full bg-[#FB0500]" />
-               <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em]">Portal / Control</p>
+               <div className="w-2 h-2 rounded-full bg-[#FB0500]" />
+               <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Portal Controls</p>
             </div>
-            <h1 className="text-2xl font-black text-gray-900 tracking-tight leading-none uppercase">Settings</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">System Settings</h1>
           </div>
-          <div className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-100 rounded-xl shadow-sm">
-             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-             <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">System Online</span>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-200/60 rounded-md">
+             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+             <span className="text-xs font-semibold text-emerald-700">System Online</span>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           
           {/* Navigation Sidebar */}
           <div className="space-y-1">
              {[
-               { id: 'profile', label: 'Identity', icon: User },
-               { id: 'security', label: 'Security', icon: Lock },
-               { id: 'notifications', label: 'Alerts', icon: Bell },
-               { id: 'appearance', label: 'Interface', icon: Monitor },
+               { id: 'profile', label: 'Identity Profile', icon: User },
+               { id: 'security', label: 'Security & Auth', icon: Lock },
+               { id: 'notifications', label: 'System Alerts', icon: Bell },
+               { id: 'appearance', label: 'Interface Theme', icon: Monitor },
              ].map(tab => (
                <button
                  key={tab.id}
                  onClick={() => setActiveTab(tab.id)}
-                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === tab.id ? 'bg-[#0078FF] text-white shadow-lg shadow-blue-500/20' : 'bg-white text-gray-400 hover:bg-gray-50'}`}
+                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-md text-xs font-bold transition-all ${
+                   activeTab === tab.id 
+                     ? 'bg-[#0078FF] text-white shadow-xs' 
+                     : 'bg-white text-gray-600 border border-gray-200/60 hover:bg-gray-50'
+                 }`}
                >
                  <tab.icon size={16} />
                  {tab.label}
@@ -138,42 +144,42 @@ const Settings = () => {
 
           {/* Settings Content Area */}
           <div className="lg:col-span-3">
-             <div className="bg-white rounded-[24px] border border-gray-100 shadow-2xl shadow-blue-900/5 overflow-hidden">
+             <div className="bg-white rounded-lg border border-gray-200/80 shadow-xs overflow-hidden">
                 
                 {activeTab === 'profile' && (
                   <form onSubmit={handleProfileUpdate} className="animate-fadeIn">
-                    <div className="p-8 border-b border-gray-50">
-                       <h2 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-1">Identity Management</h2>
-                       <p className="text-[11px] font-bold text-gray-400 uppercase">Update your public profile and contact intelligence.</p>
+                    <div className="p-6 border-b border-gray-100 bg-gray-50/50">
+                       <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-1">Identity Management</h2>
+                       <p className="text-xs text-gray-500">Update your administrator profile credentials and contact information.</p>
                     </div>
-                    <div className="p-8 space-y-6">
-                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="p-6 space-y-5">
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                           <div className="space-y-1.5">
-                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Full Name</label>
+                             <label className="text-xs font-semibold text-gray-700">Full Name</label>
                              <div className="relative">
-                                <User size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" />
-                                <input name="fullName" type="text" value={formData.fullName} onChange={handleInputChange} className="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 pl-11 pr-4 text-xs font-black focus:outline-none focus:border-[#0078FF] transition-all" />
+                                <User size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                                <input name="fullName" type="text" value={formData.fullName} onChange={handleInputChange} className="w-full bg-white border border-gray-200 rounded-md py-2.5 pl-10 pr-4 text-xs font-medium focus:ring-2 focus:ring-[#0078FF]/20 focus:border-[#0078FF] outline-none transition-all" />
                              </div>
                           </div>
                           <div className="space-y-1.5">
-                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Email Identity</label>
+                             <label className="text-xs font-semibold text-gray-700">Email Address</label>
                              <div className="relative">
-                                <Mail size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" />
-                                <input name="email" type="email" value={formData.email} onChange={handleInputChange} className="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 pl-11 pr-4 text-xs font-black focus:outline-none focus:border-[#0078FF] transition-all" />
+                                <Mail size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                                <input name="email" type="email" value={formData.email} onChange={handleInputChange} className="w-full bg-white border border-gray-200 rounded-md py-2.5 pl-10 pr-4 text-xs font-medium focus:ring-2 focus:ring-[#0078FF]/20 focus:border-[#0078FF] outline-none transition-all" />
                              </div>
                           </div>
                           <div className="space-y-1.5">
-                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Phone Intelligence</label>
+                             <label className="text-xs font-semibold text-gray-700">Phone Number</label>
                              <div className="relative">
-                                <Smartphone size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" />
-                                <input name="phone" type="text" value={formData.phone} onChange={handleInputChange} className="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 pl-11 pr-4 text-xs font-black focus:outline-none focus:border-[#0078FF] transition-all" />
+                                <Smartphone size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                                <input name="phone" type="text" value={formData.phone} onChange={handleInputChange} className="w-full bg-white border border-gray-200 rounded-md py-2.5 pl-10 pr-4 text-xs font-medium focus:ring-2 focus:ring-[#0078FF]/20 focus:border-[#0078FF] outline-none transition-all" />
                              </div>
                           </div>
                        </div>
                     </div>
-                    <div className="p-8 bg-gray-50/50 flex justify-end">
-                       <button disabled={loading} type="submit" className="flex items-center gap-2 bg-[#0078FF] text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-[#0060cc] transition-all disabled:opacity-50">
-                          <Save size={16} /> {loading ? 'Processing...' : 'Sync Profile'}
+                    <div className="p-4 bg-gray-50/60 border-t border-gray-100 flex justify-end">
+                       <button disabled={loading} type="submit" className="flex items-center gap-2 bg-[#0078FF] text-white px-5 py-2 rounded-md font-bold text-xs hover:bg-blue-600 transition-all disabled:opacity-50 shadow-xs">
+                          <Save size={15} /> {loading ? 'Saving...' : 'Save Profile Changes'}
                        </button>
                     </div>
                   </form>
@@ -181,65 +187,65 @@ const Settings = () => {
 
                 {activeTab === 'security' && (
                   <form onSubmit={handlePasswordUpdate} className="animate-fadeIn">
-                    <div className="p-8 border-b border-gray-50">
-                       <h2 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-1">Security Protocols</h2>
-                       <p className="text-[11px] font-bold text-gray-400 uppercase">Manage your credentials and system access.</p>
+                    <div className="p-6 border-b border-gray-100 bg-gray-50/50">
+                       <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-1">Security Credentials</h2>
+                       <p className="text-xs text-gray-500">Update your access password and security settings.</p>
                     </div>
-                    <div className="p-8 space-y-6">
+                    <div className="p-6 space-y-5">
                        <div className="max-w-md space-y-4">
                           <div className="space-y-1.5">
-                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">New Password</label>
+                             <label className="text-xs font-semibold text-gray-700">New Password</label>
                              <div className="relative">
-                                <Lock size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" />
-                                <input name="newPassword" type={showPassword ? "text" : "password"} value={formData.newPassword} onChange={handleInputChange} className="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 pl-11 pr-11 text-xs font-black focus:outline-none focus:border-[#FB0500] transition-all" />
-                                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-600 transition-colors">
+                                <Lock size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                                <input name="newPassword" type={showPassword ? "text" : "password"} value={formData.newPassword} onChange={handleInputChange} className="w-full bg-white border border-gray-200 rounded-md py-2.5 pl-10 pr-10 text-xs font-medium focus:ring-2 focus:ring-[#FB0500]/20 focus:border-[#FB0500] outline-none transition-all" />
+                                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
                                    {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
                                 </button>
                              </div>
                           </div>
                           <div className="space-y-1.5">
-                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Confirm Authorization</label>
+                             <label className="text-xs font-semibold text-gray-700">Confirm New Password</label>
                              <div className="relative">
-                                <ShieldCheck size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" />
-                                <input name="confirmPassword" type={showPassword ? "text" : "password"} value={formData.confirmPassword} onChange={handleInputChange} className="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 pl-11 pr-4 text-xs font-black focus:outline-none focus:border-[#FB0500] transition-all" />
+                                <ShieldCheck size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                                <input name="confirmPassword" type={showPassword ? "text" : "password"} value={formData.confirmPassword} onChange={handleInputChange} className="w-full bg-white border border-gray-200 rounded-md py-2.5 pl-10 pr-4 text-xs font-medium focus:ring-2 focus:ring-[#FB0500]/20 focus:border-[#FB0500] outline-none transition-all" />
                              </div>
                           </div>
                        </div>
                     </div>
-                    <div className="p-8 bg-gray-50/50 flex justify-end">
-                       <button disabled={loading} type="submit" className="flex items-center gap-2 bg-[#FB0500] text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-[#d00400] transition-all">
-                          <ZapIcon size={16} /> Update Credentials
+                    <div className="p-4 bg-gray-50/60 border-t border-gray-100 flex justify-end">
+                       <button disabled={loading} type="submit" className="flex items-center gap-2 bg-[#FB0500] text-white px-5 py-2 rounded-md font-bold text-xs hover:bg-red-600 transition-all shadow-xs">
+                          <ZapIcon size={15} /> Reset Password
                        </button>
                     </div>
                   </form>
                 )}
 
                 {activeTab === 'appearance' && (
-                  <div className="animate-fadeIn p-8">
-                    <div className="border-b border-gray-50 pb-8 mb-8">
-                       <h2 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-1">Interface Controls</h2>
-                       <p className="text-[11px] font-bold text-gray-400 uppercase">Customize your portal density and aesthetics.</p>
+                  <div className="animate-fadeIn p-6">
+                    <div className="border-b border-gray-100 pb-4 mb-6">
+                       <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-1">Interface Controls</h2>
+                       <p className="text-xs text-gray-500">Customize your portal layout density and aesthetics.</p>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                       <button className="flex flex-col gap-4 p-6 rounded-2xl border-2 border-[#0078FF] bg-blue-50/50 text-left transition-all">
-                          <div className="w-10 h-10 rounded-xl bg-white border border-blue-100 flex items-center justify-center text-[#0078FF]">
-                             <Monitor size={20} />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                       <button className="flex flex-col gap-3 p-5 rounded-md border-2 border-[#0078FF] bg-blue-50/40 text-left transition-all">
+                          <div className="w-9 h-9 rounded-md bg-white border border-blue-100 flex items-center justify-center text-[#0078FF]">
+                             <Monitor size={18} />
                           </div>
                           <div>
-                             <p className="text-[10px] font-black text-gray-900 uppercase tracking-widest">Industrial Density</p>
-                             <p className="text-[9px] font-bold text-gray-400 uppercase mt-1 leading-relaxed">Maximum information per pixel. Optimized for instructor productivity.</p>
+                             <p className="text-xs font-bold text-gray-900">Modern Compact Layout</p>
+                             <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">Clean flat elements with subtle borders. Optimized for maximum readability.</p>
                           </div>
-                          <div className="mt-auto">
-                             <span className="px-3 py-1 bg-[#0078FF] text-white text-[8px] font-black rounded-lg uppercase tracking-widest">Active</span>
+                          <div className="mt-auto pt-2">
+                             <span className="px-2.5 py-1 bg-[#0078FF] text-white text-[11px] font-semibold rounded-md">Active Theme</span>
                           </div>
                        </button>
-                       <button className="flex flex-col gap-4 p-6 rounded-2xl border border-gray-100 bg-white hover:border-gray-200 text-left transition-all group">
-                          <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-gray-300 group-hover:text-gray-400">
-                             <Monitor size={20} />
+                       <button className="flex flex-col gap-3 p-5 rounded-md border border-gray-200 bg-white hover:border-gray-300 text-left transition-all group">
+                          <div className="w-9 h-9 rounded-md bg-gray-50 flex items-center justify-center text-gray-400 group-hover:text-gray-600">
+                             <Monitor size={18} />
                           </div>
                           <div>
-                             <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Standard Layout</p>
-                             <p className="text-[9px] font-bold text-gray-400 uppercase mt-1 leading-relaxed">Relaxed spacing and larger typography. Optimized for presentation.</p>
+                             <p className="text-xs font-bold text-gray-700">Standard Layout</p>
+                             <p className="text-xs text-gray-400 mt-0.5 leading-relaxed">Relaxed spacing and larger typography for presentation view.</p>
                           </div>
                        </button>
                     </div>

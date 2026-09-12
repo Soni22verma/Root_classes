@@ -75,13 +75,13 @@ const TestimonialsPage = () => {
                     className={`
                       ${isWide ? 'md:col-span-7' : 'md:col-span-5'}
                       ${isDark ? 'bg-[#0a1628]' : 'bg-white'}
-                      rounded-2xl p-6 flex flex-col justify-between border
-                      ${isDark ? 'border-blue-900/30' : 'border-gray-100'}
+                      rounded-md p-6 flex flex-col justify-between border
+                      ${isDark ? 'border-blue-900/30' : 'border-gray-200'}
                       hover:shadow-md transition-shadow
                     `}
                   >
                     {/* Accent top line */}
-                    <div className="w-8 h-1 rounded-full mb-4" style={{ backgroundColor: t.accent }} />
+                    <div className="w-8 h-1 rounded-sm mb-4" style={{ backgroundColor: t.accent }} />
 
                     {/* Large quote */}
                     <div className="text-5xl font-black leading-none mb-3 opacity-40" style={{ color: t.accent }}>"</div>
@@ -100,7 +100,7 @@ const TestimonialsPage = () => {
                         <p className={`font-semibold text-sm truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>{t.name}</p>
                         <p className="text-xs text-gray-400 truncate">{t.achievement}</p>
                       </div>
-                      <span className="flex-shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full text-white" style={{ backgroundColor: t.accent }}>
+                      <span className="flex-shrink-0 text-xs font-semibold px-2.5 py-1 rounded-sm text-white" style={{ backgroundColor: t.accent }}>
                         {t.category}
                       </span>
                     </div>
@@ -115,10 +115,6 @@ const TestimonialsPage = () => {
       {/* Video Stories */}
       <div className="bg-white py-14 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
-          <div className="mb-8">
-            <p className="text-xs font-bold text-[#FB0500] uppercase tracking-widest mb-3">Watch & Learn</p>
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Success Stories in Action</h2>
-          </div>
           <VideoCarousel />
         </div>
       </div>

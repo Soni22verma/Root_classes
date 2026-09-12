@@ -337,62 +337,68 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="h-screen w-full bg-[#f8faff] bg-line-grid flex items-center justify-center p-4 md:p-8 overflow-hidden font-poppins">
-      <div className="w-full max-w-[1100px] h-full max-h-[720px] bg-white rounded-[40px] border border-gray-100 flex overflow-hidden relative">
+    <div className="min-h-screen w-full bg-[#f8faff] bg-line-grid flex items-center justify-center p-4 md:p-8 font-poppins">
+      <div className="w-full max-w-[1050px] bg-white rounded-2xl border border-gray-100 flex overflow-hidden shadow-2xl shadow-blue-900/5">
         
         {/* Left Section */}
-        <div className="w-full md:w-[45%] p-10 md:p-16 flex flex-col justify-between relative z-10 border-r border-gray-50 overflow-y-auto">
+        <div className="w-full md:w-[48%] p-8 md:p-12 flex flex-col justify-between relative z-10 border-r border-gray-50">
           {!showForgotPassword ? (
             <>
               <div>
-                <div className="mb-10">
+                <div className="mb-6 flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <img src="/logo.svg" alt="Roots Classes" className="h-10 w-auto" />
-                    <div className="h-6 w-[1px] bg-gray-200" />
-                    <span className="text-xs font-black text-gray-400 uppercase tracking-widest">Portal</span>
+                    <Link to="/" title="Go to Home">
+                      <img src="/logo.svg" alt="Roots Classes" className="h-9 w-auto hover:opacity-90 transition-all cursor-pointer" />
+                    </Link>
+                    <div className="h-5 w-[1px] bg-gray-200" />
+                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Portal</span>
                   </div>
                 </div>
 
-                <div className="mb-10">
-                  <h1 className="text-3xl font-bold text-gray-900 mb-2 tracking-tight">Login to account</h1>
-                  <p className="text-sm text-gray-400">Please enter your verified credentials.</p>
+                <div className="mb-6">
+                  <h1 className="text-2xl font-black text-gray-900 mb-1 tracking-tight">Login to account</h1>
+                  <p className="text-xs text-gray-400">Please enter your verified credentials.</p>
                 </div>
 
-                <form onSubmit={handleLogin} className="space-y-6">
+                <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-1">
-                    <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-4">Email Address</label>
-                    <input
-                      type="email" required
-                      value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full bg-gray-50 border border-gray-100 rounded-full py-4 px-6 focus:ring-2 focus:ring-[#0078FF]/20 focus:border-[#0078FF] transition-all text-sm outline-none"
-                      placeholder="name@example.com"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-4">Password</label>
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-3">Email Address</label>
                     <div className="relative">
+                      <Mail size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <input
+                        type="email" required
+                        value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })}
+                        className="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 pl-11 pr-4 focus:outline-none focus:border-[#0078FF] transition-all text-xs font-bold"
+                        placeholder="name@example.com"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-3">Password</label>
+                    <div className="relative">
+                      <Lock size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                       <input
                         type={showPassword ? "text" : "password"} required
                         value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })}
-                        className="w-full bg-gray-50 border border-gray-100 rounded-full py-4 px-6 pr-14 focus:ring-2 focus:ring-[#0078FF]/20 focus:border-[#0078FF] transition-all text-sm outline-none"
+                        className="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 pl-11 pr-11 focus:outline-none focus:border-[#0078FF] transition-all text-xs font-bold"
                         placeholder="••••••••"
                       />
                       <button
                         type="button" onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-900 transition-colors"
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-900 transition-colors"
                       >
-                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                       </button>
                     </div>
                   </div>
 
                   {/* Forgot Password Link */}
-                  <div className="text-right">
+                  <div className="text-right pt-1">
                     <button
                       type="button"
                       onClick={() => setShowForgotPassword(true)}
-                      className="text-xs text-gray-900 hover:text-[#FB0500] transition-colors font-medium"
+                      className="text-xs text-gray-500 hover:text-[#0078FF] transition-colors font-bold"
                     >
                       Forgot Password?
                     </button>
@@ -400,25 +406,25 @@ const LoginPage = () => {
 
                   <button
                     type="submit" disabled={loading}
-                    className="w-full bg-[#0a1628] text-white py-4 rounded-full font-bold hover:bg-[#FB0500] transition-all duration-300 mt-4 shadow-sm"
+                    className="w-full bg-[#0a1628] hover:bg-[#0078FF] text-white py-3.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all duration-300 shadow-md shadow-blue-900/10 disabled:opacity-50 mt-2"
                   >
                     {loading ? 'Authenticating...' : 'Sign In Now'}
                   </button>
                 </form>
 
-                <div className="mt-8 grid grid-cols-2 gap-4">
-                  <button className="flex items-center justify-center gap-2 py-3 border border-gray-100 rounded-full text-xs font-bold text-gray-500 hover:bg-gray-50 transition-all">
-                    <Apple size={16} /> Apple
+                {/* Social Login Buttons */}
+                <div className="mt-5 grid grid-cols-2 gap-3">
+                  <button type="button" className="flex items-center justify-center gap-2 py-2.5 border border-gray-100 rounded-xl text-xs font-bold text-gray-600 hover:bg-gray-50 transition-all">
+                    <Apple size={15} /> Apple
                   </button>
-                  <button className="flex items-center justify-center gap-2 py-3 border border-gray-100 rounded-full text-xs font-bold text-gray-500 hover:bg-gray-50 transition-all">
-                    <Globe size={16} /> Google
+                  <button type="button" className="flex items-center justify-center gap-2 py-2.5 border border-gray-100 rounded-xl text-xs font-bold text-gray-600 hover:bg-gray-50 transition-all">
+                    <Globe size={15} /> Google
                   </button>
                 </div>
               </div>
 
-              <div className="flex justify-between items-center text-[10px] font-black text-gray-400 uppercase tracking-widest mt-10">
-                <Link to="/register" className="hover:text-gray-900 transition-colors">No account? <span className="text-[#0078FF] border-b border-[#0078FF]">Register</span></Link>
-                <Link to="/" className="hover:text-gray-900 transition-colors">Roots Classes © 2026</Link>
+              <div className="flex justify-center items-center text-[10px] font-black text-gray-400 uppercase tracking-widest mt-6 pt-4 border-t border-gray-100">
+                <Link to="/register" className="hover:text-[#0078FF] transition-colors">No account? <span className="text-[#0078FF] border-b border-[#0078FF]">Register</span></Link>
               </div>
             </>
           ) : (
@@ -427,29 +433,30 @@ const LoginPage = () => {
         </div>
 
         {/* Right Side: Visual Section */}
-        <div className="hidden md:flex flex-1 m-4 rounded-[32px] relative overflow-hidden group">
+        <div className="hidden md:flex flex-1 m-4 rounded-xl relative overflow-hidden group">
           <img
             src="/assets/student_study.png"
             alt="Students"
             className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
           />
-          <div className="absolute inset-0 bg-[#0a1628]/10" />
+          <div className="absolute inset-0 bg-[#0a1628]/15" />
 
-          <div className="absolute top-10 left-10 bg-[#ffcf5c] p-4 rounded-2xl border border-yellow-400/50 max-w-[200px]">
-            <p className="text-[10px] font-black uppercase tracking-widest text-yellow-900 mb-1">Live Mentorship</p>
-            <p className="text-sm font-bold text-gray-900">Starts in 15 mins</p>
+          <div className="absolute top-8 left-8 bg-[#ffcf5c] p-3.5 rounded-xl border border-yellow-400/50 max-w-[190px] shadow-lg">
+            <p className="text-[9px] font-black uppercase tracking-widest text-yellow-950 mb-0.5">Live Mentorship</p>
+            <p className="text-xs font-bold text-gray-900">Starts in 15 mins</p>
           </div>
 
-          <div className="absolute bottom-10 left-10 right-10 bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-[24px] text-white">
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-xs font-bold uppercase tracking-widest opacity-80">Admission Progress</p>
-              <span className="text-xs font-bold">Step 2/3</span>
+          <div className="absolute bottom-8 left-8 right-8 bg-white/10 backdrop-blur-md border border-white/20 p-5 rounded-xl text-white shadow-xl">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[10px] font-bold uppercase tracking-widest opacity-90">Admission Progress</p>
+              <span className="text-[10px] font-bold bg-white/20 px-2 py-0.5 rounded-full">Step 2/3</span>
             </div>
             <div className="h-1.5 w-full bg-white/20 rounded-full overflow-hidden">
               <div className="h-full bg-[#ffcf5c] w-3/4 rounded-full" />
             </div>
           </div>
         </div>
+
       </div>
     </div>
   );

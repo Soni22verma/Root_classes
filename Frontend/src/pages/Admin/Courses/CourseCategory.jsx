@@ -185,17 +185,13 @@ const CourseCategory = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-4 sm:py-6 md:py-8 px-3 sm:px-4 md:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header Section - Responsive */}
-        <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+    <div className="min-h-screen bg-[#F8FAFC] font-sans pb-12">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200/80 sticky top-0 z-20 shadow-xs">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-5 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-              Course Categories
-            </h1>
-            <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-gray-600">
-              Manage and organize your course categories efficiently
-            </p>
+            <h1 className="text-xl font-bold text-gray-900 tracking-tight">Course Categories</h1>
+            <p className="text-xs text-gray-500 mt-1">Manage and organize your course categories efficiently.</p>
           </div>
           <button
             onClick={() => {
@@ -205,17 +201,17 @@ const CourseCategory = () => {
               setIsModalOpen(true);
               setError('');
             }}
-            className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-2 px-3 sm:py-2.5 sm:px-5 rounded-lg shadow-md transition duration-200 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-sm sm:text-base"
+            className="bg-gray-900 hover:bg-[#0078FF] text-white font-semibold py-2 px-4 rounded-md shadow-xs transition-all text-xs flex items-center justify-center gap-1.5"
           >
-            <span className="flex items-center justify-center gap-1 sm:gap-2">
-              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              <span className="hidden xs:inline">Add New Category</span>
-              <span className="xs:hidden">Add</span>
-            </span>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            <span>Add Category</span>
           </button>
         </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
 
         {/* Success Message */}
         {successMessage && (

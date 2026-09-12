@@ -72,14 +72,14 @@ const SliderPage = () => {
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}
         >
-          <div className="relative aspect-[2/1] md:aspect-[3.5/1] lg:aspect-[4.5/1] w-full overflow-hidden border border-gray-100 bg-slate-50 shadow-lg">
+          <div className="relative w-full overflow-hidden border border-gray-100 bg-slate-50 shadow-lg max-h-[280px] md:max-h-[320px] lg:max-h-[380px]">
             {slides.map((slide, idx) => (
               <div
                 key={slide._id || idx}
-                className={`absolute inset-0 flex h-full w-full items-center justify-center transition-all duration-700 ease-in-out transform ${currentSlide === idx ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}`}
+                className={`${currentSlide === idx ? 'relative' : 'absolute inset-0'} flex h-full w-full items-center justify-center transition-all duration-700 ease-in-out transform ${currentSlide === idx ? 'opacity-100 scale-100' : 'opacity-0 scale-105 pointer-events-none'}`}
               >
                 {/* Preserve the full banner image without cropping or stretching. */}
-                <picture className="block h-full w-full">
+                <picture className="block w-full">
                   <source
                     media="(max-width: 639px)"
                     srcSet={slide.mobileImage || slide.tabletImage || slide.desktopImage || slide.image}
@@ -91,7 +91,7 @@ const SliderPage = () => {
                   <img
                     src={slide.desktopImage || slide.image}
                     alt={slide.title || `Slide ${idx + 1}`}
-                    className="h-full w-full object-contain object-center"
+                    className="w-full h-auto object-contain"
                   />
                 </picture>
 

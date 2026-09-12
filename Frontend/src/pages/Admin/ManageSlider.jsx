@@ -311,31 +311,27 @@ const ManageSlider = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-[#F8FAFC] font-sans pb-12">
       <Toaster position="top-right" />
 
-      {/* Header - Responsive */}
-      <div className="bg-white shadow-sm sticky top-0 z-10">
-        <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Manage Sliders</h1>
-              <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1">Create, edit, and manage homepage sliders</p>
-            </div>
-            <button
-              onClick={handleCreateClick}
-              className="flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:shadow-lg transition-all duration-300 text-sm sm:text-base"
-            >
-              <Plus size={18} />
-              <span className="hidden xs:inline">Add New Slider</span>
-              <span className="xs:hidden">Add</span>
-            </button>
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200/80 sticky top-0 z-20 shadow-xs">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-5 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+          <div>
+            <h1 className="text-xl font-bold text-gray-900 tracking-tight">Manage Sliders</h1>
+            <p className="text-xs text-gray-500 mt-1">Create, edit, and manage homepage sliders.</p>
           </div>
+          <button
+            onClick={handleCreateClick}
+            className="flex items-center justify-center gap-1.5 px-4 py-2 bg-gray-900 hover:bg-[#0078FF] text-white rounded-md transition-all text-xs font-semibold shadow-xs"
+          >
+            <Plus size={16} />
+            <span>Add Slider</span>
+          </button>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
         {/* Mobile Card View - For screens below 768px */}
         <div className="block md:hidden space-y-3 sm:space-y-4">
           {sliders.length === 0 ? (

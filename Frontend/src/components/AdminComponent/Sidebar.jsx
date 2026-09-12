@@ -144,17 +144,17 @@ const AdminSidebar = ({ isMobileOpen, setIsMobileOpen }) => {
             <div key={idx}>
               {item.submenu ? (
                 <div>
-                   <button onClick={() => !isCollapsed && toggleSubmenu(item.name)} className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${isActive(item.path) ? 'bg-gray-50 text-gray-900' : 'text-gray-500 hover:bg-gray-50'}`}>
+                   <button onClick={() => !isCollapsed && toggleSubmenu(item.name)} className={`w-full flex items-center justify-between p-2.5 rounded-md transition-all ${isActive(item.path) ? 'bg-gray-100 text-gray-900 font-semibold' : 'text-gray-600 hover:bg-gray-50'}`}>
                       <div className="flex items-center gap-3">
                         <item.icon size={18} className={isActive(item.path) ? 'text-[#0078FF]' : ''} />
-                        {!isCollapsed && <span className="text-[13px] font-bold tracking-tight">{item.name}</span>}
+                        {!isCollapsed && <span className="text-xs font-semibold tracking-tight">{item.name}</span>}
                       </div>
                       {!isCollapsed && <ChevronRight size={14} className={`transition-transform ${openSubmenus[item.name] ? 'rotate-90' : ''}`} />}
                    </button>
                    {!isCollapsed && openSubmenus[item.name] && (
-                     <div className="mt-1 ml-4 border-l border-gray-100 pl-4 space-y-1 animate-fadeIn">
+                     <div className="mt-1 ml-4 border-l border-gray-100 pl-3 space-y-1 animate-fadeIn">
                         {item.submenu.map((sub, sIdx) => (
-                          <Link key={sIdx} to={sub.path} onClick={() => setIsMobileOpen(false)} className={`flex items-center gap-3 p-2.5 rounded-lg text-xs font-bold transition-all ${location.pathname === sub.path ? 'text-[#0078FF] bg-blue-50/50' : 'text-gray-400 hover:text-gray-900'}`}>
+                          <Link key={sIdx} to={sub.path} onClick={() => setIsMobileOpen(false)} className={`flex items-center gap-2.5 p-2 rounded-md text-xs font-semibold transition-all ${location.pathname === sub.path ? 'text-[#0078FF] bg-blue-50/60 font-bold' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'}`}>
                              <sub.icon size={14} />
                              {sub.name}
                           </Link>
@@ -163,9 +163,9 @@ const AdminSidebar = ({ isMobileOpen, setIsMobileOpen }) => {
                    )}
                 </div>
               ) : (
-                <Link to={item.path} onClick={() => setIsMobileOpen(false)} className={`flex items-center gap-3 p-3 rounded-xl transition-all ${isActive(item.path) ? 'bg-[#0078FF]/5 text-[#0078FF]' : 'text-gray-500 hover:bg-gray-50'}`}>
+                <Link to={item.path} onClick={() => setIsMobileOpen(false)} className={`flex items-center gap-3 p-2.5 rounded-md transition-all ${isActive(item.path) ? 'bg-blue-50/70 text-[#0078FF] font-bold' : 'text-gray-600 hover:bg-gray-50'}`}>
                    <item.icon size={18} />
-                   {!isCollapsed && <span className="text-[13px] font-bold tracking-tight">{item.name}</span>}
+                   {!isCollapsed && <span className="text-xs font-semibold tracking-tight">{item.name}</span>}
                 </Link>
               )}
             </div>
@@ -173,21 +173,21 @@ const AdminSidebar = ({ isMobileOpen, setIsMobileOpen }) => {
         </nav>
 
         {/* User Profile */}
-        <div className="p-4 border-t border-gray-50">
-           <div className={`flex items-center gap-3 p-2 rounded-2xl bg-gray-50/50 border border-gray-100 ${isCollapsed ? 'justify-center' : ''}`}>
-              <div className="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center flex-shrink-0 overflow-hidden shadow-sm">
-                 {userData.avatar ? <img src={userData.avatar} alt="" className="w-full h-full object-cover" /> : <UserCircle size={20} className="text-gray-300" />}
+        <div className="p-3 border-t border-gray-100">
+           <div className={`flex items-center gap-3 p-2 rounded-md bg-gray-50/80 border border-gray-200/60 ${isCollapsed ? 'justify-center' : ''}`}>
+              <div className="w-9 h-9 rounded-md bg-white border border-gray-200 flex items-center justify-center flex-shrink-0 overflow-hidden shadow-xs">
+                 {userData.avatar ? <img src={userData.avatar} alt="" className="w-full h-full object-cover" /> : <UserCircle size={20} className="text-gray-400" />}
               </div>
               {!isCollapsed && (
                 <div className="min-w-0 animate-fadeIn">
-                   <p className="text-xs font-black text-gray-900 truncate uppercase">{userData.name}</p>
-                   <p className="text-[9px] font-bold text-gray-400 truncate">{userData.email}</p>
+                   <p className="text-xs font-bold text-gray-900 truncate uppercase">{userData.name}</p>
+                   <p className="text-[10px] text-gray-400 truncate">{userData.email}</p>
                 </div>
               )}
            </div>
-           <button onClick={handleLogout} className={`w-full flex items-center gap-3 p-3 mt-2 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all ${isCollapsed ? 'justify-center' : ''}`}>
-              <LogOut size={18} />
-              {!isCollapsed && <span className="text-xs font-bold uppercase tracking-widest">Logout</span>}
+           <button onClick={handleLogout} className={`w-full flex items-center gap-2.5 p-2 mt-2 rounded-md text-gray-500 hover:text-red-600 hover:bg-red-50 transition-all ${isCollapsed ? 'justify-center' : ''}`}>
+              <LogOut size={16} />
+              {!isCollapsed && <span className="text-xs font-semibold uppercase tracking-wider">Logout</span>}
            </button>
         </div>
       </aside>

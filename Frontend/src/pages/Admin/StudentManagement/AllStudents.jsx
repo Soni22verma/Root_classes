@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Plus } from 'lucide-react';
+import { Plus, Search, Eye, User } from 'lucide-react';
 import api from '../../../services/adminendpoint';
 import Loader from '../../../components/AdminComponent/Loader';
 
@@ -17,7 +17,7 @@ const AllStudent = () => {
     try {
       setLoading(true);
       const response = await axios.post(api.admin.getStudents);
-      console.log(response, "All the student details fetched successfully");
+      console.log(response, "All student details fetched successfully");
       
       if (response.data && response.data.data) {
         setStudents(response.data.data);
@@ -50,20 +50,20 @@ const AllStudent = () => {
 
   const getClassColor = (className) => {
     const colors = {
-      "12th": "bg-emerald-100 text-emerald-800",
-      "11th": "bg-blue-100 text-blue-800",
-      "10th": "bg-amber-100 text-amber-800",
-      "9th": "bg-purple-100 text-purple-800",
+      "12th": "bg-emerald-50 text-emerald-700 border border-emerald-200/60",
+      "11th": "bg-blue-50 text-blue-700 border border-blue-200/60",
+      "10th": "bg-amber-50 text-amber-700 border border-amber-200/60",
+      "9th": "bg-purple-50 text-purple-700 border border-purple-200/60",
     };
-    return colors[className] || "bg-gray-100 text-gray-800";
+    return colors[className] || "bg-gray-50 text-gray-700 border border-gray-200/60";
   };
 
   const getAvatar = (student) => {
     if (student.profileImage) {
       return student.profileImage;
     }
-    const name = student.fullName;
-    const colors = ['FF6B6B', '4ECDC4', '45B7D1', '96CEB4', 'FFEAA7', 'DDA0DD', '98D8C8', 'F7B05E'];
+    const name = student.fullName || 'Student';
+    const colors = ['0078FF', 'FB0500', '10B981', '8B5CF6', 'F59E0B', 'EC4899'];
     const randomColor = colors[name?.length % colors.length];
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=${randomColor}&color=fff&size=128&bold=true&length=2`;
   };
@@ -90,34 +90,32 @@ const AllStudent = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8faff] bg-line-grid font-poppins">
-      {/* Header Section - Pro & Minimal */}
-      <div className="bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-20">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-8">
-           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 md:gap-8">
+    <div className="min-h-screen bg-[#F8FAFC] font-sans pb-12">
+      {/* Header Section */}
+      <div className="bg-white border-b border-gray-200/80 sticky top-0 z-20 shadow-xs">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-5">
+           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div>
-                 <div className="flex items-center gap-2 mb-2">
-                    <div className="w-2 h-2 rounded-full bg-[#FB0500]" />
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Student Directory</p>
+                 <div className="flex items-center gap-2 mb-1">
+                    <span className="w-2 h-2 rounded-full bg-[#FB0500]" />
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Student Directory</p>
                  </div>
-                 <h1 className="text-2xl font-black text-gray-900 tracking-tight leading-none">
+                 <h1 className="text-xl font-bold text-gray-900 tracking-tight">
                     Roster Management
                  </h1>
-                 <p className="text-[13px] font-bold text-gray-400 uppercase tracking-tight mt-2">Oversee and monitor all registered students across sectors.</p>
+                 <p className="text-xs text-gray-500 mt-0.5">Oversee and monitor all registered students across sectors.</p>
               </div>
 
-              <div className="flex items-center gap-4 w-full md:w-auto">
+              <div className="flex items-center gap-3 w-full md:w-auto">
                  <div className="relative flex-1 md:w-80">
                     <input
                       type="text"
                       placeholder="Filter by name, email or class..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-12 pr-6 py-4 bg-white border border-gray-100 rounded-2xl text-[13px] font-bold text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#0078FF]/20 focus:border-[#0078FF] transition-all shadow-xl shadow-blue-900/5 placeholder:text-gray-300"
+                      className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-md text-xs font-medium text-gray-700 focus:outline-none focus:border-[#0078FF] focus:ring-1 focus:ring-[#0078FF] transition-all placeholder:text-gray-400"
                     />
-                    <svg className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                  </div>
               </div>
            </div>
@@ -125,60 +123,58 @@ const AllStudent = () => {
       </div>
 
       {/* Students Content Area */}
-      <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-12">
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
         {filteredStudents.length === 0 ? (
-          <div className="bg-white rounded-[24px] md:rounded-[40px] border border-gray-100 p-8 md:p-24 text-center">
-            <div className="w-20 h-20 bg-gray-50 rounded-[32px] flex items-center justify-center mx-auto mb-8 text-gray-300">
-               <svg className="h-10 w-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-               </svg>
+          <div className="bg-white rounded-md border border-gray-200 p-12 text-center shadow-xs">
+            <div className="w-14 h-14 bg-gray-50 rounded-md flex items-center justify-center mx-auto mb-4 border border-gray-200/60 text-gray-400">
+               <User className="h-7 w-7" />
             </div>
-            <h2 className="text-xl font-black text-gray-900 mb-2">No students found</h2>
-            <p className="text-[13px] font-bold text-gray-400 mb-8 max-w-sm mx-auto">Try adjusting your filters or sectors to find the student records.</p>
+            <h2 className="text-base font-bold text-gray-900 mb-1">No students found</h2>
+            <p className="text-xs text-gray-500 max-w-sm mx-auto">Try adjusting your filters or search terms to find student records.</p>
           </div>
         ) : (
-          <div className="space-y-8">
+          <div className="space-y-6">
             {/* Mobile Card View (Small Screens) */}
-            <div className="block md:hidden space-y-4">
+            <div className="block md:hidden space-y-3">
               {currentStudents.map((student, idx) => (
-                <div key={student._id} className="bg-white rounded-[24px] border border-gray-100 p-5 shadow-lg shadow-blue-900/5 relative">
-                  <span className="absolute top-5 right-5 text-[10px] font-black text-gray-300">#{(indexOfFirstItem + idx + 1).toString().padStart(2, '0')}</span>
-                  <div className="flex items-center gap-4 mb-4">
+                <div key={student._id} className="bg-white rounded-md border border-gray-200 p-4 shadow-xs relative">
+                  <span className="absolute top-4 right-4 text-xs font-mono text-gray-400">#{(indexOfFirstItem + idx + 1).toString().padStart(2, '0')}</span>
+                  <div className="flex items-center gap-3 mb-3">
                      <div className="relative">
                         <img
-                           className="h-14 w-14 rounded-2xl object-cover ring-2 ring-gray-50 shadow-sm"
+                           className="h-11 w-11 rounded-full object-cover border border-gray-200"
                            src={getAvatar(student)}
                            alt={student.fullName}
                         />
-                        <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-green-500 border-2 border-white" />
+                        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white" />
                      </div>
-                     <div className="pr-8">
-                        <h3 className="text-[15px] font-black text-gray-900 tracking-tight leading-none mb-1.5">{student.fullName}</h3>
-                        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-tight line-clamp-1">{student.email}</p>
+                     <div className="pr-6">
+                        <h3 className="text-sm font-bold text-gray-900 leading-tight">{student.fullName}</h3>
+                        <p className="text-xs text-gray-500 truncate">{student.email}</p>
                      </div>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-3 mb-4">
-                     <div className="bg-gray-50 p-3 rounded-xl">
-                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Sector</p>
-                        <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest ${getClassColor(student.currentClass)}`}>
-                           {student.currentClass}
+                  <div className="grid grid-cols-2 gap-2 mb-3">
+                     <div className="bg-gray-50 p-2.5 rounded-md border border-gray-100">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Sector</p>
+                        <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${getClassColor(student.currentClass)}`}>
+                           {student.currentClass || 'N/A'}
                         </span>
-                     </div>
-                     <div className="bg-gray-50 p-3 rounded-xl">
-                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Interest</p>
-                        <span className="text-[11px] font-black text-[#0078FF] uppercase tracking-tight truncate block">{student.interestedCourse || 'General'}</span>
+                      </div>
+                     <div className="bg-gray-50 p-2.5 rounded-md border border-gray-100">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Interest</p>
+                        <span className="text-xs font-semibold text-[#0078FF] truncate block">{student.interestedCourse || 'General'}</span>
                      </div>
                   </div>
 
-                  <div className="flex items-center justify-between border-t border-gray-50 pt-4">
-                     <div className="flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                        <span className="text-[10px] font-black text-gray-900 uppercase tracking-widest">Active</span>
+                  <div className="flex items-center justify-between border-t border-gray-100 pt-3">
+                     <div className="flex items-center gap-1.5">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                        <span className="text-xs font-medium text-gray-600">Active</span>
                      </div>
                      <button 
                        onClick={() => handleViewDetails(student)}
-                       className="px-4 py-2 bg-gray-50 hover:bg-blue-50 text-[#0078FF] rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors"
+                       className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-[#0078FF] rounded-md text-xs font-semibold transition-colors"
                      >
                         View Profile
                      </button>
@@ -187,69 +183,61 @@ const AllStudent = () => {
               ))}
             </div>
 
-            {/* High-End Pro Data Grid (Tablet/Desktop) */}
-            <div className="hidden md:block bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-2xl shadow-blue-900/5">
+            {/* Tablet / Desktop Data Table */}
+            <div className="hidden md:block bg-white rounded-md border border-gray-200/80 overflow-hidden shadow-xs">
                <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                      <thead>
-                        <tr className="border-b border-gray-50">
-                           <th className="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">S.No</th>
-                           <th className="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Student Identity</th>
-                           <th className="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Sector / Class</th>
-                           <th className="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Gender</th>
-                           <th className="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Interest</th>
-                           <th className="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Status</th>
-                          
+                        <tr className="bg-gray-50/80 border-b border-gray-200/80 text-gray-500 font-semibold text-xs">
+                           <th className="px-6 py-3.5 font-semibold text-[11px] uppercase tracking-wider">S.No</th>
+                           <th className="px-6 py-3.5 font-semibold text-[11px] uppercase tracking-wider">Student Identity</th>
+                           <th className="px-6 py-3.5 font-semibold text-[11px] uppercase tracking-wider">Sector / Class</th>
+                           <th className="px-6 py-3.5 font-semibold text-[11px] uppercase tracking-wider">Gender</th>
+                           <th className="px-6 py-3.5 font-semibold text-[11px] uppercase tracking-wider">Interest</th>
+                           <th className="px-6 py-3.5 font-semibold text-[11px] uppercase tracking-wider text-right">Actions</th>
                         </tr>
                      </thead>
-                     <tbody className="divide-y divide-gray-50">
+                     <tbody className="divide-y divide-gray-100 text-sm">
                         {currentStudents.map((student, idx) => (
-                           <tr key={student._id} className="group hover:bg-gray-50/50 transition-colors">
-                              <td className="px-8 py-6">
-                                 <span className="text-[11px] font-black text-gray-300">{(indexOfFirstItem + idx + 1).toString().padStart(2, '0')}</span>
+                           <tr key={student._id} className="hover:bg-gray-50/60 transition-colors">
+                              <td className="px-6 py-4">
+                                 <span className="text-xs font-mono text-gray-400">{(indexOfFirstItem + idx + 1).toString().padStart(2, '0')}</span>
                               </td>
-                              <td className="px-8 py-6">
-                                 <div className="flex items-center gap-4">
+                              <td className="px-6 py-4">
+                                 <div className="flex items-center gap-3">
                                     <div className="relative">
                                        <img
-                                          className="h-11 w-11 rounded-2xl object-cover ring-2 ring-white shadow-sm"
+                                          className="h-9 w-9 rounded-full object-cover border border-gray-200"
                                           src={getAvatar(student)}
                                           alt={student.fullName}
                                        />
-                                       <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-green-500 border-2 border-white" />
+                                       <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white" />
                                     </div>
                                     <div>
-                                       <h3 className="text-[14px] font-black text-gray-900 tracking-tight leading-none mb-1.5">{student.fullName}</h3>
-                                       <p className="text-[11px] font-bold text-gray-400 uppercase tracking-tight">{student.email}</p>
+                                       <h3 className="text-sm font-semibold text-gray-900 leading-none mb-1">{student.fullName}</h3>
+                                       <p className="text-xs text-gray-500">{student.email}</p>
                                     </div>
                                  </div>
                               </td>
-                              <td className="px-8 py-6">
-                                 <span className={`inline-flex px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${getClassColor(student.currentClass)}`}>
-                                    {student.currentClass}
+                              <td className="px-6 py-4">
+                                 <span className={`inline-flex px-2.5 py-0.5 rounded-md text-xs font-semibold ${getClassColor(student.currentClass)}`}>
+                                    {student.currentClass || 'N/A'}
                                  </span>
                               </td>
-                              <td className="px-8 py-6">
-                                 <span className="text-[11px] font-black text-gray-500 uppercase tracking-tight">{student.gender || 'N/A'}</span>
+                              <td className="px-6 py-4 text-xs font-medium text-gray-600 capitalize">
+                                 {student.gender || 'N/A'}
                               </td>
-                              <td className="px-8 py-6">
-                                 <span className="text-[11px] font-black text-[#0078FF] uppercase tracking-tight">{student.interestedCourse || 'General'}</span>
+                              <td className="px-6 py-4 text-xs font-semibold text-[#0078FF]">
+                                 {student.interestedCourse || 'General'}
                               </td>
-                               <td className="px-8 py-6">
-                                  <div className="flex items-center justify-between gap-2">
-                                     <div className="flex items-center gap-2">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                                        <span className="text-[10px] font-black text-gray-900 uppercase tracking-widest">Active</span>
-                                     </div>
-                                     <button 
-                                       onClick={() => handleViewDetails(student)}
-                                       className="px-4 py-2 bg-gray-50 hover:bg-blue-50 text-[#0078FF] rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors"
-                                     >
-                                        View
-                                     </button>
-                                  </div>
-                               </td>
-                             
+                              <td className="px-6 py-4 text-right">
+                                 <button 
+                                   onClick={() => handleViewDetails(student)}
+                                   className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 hover:bg-blue-50 text-[#0078FF] border border-gray-200/80 hover:border-blue-200 rounded-md text-xs font-semibold transition-colors"
+                                 >
+                                    <Eye size={13} /> View
+                                 </button>
+                              </td>
                            </tr>
                         ))}
                      </tbody>
@@ -257,26 +245,26 @@ const AllStudent = () => {
                </div>
             </div>
 
-            {/* Pagination - Bespoke LMS Style */}
+            {/* Pagination */}
             {filteredStudents.length > itemsPerPage && (
-               <div className="flex items-center justify-between px-4">
-                  <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">
+               <div className="flex items-center justify-between px-2 pt-2">
+                  <p className="text-xs text-gray-500 font-medium">
                      Showing {indexOfFirstItem + 1}—{Math.min(indexOfLastItem, filteredStudents.length)} of {filteredStudents.length} Students
                   </p>
                   <div className="flex gap-2">
                      <button 
                         onClick={() => paginate(currentPage - 1)}
                         disabled={currentPage === 1}
-                        className="p-3 rounded-xl bg-white border border-gray-100 text-gray-400 hover:text-[#0078FF] disabled:opacity-30 transition-all shadow-sm"
+                        className="px-3 py-1.5 rounded-md bg-white border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-40 transition-all shadow-xs"
                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
+                        Previous
                      </button>
                      <button 
                         onClick={() => paginate(currentPage + 1)}
                         disabled={currentPage === totalPages}
-                        className="p-3 rounded-xl bg-white border border-gray-100 text-gray-400 hover:text-[#0078FF] disabled:opacity-30 transition-all shadow-sm"
+                        className="px-3 py-1.5 rounded-md bg-white border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-40 transition-all shadow-xs"
                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
+                        Next
                      </button>
                   </div>
                </div>
@@ -285,68 +273,70 @@ const AllStudent = () => {
         )}
       </div>
 
-      {/* Modal for Student Details - High End */}
+      {/* Modal for Student Details */}
       {showModal && selectedStudent && (
-        <div className="fixed inset-0 bg-[#0a1628]/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 sm:p-6 animate-fadeIn" onClick={closeModal}>
-          <div className="bg-white rounded-[24px] md:rounded-[40px] max-w-2xl w-full overflow-hidden shadow-2xl animate-slideUp max-h-[95vh] overflow-y-auto custom-scrollbar" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4" onClick={closeModal}>
+          <div className="bg-white rounded-lg max-w-xl w-full border border-gray-200 shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150" onClick={(e) => e.stopPropagation()}>
             {/* Modal Header */}
-            <div className="relative p-6 md:p-10 border-b border-gray-50">
-               <div className="flex flex-col sm:flex-row sm:items-center gap-6 md:gap-8">
+            <div className="relative p-6 border-b border-gray-100 bg-gray-50/50">
+               <div className="flex items-center gap-4">
                   <img 
                     src={getAvatar(selectedStudent)} 
                     alt={selectedStudent.fullName}
-                    className="w-20 h-20 md:w-24 md:h-24 rounded-2xl md:rounded-[32px] object-cover ring-4 ring-gray-50 shadow-xl"
+                    className="w-14 h-14 rounded-full object-cover border-2 border-white shadow-xs"
                   />
-                  <div className="pr-8 sm:pr-0">
-                     <div className="flex items-center gap-2 mb-2">
-                        <div className="w-2 h-2 rounded-full bg-green-500" />
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Profile Overview</p>
+                  <div>
+                     <div className="flex items-center gap-2 mb-0.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Student Profile</span>
                      </div>
-                     <h2 className="text-xl md:text-2xl font-black text-gray-900 tracking-tight leading-none mb-2">{selectedStudent.fullName}</h2>
-                     <p className="text-[11px] font-black text-[#0078FF] uppercase tracking-widest">{selectedStudent.currentClass} Sector</p>
+                     <h2 className="text-lg font-bold text-gray-900 leading-tight">{selectedStudent.fullName}</h2>
+                     <p className="text-xs font-semibold text-[#0078FF]">{selectedStudent.currentClass || 'General'} Sector</p>
                   </div>
                </div>
-               <button onClick={closeModal} className="absolute top-6 right-6 md:top-8 md:right-8 text-gray-300 hover:text-[#FB0500] transition-colors bg-gray-50 rounded-full p-2"><Plus size={20} className="rotate-45" /></button>
+               <button onClick={closeModal} className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 transition-colors p-1.5 rounded-md hover:bg-gray-100">
+                  <Plus size={18} className="rotate-45" />
+               </button>
             </div>
 
             {/* Modal Content */}
-            <div className="p-6 md:p-10 space-y-8 md:space-y-10">
-               <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 md:gap-10">
+            <div className="p-6 space-y-6 text-sm">
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div>
-                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Contact Intelligence</p>
-                     <div className="space-y-4">
-                        <div className="flex items-center gap-3">
-                           <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center text-gray-400"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg></div>
-                           <p className="text-[13px] font-bold text-gray-700">{selectedStudent.email}</p>
+                     <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Contact Information</p>
+                     <div className="space-y-3">
+                        <div>
+                           <p className="text-[11px] font-medium text-gray-400">Email Address</p>
+                           <p className="font-semibold text-gray-800 break-all">{selectedStudent.email}</p>
                         </div>
-                        <div className="flex items-center gap-3">
-                           <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center text-gray-400"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg></div>
-                           <p className="text-[13px] font-bold text-gray-700">{selectedStudent.phone || 'No Registry'}</p>
+                        <div>
+                           <p className="text-[11px] font-medium text-gray-400">Phone Number</p>
+                           <p className="font-semibold text-gray-800">{selectedStudent.phone || 'N/A'}</p>
                         </div>
                      </div>
                   </div>
                   <div>
-                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Academic Status</p>
-                     <div className="space-y-4">
-                        <div className="flex items-center gap-3">
-                           <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center text-gray-400"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" /></svg></div>
-                           <p className="text-[13px] font-bold text-gray-700 capitalize">{selectedStudent.interestedCourse || 'General Curriculum'}</p>
+                     <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Academic Details</p>
+                     <div className="space-y-3">
+                        <div>
+                           <p className="text-[11px] font-medium text-gray-400">Interested Course</p>
+                           <p className="font-semibold text-gray-800">{selectedStudent.interestedCourse || 'General Curriculum'}</p>
                         </div>
-                        <div className="flex items-center gap-3">
-                           <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center text-gray-400"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg></div>
-                           <p className="text-[13px] font-bold text-gray-700">{selectedStudent.dateofBirth ? new Date(selectedStudent.dateofBirth).toLocaleDateString() : 'N/A'}</p>
+                        <div>
+                           <p className="text-[11px] font-medium text-gray-400">Date of Birth</p>
+                           <p className="font-semibold text-gray-800">{selectedStudent.dateofBirth ? new Date(selectedStudent.dateofBirth).toLocaleDateString() : 'N/A'}</p>
                         </div>
                      </div>
                   </div>
                </div>
             </div>
 
-            <div className="p-8 bg-gray-50/50 flex justify-end">
+            <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end">
               <button
                 onClick={closeModal}
-                className="px-10 py-4 bg-[#0a1628] text-white rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-[#FB0500] transition-all shadow-lg shadow-gray-200"
+                className="px-5 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-md font-semibold text-xs uppercase tracking-wider transition-all"
               >
-                Close Profile
+                Close
               </button>
             </div>
           </div>

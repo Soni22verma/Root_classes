@@ -229,32 +229,44 @@ const ScholarshipResult = () => {
     }
   };
 
-  // Status badge (unchanged, but add email hint)
+  // Status badge
   const getStatusBadge = (result) => {
     if (result.status === 'approved') {
       return (
-        <div>
-          <span className="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">✅ Approved</span>
-          {result.validUntil && <p className="text-xs text-gray-500 mt-1">Valid until: {new Date(result.validUntil).toLocaleDateString()}</p>}
-          <p className="text-xs text-blue-500 mt-0.5">📧 Email sent</p>
+        <div className="space-y-0.5">
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Approved
+          </span>
+          {result.validUntil && <p className="text-[11px] text-gray-500 font-medium">Valid: {new Date(result.validUntil).toLocaleDateString()}</p>}
+          <p className="text-[11px] text-blue-600 font-medium">📧 Email sent</p>
         </div>
       );
     }
     if (result.status === 'rejected') {
       return (
-        <div>
-          <span className="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">❌ Rejected</span>
-          <p className="text-xs text-blue-500 mt-0.5">📧 Email sent</p>
+        <div className="space-y-0.5">
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-md bg-rose-50 text-rose-700 border border-rose-200/60">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span> Rejected
+          </span>
+          <p className="text-[11px] text-blue-600 font-medium">📧 Email sent</p>
         </div>
       );
     }
     if (result.status === 'pending' && result.isEligible) {
-      return <span className="px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">⏳ Pending Approval</span>;
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-md bg-amber-50 text-amber-700 border border-amber-200/60">
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span> Pending Approval
+        </span>
+      );
     }
-    return <span className="px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Not Eligible</span>;
+    return (
+      <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md bg-gray-100 text-gray-600 border border-gray-200/60">
+        Not Eligible
+      </span>
+    );
   };
 
-  // Filter and stats (same as yours, shortened for brevity)
+  // Filter and stats
   const filteredResults = results.filter(result => {
     const matchesSearch = (result.studentId?.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       result.studentId?.email?.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -271,89 +283,247 @@ const ScholarshipResult = () => {
 
   if (loading) return <Loader message="Loading Scholarship Data..." />;
   if (error) return (
-    <div className="flex justify-center items-center min-h-screen">
-      <div className="bg-red-50 p-6 rounded shadow text-red-600">{error} <button onClick={fetchAllData} className="ml-4 underline">Retry</button></div>
+    <div className="flex justify-center items-center min-h-[60vh] p-6">
+      <div className="bg-rose-50 border border-rose-200/80 p-6 rounded-lg text-rose-700 max-w-md text-center shadow-xs">
+        <p className="font-medium mb-3">{error}</p>
+        <button onClick={fetchAllData} className="px-4 py-2 bg-rose-600 text-white rounded-md text-xs font-bold uppercase tracking-wider hover:bg-rose-700 transition-all shadow-xs">Retry Loading</button>
+      </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-[#F8FAFC] p-4 sm:p-6 md:p-8 space-y-6">
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold mb-2">Scholarship Management</h1>
-        <p className="text-gray-600 mb-6">Review, approve/reject – emails sent automatically to students.</p>
-
-        {/* Stats Cards (same structure, just reuse stats) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white rounded shadow p-6"><div className="flex justify-between"><div><p className="text-gray-500">Total</p><p className="text-2xl font-bold">{stats.total}</p></div><div className="bg-blue-100 p-3 rounded-full">📄</div></div></div>
-          <div className="bg-white rounded shadow p-6"><div className="flex justify-between"><div><p className="text-gray-500">Approved</p><p className="text-2xl font-bold text-green-600">{stats.approved}</p></div><div className="bg-green-100 p-3 rounded-full">✅</div></div></div>
-          <div className="bg-white rounded shadow p-6"><div className="flex justify-between"><div><p className="text-gray-500">Rejected</p><p className="text-2xl font-bold text-red-600">{stats.rejected}</p></div><div className="bg-red-100 p-3 rounded-full">❌</div></div></div>
-          <div className="bg-white rounded shadow p-6"><div className="flex justify-between"><div><p className="text-gray-500">Pending</p><p className="text-2xl font-bold text-yellow-600">{stats.pending}</p></div><div className="bg-yellow-100 p-3 rounded-full">⏳</div></div></div>
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Sticky Top Header */}
+        <div className="bg-white rounded-lg border border-gray-200/80 p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sticky top-0 z-20">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="w-2 h-2 rounded-full bg-[#0078FF]"></span>
+              <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Scholarship Portal</span>
+            </div>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">Scholarship Results & Approvals</h1>
+            <p className="text-xs text-gray-500 mt-0.5">Review, grant or reject student scholarship applications. Notifications sent automatically.</p>
+          </div>
+          <button onClick={fetchAllData} className="px-4 py-2 bg-gray-50 border border-gray-200 text-gray-700 rounded-md text-xs font-bold uppercase tracking-wider hover:bg-gray-100 transition-all shadow-xs">
+            🔄 Refresh Data
+          </button>
         </div>
 
-        {/* Search & Filter (unchanged) */}
-        <div className="bg-white rounded shadow p-4 mb-6 flex flex-col sm:flex-row gap-4">
-          <input type="text" placeholder="🔍 Search student..." className="flex-1 border rounded px-4 py-2" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
-          <div className="flex gap-2">
+        {/* Stats Cards Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white rounded-lg border border-gray-200/80 p-5 shadow-xs hover:border-gray-300 transition-all">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Applications</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">{stats.total}</p>
+              </div>
+              <div className="w-10 h-10 rounded-md bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 font-bold">📄</div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg border border-gray-200/80 p-5 shadow-xs hover:border-gray-300 transition-all">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Approved</p>
+                <p className="text-2xl font-bold text-emerald-600 mt-1">{stats.approved}</p>
+              </div>
+              <div className="w-10 h-10 rounded-md bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 font-bold">✅</div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg border border-gray-200/80 p-5 shadow-xs hover:border-gray-300 transition-all">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Rejected</p>
+                <p className="text-2xl font-bold text-rose-600 mt-1">{stats.rejected}</p>
+              </div>
+              <div className="w-10 h-10 rounded-md bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600 font-bold">❌</div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg border border-gray-200/80 p-5 shadow-xs hover:border-gray-300 transition-all">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Pending</p>
+                <p className="text-2xl font-bold text-amber-600 mt-1">{stats.pending}</p>
+              </div>
+              <div className="w-10 h-10 rounded-md bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 font-bold">⏳</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Filter & Search Toolbar */}
+        <div className="bg-white rounded-lg border border-gray-200/80 p-4 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="relative w-full sm:w-80">
+            <input 
+              type="text" 
+              placeholder="Search by student name or email..." 
+              className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-md text-xs font-medium focus:ring-2 focus:ring-[#0078FF]/20 focus:border-[#0078FF] outline-none transition-all" 
+              value={searchTerm} 
+              onChange={e => setSearchTerm(e.target.value)} 
+            />
+            <span className="absolute left-3 top-2.5 text-gray-400 text-xs">🔍</span>
+          </div>
+
+          <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
             {['all', 'pending', 'approved', 'rejected'].map(status => (
-              <button key={status} onClick={() => setFilterStatus(status)} className={`px-4 py-2 rounded ${filterStatus === status ? (status === 'approved' ? 'bg-green-600 text-white' : status === 'rejected' ? 'bg-red-600 text-white' : status === 'pending' ? 'bg-yellow-600 text-white' : 'bg-blue-600 text-white') : 'bg-gray-100'}`}>{status.charAt(0).toUpperCase() + status.slice(1)}</button>
+              <button 
+                key={status} 
+                onClick={() => setFilterStatus(status)} 
+                className={`px-3.5 py-1.5 rounded-md text-xs font-semibold uppercase tracking-wider transition-all whitespace-nowrap ${
+                  filterStatus === status 
+                    ? 'bg-[#0078FF] text-white shadow-xs' 
+                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200/60'
+                }`}
+              >
+                {status}
+              </button>
             ))}
           </div>
         </div>
 
-        {/* Table (only actions modified to show "Email sent" hint, but already in badge) */}
-        <div className="bg-white rounded shadow overflow-x-auto">
-          <table className="min-w-full divide-y">
-            <thead className="bg-gray-50">
-              <tr><th className="px-6 py-3 text-left">S.No</th><th>Student</th><th>Email</th><th>Test Score</th><th>Percentage</th><th>Status</th><th>Actions</th></tr>
-            </thead>
-            <tbody>
-              {filteredResults.map((result, idx) => (
-                <tr key={result._id || result.scholarshipId} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">{idx+1}</td>
-                  <td className="px-6 py-4 font-medium">{result.studentId?.fullName || 'N/A'}</td>
-                  <td className="px-6 py-4">{result.studentId?.email || 'N/A'}</td>
-                  <td className="px-6 py-4">{getTestScoreDisplay(result.obtainedMarks, result.totalMarks)}</td>
-                  <td className="px-6 py-4">{result.percentage || 0}%</td>
-                  <td className="px-6 py-4">{getStatusBadge(result)}</td>
-                  <td className="px-6 py-4">
-                    {result.status === 'pending' && result.isEligible && !result.isProcessed ? (
-                      <div className="flex gap-2">
-                        <button onClick={() => openScholarshipModal(result)} disabled={actionLoading === result._id} className="px-3 py-1 bg-green-600 text-white rounded disabled:opacity-50">✅ Grant</button>
-                        <button onClick={() => rejectScholarship(result)} disabled={actionLoading === result._id} className="px-3 py-1 bg-red-600 text-white rounded disabled:opacity-50">❌ Reject</button>
-                      </div>
-                    ) : result.status === 'approved' ? (
-                      <span className="text-green-600 text-sm">{result.discount || 50}% Discount</span>
-                    ) : result.status === 'rejected' ? (
-                      <span className="text-red-600 text-sm">Rejected</span>
-                    ) : <span className="text-gray-400">—</span>}
-                  </td>
+        {/* Results Data Table */}
+        <div className="bg-white rounded-lg border border-gray-200/80 shadow-xs overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-gray-50/80 border-b border-gray-200/80 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                  <th className="px-5 py-3.5">#</th>
+                  <th className="px-5 py-3.5">Student Details</th>
+                  <th className="px-5 py-3.5">Email</th>
+                  <th className="px-5 py-3.5">Test Score</th>
+                  <th className="px-5 py-3.5">Percentage</th>
+                  <th className="px-5 py-3.5">Status</th>
+                  <th className="px-5 py-3.5 text-right">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-100 text-xs text-gray-700">
+                {filteredResults.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-5 py-12 text-center text-gray-400 font-medium">
+                      No scholarship applications found matching your criteria.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredResults.map((result, idx) => (
+                    <tr key={result._id || result.scholarshipId} className="hover:bg-gray-50/60 transition-colors">
+                      <td className="px-5 py-4 font-mono text-gray-400">{idx + 1}</td>
+                      <td className="px-5 py-4 font-semibold text-gray-900">{result.studentId?.fullName || 'N/A'}</td>
+                      <td className="px-5 py-4 text-gray-600">{result.studentId?.email || 'N/A'}</td>
+                      <td className="px-5 py-4 font-medium">{getTestScoreDisplay(result.obtainedMarks, result.totalMarks)}</td>
+                      <td className="px-5 py-4 font-semibold text-gray-900">{result.percentage || 0}%</td>
+                      <td className="px-5 py-4">{getStatusBadge(result)}</td>
+                      <td className="px-5 py-4 text-right">
+                        {result.status === 'pending' && result.isEligible && !result.isProcessed ? (
+                          <div className="flex items-center justify-end gap-2">
+                            <button 
+                              onClick={() => openScholarshipModal(result)} 
+                              disabled={actionLoading === result._id} 
+                              className="px-3 py-1.5 bg-emerald-600 text-white rounded-md text-xs font-semibold hover:bg-emerald-700 disabled:opacity-50 transition-all shadow-xs"
+                            >
+                              Grant
+                            </button>
+                            <button 
+                              onClick={() => rejectScholarship(result)} 
+                              disabled={actionLoading === result._id} 
+                              className="px-3 py-1.5 bg-rose-600 text-white rounded-md text-xs font-semibold hover:bg-rose-700 disabled:opacity-50 transition-all shadow-xs"
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        ) : result.status === 'approved' ? (
+                          <span className="inline-block px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-100">
+                            {result.discount || 50}% Off
+                          </span>
+                        ) : result.status === 'rejected' ? (
+                          <span className="text-rose-600 font-semibold text-xs">Rejected</span>
+                        ) : (
+                          <span className="text-gray-400">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
+        {/* Scholarship Grant Modal */}
         {showScholarshipModal && selectedStudent && (
-          <div className="fixed inset-0 bg-black/60 bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-md w-full">
-              <div className="p-6 border-b">
-                <h2 className="text-xl font-bold">Grant Scholarship</h2>
-                <p className="text-sm text-gray-600">{selectedStudent.studentId?.fullName}</p>
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg border border-gray-200/80 shadow-2xl max-w-md w-full overflow-hidden animate-fadeIn">
+              <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+                <div>
+                  <h2 className="text-base font-bold text-gray-900">Grant Scholarship</h2>
+                  <p className="text-xs text-gray-500 mt-0.5">{selectedStudent.studentId?.fullName}</p>
+                </div>
+                <button 
+                  onClick={() => setShowScholarshipModal(false)} 
+                  className="w-7 h-7 rounded-md flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 text-lg transition-all"
+                >
+                  ✕
+                </button>
               </div>
-              <div className="p-6 space-y-4">
-                <div><label>Discount (%)</label><input type="number" min="0" max="100" value={scholarshipForm.discount} onChange={e => setScholarshipForm({...scholarshipForm, discount: +e.target.value})} className="w-full border rounded px-3 py-2" /></div>
-                <div><label>Valid From</label><input type="date" value={scholarshipForm.validFrom} onChange={e => setScholarshipForm({...scholarshipForm, validFrom: e.target.value})} className="w-full border rounded px-3 py-2" /></div>
-                <div><label>Valid Until</label><input type="date" value={scholarshipForm.validUntil} onChange={e => setScholarshipForm({...scholarshipForm, validUntil: e.target.value})} className="w-full border rounded px-3 py-2" /></div>
-                {formErrors.discount && <p className="text-red-500 text-sm">{formErrors.discount}</p>}
-                {formErrors.validFrom && <p className="text-red-500 text-sm">{formErrors.validFrom}</p>}
-                {formErrors.validUntil && <p className="text-red-500 text-sm">{formErrors.validUntil}</p>}
-                <div className="bg-blue-50 p-3 rounded text-sm">ℹ️ Student will receive an email with these scholarship details.</div>
+
+              <div className="p-5 space-y-4 text-xs">
+                <div>
+                  <label className="block font-semibold text-gray-700 mb-1">Scholarship Discount (%)</label>
+                  <input 
+                    type="number" 
+                    min="0" 
+                    max="100" 
+                    value={scholarshipForm.discount} 
+                    onChange={e => setScholarshipForm({...scholarshipForm, discount: +e.target.value})} 
+                    className="w-full border border-gray-200 rounded-md px-3 py-2 text-xs font-medium focus:ring-2 focus:ring-[#0078FF]/20 focus:border-[#0078FF] outline-none" 
+                  />
+                  {formErrors.discount && <p className="text-rose-500 text-[11px] mt-1">{formErrors.discount}</p>}
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-gray-700 mb-1">Valid From</label>
+                  <input 
+                    type="date" 
+                    value={scholarshipForm.validFrom} 
+                    onChange={e => setScholarshipForm({...scholarshipForm, validFrom: e.target.value})} 
+                    className="w-full border border-gray-200 rounded-md px-3 py-2 text-xs font-medium focus:ring-2 focus:ring-[#0078FF]/20 focus:border-[#0078FF] outline-none" 
+                  />
+                  {formErrors.validFrom && <p className="text-rose-500 text-[11px] mt-1">{formErrors.validFrom}</p>}
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-gray-700 mb-1">Valid Until</label>
+                  <input 
+                    type="date" 
+                    value={scholarshipForm.validUntil} 
+                    onChange={e => setScholarshipForm({...scholarshipForm, validUntil: e.target.value})} 
+                    className="w-full border border-gray-200 rounded-md px-3 py-2 text-xs font-medium focus:ring-2 focus:ring-[#0078FF]/20 focus:border-[#0078FF] outline-none" 
+                  />
+                  {formErrors.validUntil && <p className="text-rose-500 text-[11px] mt-1">{formErrors.validUntil}</p>}
+                </div>
+
+                <div className="bg-blue-50/80 border border-blue-100 p-3 rounded-md text-blue-700 text-xs flex items-start gap-2">
+                  <span>ℹ️</span>
+                  <span>The student will automatically receive an official confirmation email with their grant details.</span>
+                </div>
               </div>
-              <div className="p-6 border-t flex justify-end gap-3">
-                <button onClick={() => setShowScholarshipModal(false)} className="px-4 py-2 bg-gray-200 rounded">Cancel</button>
-                <button onClick={grantScholarship} disabled={actionLoading === selectedStudent._id} className="px-4 py-2 bg-green-600 text-white rounded disabled:opacity-50">Grant & Send Email</button>
+
+              <div className="p-4 border-t border-gray-100 flex items-center justify-end gap-2 bg-gray-50/30">
+                <button 
+                  onClick={() => setShowScholarshipModal(false)} 
+                  className="px-4 py-2 bg-gray-100 text-gray-700 font-semibold rounded-md hover:bg-gray-200 text-xs transition-all"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={grantScholarship} 
+                  disabled={actionLoading === selectedStudent._id} 
+                  className="px-4 py-2 bg-emerald-600 text-white font-semibold rounded-md hover:bg-emerald-700 text-xs disabled:opacity-50 transition-all shadow-xs"
+                >
+                  Grant & Send Email
+                </button>
               </div>
             </div>
           </div>
@@ -363,4 +533,4 @@ const ScholarshipResult = () => {
   );
 };
 
-export default ScholarshipResult;
+export default ScholarshipResult;
