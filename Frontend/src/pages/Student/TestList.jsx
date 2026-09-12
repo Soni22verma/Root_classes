@@ -152,12 +152,15 @@ const StudentTestPanel = () => {
       if (res.data?.success) {
         let rawTests = res.data.tests || res.data.data || [];
 
-        if (studentClass) {
+        if (studentClass && rawTests.length > 0) {
           const studentNum = extractClassNumber(studentClass);
-          rawTests = rawTests.filter(test => {
+          const filtered = rawTests.filter(test => {
             const testNum = extractClassNumber(test.className);
             return studentNum && testNum && studentNum === testNum;
           });
+          if (filtered.length > 0) {
+            rawTests = filtered;
+          }
         }
 
         const completedTests = await fetchCompletedTests();
