@@ -46,7 +46,7 @@ const NotificationDropdown = ({ isDark = false, align = 'right' }) => {
       </button>
 
       {isOpen && (
-        <div className={`absolute ${positionClasses} mt-2 w-80 rounded-xl shadow-2xl border transition-all animate-fadeIn z-[100] ${
+        <div className={`absolute ${positionClasses} mt-2 w-80 rounded-sm shadow-2xl border transition-all animate-fadeIn z-[100] ${
           isDark ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-100'
         }`}>
 

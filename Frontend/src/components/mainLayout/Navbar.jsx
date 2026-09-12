@@ -150,7 +150,7 @@ const Navbar = () => {
                   <div className="relative" ref={dropdownRef}>
                     <button
                       onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                      className="flex items-center gap-2.5 px-3 py-1.5 rounded-md border border-gray-100 hover:border-gray-200 bg-white hover:bg-gray-50/50 transition-all text-sm"
+                      className="flex items-center gap-2.5 px-3 py-1.5 rounded-sm border border-gray-100 hover:border-gray-200 bg-white hover:bg-gray-50/50 transition-all text-sm cursor-pointer"
                     >
                       <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-[#FB0500] to-red-500 flex items-center justify-center flex-shrink-0 text-white text-xs font-bold shadow-xs overflow-hidden">
                         {getProfileImage() ? (
@@ -164,7 +164,7 @@ const Navbar = () => {
                     </button>
 
                     {isDropdownOpen && (
-                      <div className="absolute right-0 mt-2 w-60 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
+                      <div className="absolute right-0 mt-2 w-60 bg-white rounded-sm shadow-xl border border-gray-100 py-2 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
                         <div className="px-4 py-3 border-b border-gray-100">
                           <div className="flex items-center gap-3">
                             <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#FB0500] to-red-500 flex items-center justify-center flex-shrink-0 text-white text-sm font-bold shadow-xs overflow-hidden">
@@ -213,12 +213,12 @@ const Navbar = () => {
               ) : (
                 <div className="flex items-center gap-2.5">
                   <Link to="/stdlogin">
-                    <button className="px-4 py-1.5 text-sm font-semibold text-gray-700 hover:text-gray-900 border border-gray-200 hover:border-gray-300 hover:bg-gray-50/80 rounded-md transition-all">
+                    <button className="px-4 py-1.5 text-sm font-semibold text-gray-700 hover:text-gray-900 border border-gray-200 hover:border-gray-300 hover:bg-gray-50/80 rounded-sm transition-all">
                       Login
                     </button>
                   </Link>
                   <Link to="/register">
-                    <button className="px-4 py-1.5 text-sm font-semibold text-white bg-[#0078FF] hover:bg-[#0066DD] rounded-md transition-all shadow-xs">
+                    <button className="px-4 py-1.5 text-sm font-semibold text-white bg-[#0078FF] hover:bg-[#0066DD] rounded-sm transition-all shadow-xs">
                       Sign Up Free
                     </button>
                   </Link>
@@ -229,7 +229,7 @@ const Navbar = () => {
             {/* Mobile toggle */}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="md:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
+              className="md:hidden p-2 rounded-sm text-gray-600 hover:bg-gray-100 transition-colors"
             >
               {isMenuOpen ? <X size={22} /> : <Menu size={22} />}
             </button>
@@ -243,7 +243,7 @@ const Navbar = () => {
               {navItems.map((item) => (
                 <Link key={item.name} to={item.path}
                   onClick={() => setIsMenuOpen(false)}
-                  className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive(item.path) ? 'text-[#FB0500] font-semibold' : 'text-gray-600 hover:bg-gray-50'
+                  className={`px-4 py-2.5 rounded-sm text-sm font-medium transition-colors ${isActive(item.path) ? 'text-[#FB0500] font-semibold' : 'text-gray-600 hover:bg-gray-50'
                     }`}
                 >
                   {item.name}
@@ -267,31 +267,31 @@ const Navbar = () => {
                       </div>
                     </div>
                     {isAdminOrInstructor() && (
-                      <Link to="/admin/" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-gray-700 hover:bg-gray-50">
+                      <Link to="/admin/" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 px-4 py-2.5 rounded-sm text-sm text-gray-700 hover:bg-gray-50">
                         <LayoutDashboard size={16} className="text-gray-400" />Dashboard
                       </Link>
                     )}
                     {isStudent() && (
                       <>
-                        <Link to="/stdprofile" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-gray-700 hover:bg-gray-50">
+                        <Link to="/stdprofile" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 px-4 py-2.5 rounded-sm text-sm text-gray-700 hover:bg-gray-50">
                           <UserCircle size={16} className="text-gray-400" />My Profile
                         </Link>
-                        <Link to="/purchescourse" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-gray-700 hover:bg-gray-50">
+                        <Link to="/purchescourse" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 px-4 py-2.5 rounded-sm text-sm text-gray-700 hover:bg-gray-50">
                           <SiCoursera size={16} className="text-gray-400" />My Courses
                         </Link>
                       </>
                     )}
-                    <button onClick={handleLogout} className="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-sm text-red-600 hover:bg-red-50">
+                    <button onClick={handleLogout} className="flex items-center gap-3 w-full px-4 py-2.5 rounded-sm text-sm text-red-600 hover:bg-red-50">
                       <LogOut size={16} />Logout
                     </button>
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 gap-3 px-1">
                     <Link to="/stdlogin" onClick={() => setIsMenuOpen(false)}>
-                      <button className="w-full py-2 text-sm font-semibold text-gray-700 border border-gray-200 rounded-md hover:bg-gray-50">Login</button>
+                      <button className="w-full py-2 text-sm font-semibold text-gray-700 border border-gray-200 rounded-sm hover:bg-gray-50">Login</button>
                     </Link>
                     <Link to="/register" onClick={() => setIsMenuOpen(false)}>
-                      <button className="w-full py-2 text-sm font-semibold text-white bg-[#0078FF] hover:bg-[#0066DD] rounded-md shadow-xs">Sign Up Free</button>
+                      <button className="w-full py-2 text-sm font-semibold text-white bg-[#0078FF] hover:bg-[#0066DD] rounded-sm shadow-xs">Sign Up Free</button>
                     </Link>
                   </div>
                 )}

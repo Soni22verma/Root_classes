@@ -637,7 +637,7 @@ const CourseDetails = () => {
   if (!course) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center bg-white p-10 rounded-2xl border border-gray-100 shadow max-w-sm">
+        <div className="text-center bg-white p-10 rounded-sm border border-gray-100 shadow max-w-sm">
           <BookOpen size={40} className="mx-auto text-gray-200 mb-3" />
           <p className="font-semibold text-gray-800 mb-4">Course not found</p>
           <button onClick={() => navigate('/course')} className="text-sm text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-1">
@@ -668,7 +668,7 @@ const CourseDetails = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Toast */}
       {toast.show && (
-        <div className={`fixed top-5 right-4 z-[9999] px-5 py-3 rounded-xl shadow-lg text-sm font-medium text-white flex items-center gap-2 transition-all ${toast.type === 'success' ? 'bg-green-500' : toast.type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+        <div className={`fixed top-5 right-4 z-[9999] px-5 py-3 rounded-sm shadow-lg text-sm font-medium text-white flex items-center gap-2 transition-all ${toast.type === 'success' ? 'bg-green-500' : toast.type === 'error' ? 'bg-red-500' : 'bg-blue-500'
           }`}>
           {toast.type === 'success' && <CheckCircle size={15} />}
           {toast.type === 'error' && <X size={15} />}
@@ -678,11 +678,11 @@ const CourseDetails = () => {
 
       {/* Payment Modal */}
       {showPaymentModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" onClick={() => !paymentProcessing && setShowPaymentModal(false)}>
-          <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl overflow-hidden" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 md:pt-25 pb-8 px-4 bg-black/40 overflow-y-auto" onClick={() => !paymentProcessing && setShowPaymentModal(false)}>
+          <div className="w-full max-w-sm bg-white rounded-sm shadow-xl overflow-hidden mt-1" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <h3 className="text-base font-bold text-gray-900">Complete Enrollment</h3>
-              <button onClick={() => setShowPaymentModal(false)} className="p-1 hover:bg-gray-100 rounded-lg">
+              <button onClick={() => setShowPaymentModal(false)} className="p-1 hover:bg-gray-100 rounded-sm">
                 <X size={16} className="text-gray-400" />
               </button>
             </div>
@@ -699,7 +699,7 @@ const CourseDetails = () => {
                   <div className="mb-2">
                     <p className="text-sm text-gray-400 line-through">₹{originalPrice.toLocaleString('en-IN')}</p>
                     <p className="text-3xl font-bold text-gray-900">₹{finalPrice.toLocaleString('en-IN')}</p>
-                    <div className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-green-100 rounded-full">
+                    <div className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-green-100 rounded-sm">
                       <Percent size={12} className="text-green-600" />
                       <span className="text-xs font-semibold text-green-700">{discountApplied}% First Purchase Discount!</span>
                     </div>
@@ -723,7 +723,7 @@ const CourseDetails = () => {
                 <p className="text-xs text-gray-500 mt-2">✓ Receipt will be sent to your email</p>
               </div>
 
-              <div className="bg-gray-50 rounded-xl p-4 mb-5 space-y-2 text-sm">
+              <div className="bg-gray-50 rounded-sm p-4 mb-5 space-y-2 text-sm">
                 <div className="flex justify-between text-gray-600">
                   <span>Total lessons</span>
                   <span className="font-medium text-gray-900">{tt}</span>
@@ -740,7 +740,7 @@ const CourseDetails = () => {
                 )}
               </div>
 
-              <div className="flex items-center gap-2 px-4 py-3 border border-gray-200 rounded-xl mb-5">
+              <div className="flex items-center gap-2 px-4 py-3 border border-gray-200 rounded-sm mb-5">
                 <CreditCard size={16} className="text-gray-400" />
                 <span className="text-sm font-medium text-gray-700">Razorpay — Secure Payment</span>
               </div>
@@ -748,7 +748,7 @@ const CourseDetails = () => {
               <button
                 onClick={handlePayment}
                 disabled={paymentProcessing}
-                className="w-full py-3 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-60 transition-colors"
+                className="w-full py-3 bg-blue-600 text-white text-sm font-semibold rounded-sm hover:bg-blue-700 disabled:opacity-60 transition-colors"
               >
                 {paymentProcessing ? 'Processing...' : `Pay ₹${finalPrice.toLocaleString('en-IN')} & Enroll`}
               </button>
@@ -781,14 +781,14 @@ const CourseDetails = () => {
           <div className="flex-1 min-w-0">
             {/* Scholarship Banner - only shown if no previous purchase, not enrolled, course has price, and scholarship exists */}
             {scholarship && !hasPreviousPurchase && !isEnrolled && course?.price > 0 && !isCompletelyFree() && (
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-xl p-5 mb-5 flex items-start gap-4">
-                <div className="bg-blue-100 p-2.5 rounded-full flex-shrink-0 mt-0.5">
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-sm p-5 mb-5 flex items-start gap-4">
+                <div className="bg-blue-100 p-2.5 rounded-sm flex-shrink-0 mt-0.5">
                   <Tag size={20} className="text-blue-600" />
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
                     Special Scholarship Available!
-                    <span className="bg-blue-600 text-white text-xs px-2.5 py-0.5 rounded-full font-semibold shadow-sm">
+                    <span className="bg-blue-600 text-white text-xs px-2.5 py-0.5 rounded-sm font-semibold shadow-sm">
                       {scholarship.discount}% OFF
                     </span>
                   </h3>
@@ -797,7 +797,7 @@ const CourseDetails = () => {
                     Enroll now to claim your discount!
                   </p>
                   {(scholarship.validFrom || scholarship.validUntil) && (
-                    <div className="flex items-center gap-1.5 mt-2.5 text-xs text-gray-500 font-medium bg-white/60 w-fit px-3 py-1.5 rounded-lg border border-blue-50">
+                    <div className="flex items-center gap-1.5 mt-2.5 text-xs text-gray-500 font-medium bg-white/60 w-fit px-3 py-1.5 rounded-sm border border-blue-50">
                       <Calendar size={13} className="text-blue-500" />
                       {scholarship.validFrom && scholarship.validUntil ? (
                         <span>Valid from {formatDate(scholarship.validFrom)} to {formatDate(scholarship.validUntil)}</span>
@@ -813,17 +813,17 @@ const CourseDetails = () => {
             )}
 
             {/* Course header */}
-            <div className="bg-white rounded-xl border border-gray-100 p-6 mb-5">
+            <div className="bg-white rounded-sm border border-gray-100 p-6 mb-5">
               <div className="flex flex-wrap gap-2 mb-3">
                 {course.category?.name && (
-                  <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md">{course.category.name}</span>
+                  <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2.5 py-1 rounded-sm">{course.category.name}</span>
                 )}
-                <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2.5 py-1 rounded-md capitalize">{course.level || 'Beginner'}</span>
-                {isEnrolled && <span className="text-xs font-medium text-green-700 bg-green-50 px-2.5 py-1 rounded-md flex items-center gap-1"><CheckCircle size={11} /> Enrolled</span>}
-                {!isEnrolled && isCompletelyFree() && <span className="text-xs font-medium text-green-700 bg-green-50 px-2.5 py-1 rounded-md">Free</span>}
-                {!isEnrolled && !isCompletelyFree() && hasPreviewContent() && <span className="text-xs font-medium text-blue-700 bg-blue-50 px-2.5 py-1 rounded-md">Free Preview Available</span>}
+                <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2.5 py-1 rounded-sm capitalize">{course.level || 'Beginner'}</span>
+                {isEnrolled && <span className="text-xs font-medium text-green-700 bg-green-50 px-2.5 py-1 rounded-sm flex items-center gap-1"><CheckCircle size={11} /> Enrolled</span>}
+                {!isEnrolled && isCompletelyFree() && <span className="text-xs font-medium text-green-700 bg-green-50 px-2.5 py-1 rounded-sm">Free</span>}
+                {!isEnrolled && !isCompletelyFree() && hasPreviewContent() && <span className="text-xs font-medium text-blue-700 bg-blue-50 px-2.5 py-1 rounded-sm">Free Preview Available</span>}
                 {showDiscountBlock && !isEnrolled && (
-                  <span className="text-xs font-medium text-green-700 bg-green-50 px-2.5 py-1 rounded-md flex items-center gap-1">
+                  <span className="text-xs font-medium text-green-700 bg-green-50 px-2.5 py-1 rounded-sm flex items-center gap-1">
                     <Percent size={11} /> {discountApplied}% First Purchase Discount
                   </span>
                 )}
@@ -845,12 +845,12 @@ const CourseDetails = () => {
             </div>
 
             {/* Tabs */}
-            <div className="flex gap-1 bg-gray-100 p-1 rounded-xl mb-5 w-fit">
+            <div className="flex gap-1 bg-gray-100 p-1 rounded-sm mb-5 w-fit">
               {['overview', 'curriculum'].map(tab => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`px-5 py-2 text-sm font-medium rounded-lg transition-colors capitalize ${activeTab === tab ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                  className={`px-5 py-2 text-sm font-medium rounded-sm transition-colors capitalize ${activeTab === tab ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
                     }`}
                 >
                   {tab}
@@ -861,13 +861,13 @@ const CourseDetails = () => {
             {/* Overview Tab Content */}
             {activeTab === 'overview' && (
               <div className="space-y-4">
-                <div className="bg-white rounded-xl border border-gray-100 p-5">
+                <div className="bg-white rounded-sm border border-gray-100 p-5">
                   <h2 className="text-base font-bold text-gray-900 mb-3">About this course</h2>
                   <p className="text-sm text-gray-600 leading-relaxed">{course.description || 'No description available.'}</p>
                 </div>
 
                 {course.whatYouWillLearn?.length > 0 && (
-                  <div className="bg-white rounded-xl border border-gray-100 p-5">
+                  <div className="bg-white rounded-sm border border-gray-100 p-5">
                     <h2 className="text-base font-bold text-gray-900 mb-3">What you'll learn</h2>
                     <div className="grid sm:grid-cols-2 gap-2.5">
                       {course.whatYouWillLearn.map((item, i) => (
@@ -880,12 +880,12 @@ const CourseDetails = () => {
                   </div>
                 )}
                 {course.requirements?.length > 0 && (
-                  <div className="bg-white rounded-xl border border-gray-100 p-5">
+                  <div className="bg-white rounded-sm border border-gray-100 p-5">
                     <h2 className="text-base font-bold text-gray-900 mb-3">Requirements</h2>
                     <ul className="space-y-2">
                       {course.requirements.map((r, i) => (
                         <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
-                          <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-gray-400 flex-shrink-0" />
+                          <span className="mt-1.5 w-1.5 h-1.5 rounded-sm bg-gray-400 flex-shrink-0" />
                           {r}
                         </li>
                       ))}
@@ -897,7 +897,7 @@ const CourseDetails = () => {
 
             {/* Curriculum Tab */}
             {activeTab === 'curriculum' && (
-              <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+              <div className="bg-white rounded-sm border border-gray-100 overflow-hidden">
                 <div className="px-5 py-4 border-b border-gray-100">
                   <h2 className="text-base font-bold text-gray-900">Course Curriculum</h2>
                   <p className="text-xs text-gray-500 mt-0.5">
@@ -944,10 +944,10 @@ const CourseDetails = () => {
                                     {ch.topics?.map((topic, tIdx) => {
                                       const hasAccess = isEnrolled || topic.isPreviewFree || isCompletelyFree();
                                       return (
-                                        <div key={topic._id || tIdx} className="mx-4 rounded-xl bg-white border border-gray-100 overflow-hidden">
+                                        <div key={topic._id || tIdx} className="mx-4 rounded-sm bg-white border border-gray-100 overflow-hidden">
                                           <div className="flex items-center justify-between px-4 py-3 gap-3">
                                             <div className="flex items-center gap-3 min-w-0">
-                                              <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${hasAccess ? 'bg-green-50' : 'bg-gray-100'}`}>
+                                              <div className={`w-7 h-7 rounded-sm flex items-center justify-center flex-shrink-0 ${hasAccess ? 'bg-green-50' : 'bg-gray-100'}`}>
                                                 {hasAccess ? <Play size={13} className="text-green-600 ml-0.5" /> : <Lock size={12} className="text-gray-400" />}
                                               </div>
                                               <div className="min-w-0">
@@ -970,7 +970,7 @@ const CourseDetails = () => {
                                                 <button
                                                   onClick={() => playVideo(topic)}
                                                   disabled={!hasAccess}
-                                                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${hasAccess
+                                                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-sm text-xs font-medium transition-colors ${hasAccess
                                                     ? 'bg-blue-600 text-white hover:bg-blue-700'
                                                     : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                                     }`}
@@ -982,7 +982,7 @@ const CourseDetails = () => {
                                               {topic.description && (
                                                 <button
                                                   onClick={() => openTopicInfo(topic)}
-                                                  className="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors flex items-center gap-1"
+                                                  className="px-2.5 py-1.5 rounded-sm text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors flex items-center gap-1"
                                                 >
                                                   <Info size={11} /> Info
                                                 </button>
@@ -992,7 +992,7 @@ const CourseDetails = () => {
                                                 <button
                                                   onClick={() => handleDownloadNotesPDF(topic)}
                                                   disabled={!hasAccess}
-                                                  className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 ${hasAccess
+                                                  className={`px-2.5 py-1.5 rounded-sm text-xs font-medium transition-colors flex items-center gap-1 ${hasAccess
                                                     ? 'bg-purple-100 text-purple-700 hover:bg-purple-200'
                                                     : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                                     }`}
@@ -1027,15 +1027,15 @@ const CourseDetails = () => {
           {/* RIGHT COLUMN - Enrollment card + Instructor Sidebar */}
           <div className="w-full lg:w-72 flex-shrink-0 space-y-5">
             {/* Enrollment Card */}
-            <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm">
+            <div className="bg-white rounded-sm border border-gray-100 overflow-hidden shadow-sm">
               {checkingEnrollment ? (
                 <div className="p-8 text-center">
-                  <div className="w-8 h-8 border-3 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-2" />
+                  <div className="w-8 h-8 border-3 border-blue-200 border-t-blue-600 rounded-sm animate-spin mx-auto mb-2" />
                   <p className="text-xs text-gray-400">Checking enrollment...</p>
                 </div>
               ) : isEnrolled ? (
                 <div className="p-6 text-center">
-                  <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <div className="w-14 h-14 bg-green-100 rounded-sm flex items-center justify-center mx-auto mb-3">
                     <CheckCircle size={26} className="text-green-600" />
                   </div>
                   <p className="font-bold text-gray-900 mb-1">Already Enrolled!</p>
@@ -1046,7 +1046,7 @@ const CourseDetails = () => {
                   </div>
                   <button
                     onClick={() => navigate(`/course-content/${course._id}`, { state: { course } })}
-                    className="w-full py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors"
+                    className="w-full py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-sm hover:bg-blue-700 transition-colors"
                   >
                     Continue Learning
                   </button>
@@ -1056,8 +1056,8 @@ const CourseDetails = () => {
                   <div className="p-5 text-center border-b border-gray-100">
                     {fetchingPrice ? (
                       <div className="animate-pulse">
-                        <div className="h-8 bg-gray-200 rounded w-24 mx-auto mb-2"></div>
-                        <div className="h-3 bg-gray-100 rounded w-32 mx-auto"></div>
+                        <div className="h-8 bg-gray-200 rounded-sm w-24 mx-auto mb-2"></div>
+                        <div className="h-3 bg-gray-100 rounded-sm w-32 mx-auto"></div>
                       </div>
                     ) : (
                       <>
@@ -1071,7 +1071,7 @@ const CourseDetails = () => {
                           <div>
                             <p className="text-sm text-gray-400 line-through">₹{originalPrice.toLocaleString('en-IN')}</p>
                             <p className="text-3xl font-bold text-gray-900">₹{finalPrice.toLocaleString('en-IN')}</p>
-                            <div className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-green-100 rounded-full">
+                            <div className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-green-100 rounded-sm">
                               <Percent size={12} className="text-green-600" />
                               <span className="text-xs font-semibold text-green-700">{discountApplied}% First Purchase Discount!</span>
                             </div>
@@ -1105,7 +1105,7 @@ const CourseDetails = () => {
                     <button
                       onClick={handleEnrollClick}
                       disabled={enrollmentLoading || paymentProcessing || fetchingPrice || info.disabled}
-                      className={`w-full py-3 text-sm font-semibold rounded-xl transition-colors ${info.disabled
+                      className={`w-full py-3 text-sm font-semibold rounded-sm transition-colors ${info.disabled
                         ? 'bg-gray-400 text-white cursor-not-allowed'
                         : 'bg-blue-600 text-white hover:bg-blue-700'
                         } disabled:opacity-60`}
@@ -1127,7 +1127,7 @@ const CourseDetails = () => {
             </div>
 
             {/* INSTRUCTOR CARD - Now in sidebar */}
-            <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
+            <div className="bg-white rounded-sm border border-gray-100 p-5 shadow-sm">
               <h3 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <User size={18} className="text-blue-500" />
                 Meet your instructor
@@ -1174,12 +1174,12 @@ const CourseDetails = () => {
           className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4"
           onClick={() => { setShowVideoPlayer(false); setCurrentVideo(null); }}
         >
-          <div className="w-full max-w-4xl bg-black rounded-2xl overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
+          <div className="w-full max-w-4xl bg-black rounded-sm overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-3 bg-gray-900">
               <p className="text-sm font-medium text-white truncate">{currentVideo.title}</p>
               <button
                 onClick={() => { setShowVideoPlayer(false); setCurrentVideo(null); }}
-                className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+                className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded-sm transition-colors"
               >
                 <X size={16} />
               </button>

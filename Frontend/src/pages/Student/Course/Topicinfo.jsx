@@ -269,7 +269,7 @@ const TopicInfo = () => {
 
       <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
         {!accessible && (
-          <div className="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-4">
+          <div className="mb-6 bg-amber-50 border border-amber-200 rounded-sm p-4">
             <div className="flex items-start gap-3">
               <Lock size={18} className="text-amber-600 mt-0.5" />
               <div>
@@ -280,7 +280,7 @@ const TopicInfo = () => {
                 {course?._id && (
                   <button
                     onClick={() => navigate(`/course/${course._id}`)}
-                    className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 transition-colors"
+                    className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-sm hover:bg-amber-700 transition-colors"
                   >
                     View Course
                   </button>
@@ -291,21 +291,21 @@ const TopicInfo = () => {
         )}
 
         <div className="space-y-5">
-          <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+          <div className="bg-white rounded-sm border border-gray-100 overflow-hidden">
             <div className="bg-gradient-to-r from-blue-600 to-blue-800 px-4 sm:px-6 py-6 sm:py-8">
               <div className="flex items-center gap-2 mb-3">
                 {topic.isPreviewFree && (
-                  <span className="text-xs font-medium text-green-600 bg-green-50 px-2.5 py-1 rounded-md flex items-center gap-1">
+                  <span className="text-xs font-medium text-green-600 bg-green-50 px-2.5 py-1 rounded-sm flex items-center gap-1">
                     <Unlock size={12} /> Free Preview
                   </span>
                 )}
                 {!topic.isPreviewFree && !accessible && (
-                  <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2.5 py-1 rounded-md flex items-center gap-1">
+                  <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2.5 py-1 rounded-sm flex items-center gap-1">
                     <Lock size={12} /> Premium Content
                   </span>
                 )}
                 {accessible && !topic.isPreviewFree && (
-                  <span className="text-xs font-medium text-green-600 bg-green-50 px-2.5 py-1 rounded-md flex items-center gap-1">
+                  <span className="text-xs font-medium text-green-600 bg-green-50 px-2.5 py-1 rounded-sm flex items-center gap-1">
                     <CheckCircle size={12} /> Access Granted
                   </span>
                 )}
@@ -335,14 +335,14 @@ const TopicInfo = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-100 p-4 sm:p-6">
+          <div className="bg-white rounded-sm border border-gray-100 p-4 sm:p-6">
             <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <Clock size={18} className="text-blue-600" />
               Lesson Details
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
               {topic.duration && (
-                <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
+                <div className="bg-gray-50 rounded-sm p-3 sm:p-4">
                   <div className="flex items-center gap-2 text-gray-500 text-xs mb-1">
                     <Clock size={14} />
                     <span>Duration</span>
@@ -352,7 +352,7 @@ const TopicInfo = () => {
               )}
 
               {topic.order && (
-                <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
+                <div className="bg-gray-50 rounded-sm p-3 sm:p-4">
                   <div className="flex items-center gap-2 text-gray-500 text-xs mb-1">
                     <GraduationCap size={14} />
                     <span>Lesson Order</span>
@@ -362,7 +362,7 @@ const TopicInfo = () => {
               )}
 
               {topic.createdAt && (
-                <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
+                <div className="bg-gray-50 rounded-sm p-3 sm:p-4">
                   <div className="flex items-center gap-2 text-gray-500 text-xs mb-1">
                     <Calendar size={14} />
                     <span>Added On</span>
@@ -379,7 +379,7 @@ const TopicInfo = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-100 p-4 sm:p-6">
+          <div className="bg-white rounded-sm border border-gray-100 p-4 sm:p-6">
             <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <FileText size={18} className="text-blue-600" />
               Learning Materials
@@ -390,13 +390,13 @@ const TopicInfo = () => {
                 <button
                   onClick={playVideo}
                   disabled={!accessible}
-                  className={`w-full flex items-center justify-between p-3 sm:p-4 rounded-xl transition-all ${accessible
+                  className={`w-full flex items-center justify-between p-3 sm:p-4 rounded-sm transition-all ${accessible
                     ? 'bg-blue-50 hover:bg-blue-100 cursor-pointer'
                     : 'bg-gray-50 cursor-not-allowed opacity-60'
                     }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center ${accessible ? 'bg-blue-600' : 'bg-gray-400'}`}>
+                    <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-sm flex items-center justify-center ${accessible ? 'bg-blue-600' : 'bg-gray-400'}`}>
                       <Play size={16} className="text-white sm:w-[18px] sm:h-[18px]" />
                     </div>
                     <div className="text-left">
@@ -412,13 +412,13 @@ const TopicInfo = () => {
                 <button
                   onClick={openNotes}
                   disabled={!accessible}
-                  className={`w-full flex items-center justify-between p-3 sm:p-4 rounded-xl transition-all ${accessible
+                  className={`w-full flex items-center justify-between p-3 sm:p-4 rounded-sm transition-all ${accessible
                     ? 'bg-gray-50 hover:bg-gray-100 cursor-pointer'
                     : 'bg-gray-50 cursor-not-allowed opacity-60'
                     }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-600 rounded-lg flex items-center justify-center">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-600 rounded-sm flex items-center justify-center">
                       <FileText size={16} className="text-white sm:w-[18px] sm:h-[18px]" />
                     </div>
                     <div className="text-left">
@@ -435,7 +435,7 @@ const TopicInfo = () => {
               )}
 
               {!topic.videoUrl && !hasNotes && (
-                <div className="text-center py-8 sm:py-12 bg-gray-50 rounded-xl">
+                <div className="text-center py-8 sm:py-12 bg-gray-50 rounded-sm">
                   <FileText size={40} className="mx-auto text-gray-300 mb-3" />
                   <p className="text-gray-400 text-sm">No learning materials available for this lesson yet.</p>
                 </div>
@@ -446,7 +446,7 @@ const TopicInfo = () => {
           <div className="flex flex-col sm:flex-row gap-3 sticky bottom-4">
             <button
               onClick={() => navigate(-1)}
-              className="py-3 px-6 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-colors"
+              className="py-3 px-6 bg-gray-100 text-gray-700 font-semibold rounded-sm hover:bg-gray-200 transition-colors"
             >
               Back to Course
             </button>

@@ -696,8 +696,7 @@ const getInstructorName = (instructor) => {
     return (
         <div className="min-h-screen bg-white">
             {/* Topbar */}
-            <div className="sticky top-[64px] left-0 right-0 z-30 bg-white border-b border-gray-200 shadow-xs">
-                <div className="flex items-center justify-between px-4 md:px-6 h-14">
+            <div className="sticky top-[64px] left-0 right-0 z-30 bg-white border-b border-gray-200 shadow-xs">                <div className="flex items-center justify-between px-4 md:px-6 h-14">
                     <button onClick={() => { setSelectedCourse(null); setSelectedTopic(null); }} className="flex items-center gap-2 text-gray-500 hover:text-gray-700 transition">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -707,8 +706,8 @@ const getInstructorName = (instructor) => {
                     <div className="font-semibold text-gray-800 truncate max-w-[150px] sm:max-w-[200px] md:max-w-md">{selectedCourse.course.title}</div>
                     <div className="flex items-center gap-3">
                         <span className="text-xs text-gray-400 hidden sm:inline">{courseCompletedCount}/{totalTopics}</span>
-                        <div className="w-24 md:w-32 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                            <div className="h-full bg-gray-600 rounded-full transition-all duration-300" style={{ width: `${courseProgressPercent}%` }}></div>
+                        <div className="w-24 md:w-32 h-1.5 bg-gray-100 rounded-sm overflow-hidden">
+                            <div className="h-full bg-gray-600 rounded-sm transition-all duration-300" style={{ width: `${courseProgressPercent}%` }}></div>
                         </div>
                         <span className="text-xs font-mono text-gray-500">{Math.round(courseProgressPercent)}%</span>
                     </div>
@@ -720,13 +719,13 @@ const getInstructorName = (instructor) => {
                 <aside className="order-2 lg:order-1 w-full lg:w-80 xl:w-96 bg-gray-50 border-r border-gray-200 h-auto lg:h-[calc(100vh-7.5rem)] lg:sticky top-[120px] overflow-y-auto">
                     <div className="p-5 border-b border-gray-200">
                         <div className="flex items-center gap-3 mb-4">
-                            <div className="w-12 h-12 rounded-xl bg-gray-200 flex items-center justify-center shadow-sm overflow-hidden">
+                            <div className="w-12 h-12 rounded-sm bg-gray-200 flex items-center justify-center shadow-sm overflow-hidden">
                                 {selectedCourse.course.image ? (
-                                    <img src={selectedCourse.course.image} className="w-full h-full object-cover rounded-xl" alt="" />
+                                    <img src={selectedCourse.course.image} className="w-full h-full object-cover rounded-sm" alt="" />
                                 ) : (
                                     <img
                                         src={getDummyImage(selectedCourse.course.title)}
-                                        className="w-full h-full object-cover rounded-xl"
+                                        className="w-full h-full object-cover rounded-sm"
                                         alt=""
                                     />
                                 )}
@@ -734,8 +733,8 @@ const getInstructorName = (instructor) => {
                             <div>
                                 <h2 className="font-bold text-gray-800 text-lg line-clamp-1">{selectedCourse.course.title}</h2>
                                 <div className="flex flex-wrap gap-2 mt-1">
-                                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-200 text-gray-600">{selectedCourse.course.level || 'Beginner'}</span>
-                                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">{selectedCourse.course.modules?.length || 0}M · {totalTopics}T</span>
+                                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-sm bg-gray-200 text-gray-600">{selectedCourse.course.level || 'Beginner'}</span>
+                                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-sm bg-gray-100 text-gray-500">{selectedCourse.course.modules?.length || 0}M · {totalTopics}T</span>
                                 </div>
                             </div>
                         </div>
@@ -743,8 +742,8 @@ const getInstructorName = (instructor) => {
                             <span>Course Progress</span>
                             <span>{Math.round(courseProgressPercent)}%</span>
                         </div>
-                        <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                            <div className="h-full bg-gray-600 rounded-full transition-all" style={{ width: `${courseProgressPercent}%` }}></div>
+                        <div className="w-full h-1.5 bg-gray-100 rounded-sm overflow-hidden">
+                            <div className="h-full bg-gray-600 rounded-sm transition-all" style={{ width: `${courseProgressPercent}%` }}></div>
                         </div>
                     </div>
 
@@ -770,16 +769,16 @@ const getInstructorName = (instructor) => {
                                     <div key={modId} className="mb-3">
                                         <button
                                             onClick={() => handleModuleClick(modId)}
-                                            className="w-full flex items-center justify-between p-3 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 transition-all group"
+                                            className="w-full flex items-center justify-between p-3 rounded-sm bg-white border border-gray-200 hover:bg-gray-50 transition-all group"
                                         >
                                             <div className="flex flex-col items-start gap-1">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="text-xs font-mono text-gray-500 bg-gray-100 px-2 py-0.5 rounded">MT - {moduleTopicsCount} UNITS</span>
+                                                    <span className="text-xs font-mono text-gray-500 bg-gray-100 px-2 py-0.5 rounded-sm">MT - {moduleTopicsCount} UNITS</span>
                                                     <span className="text-xs text-gray-400">{Math.round(mProgress)}%</span>
                                                 </div>
                                                 <span className="text-sm font-medium text-gray-700 text-left">{module.title}</span>
-                                                <div className="w-32 h-1 bg-gray-100 rounded-full mt-1">
-                                                    <div className="h-full bg-gray-500 rounded-full" style={{ width: `${mProgress}%` }}></div>
+                                                <div className="w-32 h-1 bg-gray-100 rounded-sm mt-1">
+                                                    <div className="h-full bg-gray-500 rounded-sm" style={{ width: `${mProgress}%` }}></div>
                                                 </div>
                                             </div>
                                             <svg className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -797,7 +796,7 @@ const getInstructorName = (instructor) => {
                                                                 <button
                                                                     key={topic._id}
                                                                     onClick={() => handleTopicClick(topic)}
-                                                                    className={`w-full flex items-center justify-between p-2 rounded-lg text-left transition-all ${selectedTopic?._id === topic._id
+                                                                    className={`w-full flex items-center justify-between p-2 rounded-sm text-left transition-all ${selectedTopic?._id === topic._id
                                                                         ? 'bg-gray-100 border border-gray-300 shadow-sm'
                                                                         : 'hover:bg-gray-50'
                                                                         }`}
@@ -834,7 +833,7 @@ const getInstructorName = (instructor) => {
                         {selectedTopic ? (
                             <div>
                                 <div className="max-w-5xl mx-auto">
-                                    <div className="bg-black rounded-xl overflow-hidden shadow-lg">
+                                    <div className="bg-black rounded-sm overflow-hidden shadow-lg">
                                         <div className="aspect-video bg-black">
                                             {selectedTopic.videoType === 'youtube' && embedUrl ? (
                                                 <iframe
@@ -864,14 +863,14 @@ const getInstructorName = (instructor) => {
                                     </div>
 
                                     {/* Mark Complete Row */}
-                                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0 mt-4 bg-gray-50 rounded-xl p-3 border border-gray-200">
+                                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0 mt-4 bg-gray-50 rounded-sm p-3 border border-gray-200">
                                         {!videoCompleted[selectedTopic._id] ? (
                                             <>
                                                 <span className="text-sm text-gray-500">📺 Watch and mark as complete</span>
                                                 <button
                                                     onClick={() => handleTopicProgress(selectedTopic._id)}
                                                     disabled={markingProgress || videoCompleted[selectedTopic._id]}
-                                                    className="px-4 py-1.5 bg-black hover:bg-gray-800 rounded-lg text-white text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    className="px-4 py-1.5 bg-black hover:bg-gray-800 rounded-sm text-white text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
                                                 >
                                                     {videoCompleted[selectedTopic._id]
                                                         ? "Completed"
@@ -907,7 +906,7 @@ const getInstructorName = (instructor) => {
                                         </div>
 
                                         {selectedTopic.notesUrl && (
-                                            <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                                            <div className="bg-gray-50 rounded-sm p-4 border border-gray-200">
                                                 <div className="flex items-center gap-2 text-gray-600 mb-2">
                                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -932,7 +931,7 @@ const getInstructorName = (instructor) => {
                                             <button
                                                 onClick={handlePrevTopic}
                                                 disabled={!prevTopic}
-                                                className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-lg transition ${prevTopic
+                                                className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-sm transition ${prevTopic
                                                     ? 'bg-gray-100 hover:bg-gray-200 text-gray-700'
                                                     : 'opacity-30 cursor-not-allowed text-gray-300'
                                                     }`}
@@ -947,7 +946,7 @@ const getInstructorName = (instructor) => {
                                             <button
                                                 onClick={handleNextTopic}
                                                 disabled={!nextTopic}
-                                                className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-lg transition ${nextTopic
+                                                className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-sm transition ${nextTopic
                                                     ? 'bg-black hover:bg-gray-800 text-white'
                                                     : 'opacity-30 cursor-not-allowed bg-gray-100 text-gray-400'
                                                     }`}
@@ -963,7 +962,7 @@ const getInstructorName = (instructor) => {
                             </div>
                         ) : (
                             <div className="flex flex-col items-center justify-center py-20 text-center">
-                                <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center mb-6">
+                                <div className="w-24 h-24 rounded-sm bg-gray-100 flex items-center justify-center mb-6">
                                     <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
