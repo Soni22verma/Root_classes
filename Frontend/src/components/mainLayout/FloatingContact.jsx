@@ -1,9 +1,15 @@
 import React, { useState } from 'react';
 import { Phone, X, MessageSquare } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa';
+import { useLocation } from 'react-router-dom';
 
 const FloatingContact = () => {
   const [isOpen, setIsOpen] = useState(true);
+  const location = useLocation();
+
+  if (location.pathname !== '/') {
+    return null;
+  }
 
   const whatsappNumber = "919877515330";
   const phoneNumber = "+91 98775-15330";

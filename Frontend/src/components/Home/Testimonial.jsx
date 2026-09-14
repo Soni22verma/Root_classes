@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import api from '../../services/endpoints';
 import VideoCarousel from './VideoCarousel';
+import ReactFastMarquee from "react-fast-marquee";
+
+const Marquee = ReactFastMarquee.default || ReactFastMarquee;
 
 /* alternate red/blue per card */
 const cardAccents = ['#FB0500','#0078FF','#FB0500','#0078FF','#FB0500','#0078FF'];
@@ -29,46 +32,6 @@ const TestimonialsPage = () => {
   };
 
   useEffect(() => { GetTestinomial(); }, []);
-
-  const scrollRef = React.useRef(null);
-
-  React.useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    
-    let scrollPos = 0;
-    let animationId;
-    let isHovered = false;
-
-    const scroll = () => {
-      if (!isHovered && el.scrollWidth > el.clientWidth) {
-        scrollPos += 0.5; // speed
-        if (scrollPos >= el.scrollWidth - el.clientWidth) {
-          scrollPos = 0;
-        }
-        el.scrollLeft = scrollPos;
-      }
-      animationId = requestAnimationFrame(scroll);
-    };
-
-    animationId = requestAnimationFrame(scroll);
-    
-    const handleMouseEnter = () => isHovered = true;
-    const handleMouseLeave = () => isHovered = false;
-    
-    el.addEventListener('mouseenter', handleMouseEnter);
-    el.addEventListener('mouseleave', handleMouseLeave);
-    el.addEventListener('touchstart', handleMouseEnter, { passive: true });
-    el.addEventListener('touchend', handleMouseLeave);
-
-    return () => {
-      cancelAnimationFrame(animationId);
-      el.removeEventListener('mouseenter', handleMouseEnter);
-      el.removeEventListener('mouseleave', handleMouseLeave);
-      el.removeEventListener('touchstart', handleMouseEnter);
-      el.removeEventListener('touchend', handleMouseLeave);
-    };
-  }, [testimonials]);
 
   if (loading) return <div className="py-20 flex items-center justify-center"><div className="animate-spin rounded-full h-7 w-7 border-b-2 border-[#FB0500]" /></div>;
   if (error)   return (
@@ -106,19 +69,15 @@ const TestimonialsPage = () => {
           {testimonials.length === 0 ? (
             <p className="text-gray-400 text-sm text-center py-10">No testimonials yet.</p>
           ) : (
-            <div 
-              ref={scrollRef}
-              className="flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory" 
-              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-            >
-              <style>{`.flex::-webkit-scrollbar { display: none; }`}</style>
-              {testimonials.map((t, i) => {
-                const isDark = false; // Always light
-                return (
-                  <div key={t.id}
-                    className={`
-                      w-[85vw] md:w-[40vw] lg:w-[30vw] shrink-0 snap-center
-                      ${isDark ? 'bg-[#0a1628]' : 'bg-white'}
+            <div className="pb-4">
+              <Marquee pauseOnHover={true} speed={40} gradient={false}>
+                {testimonials.map((t, i) => {
+                  const isDark = false; // Always light
+                  return (
+                    <div key={t.id}
+                      className={`
+                        w-[85vw] md:w-[40vw] lg:w-[30vw] mx-2 h-full
+                        ${isDark ? 'bg-[#0a1628]' : 'bg-white'}
                       rounded-md p-6 flex flex-col justify-between border
                       ${isDark ? 'border-blue-900/30' : 'border-gray-200'}
                       hover:shadow-md transition-shadow
@@ -136,7 +95,8 @@ const TestimonialsPage = () => {
 
                     <div className={`flex items-center gap-3 pt-4 border-t ${isDark ? 'border-white/10' : 'border-gray-100'}`}>
                       <img
-                        src={t.image} alt={t.name}
+                        src={t.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(t.name)}&background=${t.accent.replace('#','')}&color=fff`} 
+                        alt={t.name}
                         className="w-10 h-10 rounded-full object-cover flex-shrink-0 border-2 border-white/20"
                         onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(t.name)}&background=${t.accent.replace('#','')}&color=fff`; }}
                       />
@@ -151,6 +111,7 @@ const TestimonialsPage = () => {
                   </div>
                 );
               })}
+              </Marquee>
             </div>
           )}
         </div>
