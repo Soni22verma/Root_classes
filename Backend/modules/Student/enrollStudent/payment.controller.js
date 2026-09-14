@@ -95,31 +95,15 @@ export const createPayment = async (req, res) => {
       });
     }
 
-    const pendingEnrollment = await EnrollStudent.findOne({
-      student: studentId,
-      course: courseId,
-      paymentStatus: "pending",
-      status: "pending"
+    const now = new Date();
+
+    const scholarship = await Scholarship.findOne({
+      studentId,
+      status: "approved",
+      isUsed: false,
+      validFrom: { $lte: now },
+      validUntil: { $gte: now }  
     });
-
-    if (pendingEnrollment) {
-      return res.status(400).json({
-        success: false,
-        message: "You already have a pending payment for this course. Please complete or cancel it.",
-        alreadyPurchased: false,
-        pending: true
-      });
-      
-    }
-const now = new Date();
-
-   const scholarship = await Scholarship.findOne({
-  studentId,
-  status: "approved",
-  isUsed: false,
-  validFrom: { $lte: now },
-  validUntil: { $gte: now }  
-});
 
     let finalPrice = course.price;
     let discountApplied = 0;
@@ -137,27 +121,39 @@ const now = new Date();
       receipt: `rcpt_${Date.now().toString().slice(-10)}`
     });
 
-    let enrollment;
-    try {
-      enrollment = await EnrollStudent.create({
-        student: studentId,
-        course: courseId,
-        orderId: order.id,
-        amount: finalPrice,
-        originalPrice: course.price,
-        discountApplied,
-        status: "pending",
-        paymentStatus: "pending"
-      });
-    } catch (dbError) {
-      if (dbError.code === 11000) {
-        return res.status(400).json({
-          success: false,
-          message: "You have already purchased this course!",
-          alreadyPurchased: true
+    let enrollment = await EnrollStudent.findOne({
+      student: studentId,
+      course: courseId,
+      paymentStatus: "pending"
+    });
+
+    if (enrollment) {
+      enrollment.orderId = order.id;
+      enrollment.amount = finalPrice;
+      enrollment.discountApplied = discountApplied;
+      await enrollment.save();
+    } else {
+      try {
+        enrollment = await EnrollStudent.create({
+          student: studentId,
+          course: courseId,
+          orderId: order.id,
+          amount: finalPrice,
+          originalPrice: course.price,
+          discountApplied,
+          status: "pending",
+          paymentStatus: "pending"
         });
+      } catch (dbError) {
+        if (dbError.code === 11000) {
+          return res.status(400).json({
+            success: false,
+            message: "You have already purchased this course!",
+            alreadyPurchased: true
+          });
+        }
+        throw dbError;
       }
-      throw dbError;
     }
 
     res.json({
