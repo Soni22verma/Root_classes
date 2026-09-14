@@ -30,6 +30,46 @@ const TestimonialsPage = () => {
 
   useEffect(() => { GetTestinomial(); }, []);
 
+  const scrollRef = React.useRef(null);
+
+  React.useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    
+    let scrollPos = 0;
+    let animationId;
+    let isHovered = false;
+
+    const scroll = () => {
+      if (!isHovered && el.scrollWidth > el.clientWidth) {
+        scrollPos += 0.5; // speed
+        if (scrollPos >= el.scrollWidth - el.clientWidth) {
+          scrollPos = 0;
+        }
+        el.scrollLeft = scrollPos;
+      }
+      animationId = requestAnimationFrame(scroll);
+    };
+
+    animationId = requestAnimationFrame(scroll);
+    
+    const handleMouseEnter = () => isHovered = true;
+    const handleMouseLeave = () => isHovered = false;
+    
+    el.addEventListener('mouseenter', handleMouseEnter);
+    el.addEventListener('mouseleave', handleMouseLeave);
+    el.addEventListener('touchstart', handleMouseEnter, { passive: true });
+    el.addEventListener('touchend', handleMouseLeave);
+
+    return () => {
+      cancelAnimationFrame(animationId);
+      el.removeEventListener('mouseenter', handleMouseEnter);
+      el.removeEventListener('mouseleave', handleMouseLeave);
+      el.removeEventListener('touchstart', handleMouseEnter);
+      el.removeEventListener('touchend', handleMouseLeave);
+    };
+  }, [testimonials]);
+
   if (loading) return <div className="py-20 flex items-center justify-center"><div className="animate-spin rounded-full h-7 w-7 border-b-2 border-[#FB0500]" /></div>;
   if (error)   return (
     <div className="py-16 flex items-center justify-center">
@@ -44,7 +84,7 @@ const TestimonialsPage = () => {
     <>
       {/* Testimonials */}
       <div className="bg-dot-grid py-16 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-7xl mx-auto overflow-hidden">
 
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
             <div>
@@ -66,14 +106,18 @@ const TestimonialsPage = () => {
           {testimonials.length === 0 ? (
             <p className="text-gray-400 text-sm text-center py-10">No testimonials yet.</p>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+            <div 
+              ref={scrollRef}
+              className="flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory" 
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
+              <style>{`.flex::-webkit-scrollbar { display: none; }`}</style>
               {testimonials.map((t, i) => {
-                const isWide = i % 3 === 0;
                 const isDark = false; // Always light
                 return (
                   <div key={t.id}
                     className={`
-                      ${isWide ? 'md:col-span-7' : 'md:col-span-5'}
+                      w-[85vw] md:w-[40vw] lg:w-[30vw] shrink-0 snap-center
                       ${isDark ? 'bg-[#0a1628]' : 'bg-white'}
                       rounded-md p-6 flex flex-col justify-between border
                       ${isDark ? 'border-blue-900/30' : 'border-gray-200'}

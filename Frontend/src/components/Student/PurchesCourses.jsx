@@ -1,10 +1,14 @@
 import axios from 'axios';
 import React, { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../services/endpoints';
 import useStudentStore from '../../Store/studentstore';
 import { useCourseStore } from '../../Store/courseStore';
 import { toast } from 'react-toastify';
-import { BookOpen, Library, GraduationCap, Award, PlayCircle, CheckCircle, ChevronRight, ArrowLeft } from 'lucide-react';
+import { 
+    BookOpen, Library, GraduationCap, Award, PlayCircle, CheckCircle, ChevronRight, ArrowLeft,
+    LayoutDashboard, Sparkles, FileText, LogOut, Menu, X, Camera 
+} from 'lucide-react';
 
 // ========== LOCALSTORAGE HELPERS ==========
 const STORAGE_KEY = 'video_completed_topics';
@@ -93,8 +97,9 @@ const getDummyImage = (courseTitle) => {
     return 'https://images.unsplash.com/photo-1501504905252-473c47e087f8?w=400&h=240&fit=crop';
 };
 
-const PurchasedCourse = () => {
-    const { student } = useStudentStore();
+const PurchasedCourse = ({ isEmbedded = false }) => {
+    const { student, setStudent } = useStudentStore();
+    const navigate = useNavigate();
     const studentId = student?.id || student?._id;
 
     const [courses, setCourses] = useState([]);
@@ -107,6 +112,174 @@ const PurchasedCourse = () => {
     const [embedUrl, setEmbedUrl] = useState(null);
     const [markingProgress, setMarkingProgress] = useState(false);
     const [courseProgress, setCourseProgress] = useState({});
+    const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
+    const handleLogout = () => {
+        localStorage.removeItem('student');
+        localStorage.removeItem('token');
+        if (setStudent) setStudent(null);
+        toast.info("Logged out successfully");
+        navigate('/stdlogin');
+    };
+
+    const renderStudentSidebar = () => {
+        const studentName = student?.fullName || student?.name || student?.user?.fullName || 'Student';
+        const studentEmail = student?.email || student?.user?.email || '';
+        const studentClass = student?.currentClass || student?.className || student?.user?.currentClass;
+        const profileImageUrl = student?.profileImage || student?.profilePicture || student?.user?.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(studentName)}&background=0078FF&color=fff&size=200&bold=true`;
+
+        const navItems = [
+            { id: 'overview', label: 'Overview Dashboard', icon: LayoutDashboard, isLink: '/stdprofile' },
+            { id: 'courses', label: 'My Enrolled Courses', icon: BookOpen, active: true },
+            { id: 'academic', label: 'Academic Details', icon: GraduationCap, isLink: '/stdprofile' },
+            { id: 'tests', label: 'Online Mock Tests', icon: FileText, isLink: '/test' },
+        ];
+
+        return (
+            <>
+                {/* Mobile Header Bar */}
+                <div className="md:hidden bg-white text-slate-900 p-4 flex items-center justify-between sticky top-0 z-50 border-b border-slate-200 shadow-xs">
+                    <div className="flex items-center gap-3">
+                        <button 
+                            onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
+                            className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-md transition-colors"
+                        >
+                            {mobileSidebarOpen ? <X size={22} /> : <Menu size={22} />}
+                        </button>
+                        <div className="flex items-center gap-2">
+                            <img src="/logo.svg" alt="Roots Classes" className="h-7 w-auto" />
+                            <div>
+                                <span className="text-sm font-black text-[#FB0500] tracking-tight">Roots</span>
+                                <span className="text-sm font-black text-slate-900 tracking-tight"> Classes</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <img src={profileImageUrl} alt="Avatar" className="w-8 h-8 rounded-full border border-blue-500 object-cover" />
+                        <span className="text-xs font-bold text-slate-800 truncate max-w-[100px]">{studentName.split(' ')[0]}</span>
+                    </div>
+                </div>
+
+                {/* Mobile Overlay */}
+                {mobileSidebarOpen && (
+                    <div 
+                        className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-40 md:hidden"
+                        onClick={() => setMobileSidebarOpen(false)}
+                    />
+                )}
+
+                {/* LEFT SIDEBAR NAVIGATION */}
+                <aside className={`
+                    fixed md:sticky top-0 left-0 h-screen w-60 bg-white text-slate-700 z-50 flex flex-col justify-between
+                    transition-transform duration-300 ease-in-out border-r border-slate-200 shadow-xs flex-shrink-0
+                    ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+                `}>
+                    <div>
+                        {/* Header: Back Button only */}
+                        <div className="p-3 px-4 border-b border-slate-100 flex items-center justify-between">
+                            <button 
+                                onClick={() => navigate('/')} 
+                                className="flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-slate-900 transition-colors"
+                            >
+                                <ArrowLeft size={16} />
+                                <span>Back to Home</span>
+                            </button>
+                        </div>
+
+                        {/* Student Mini Profile Card in Sidebar */}
+                        <div className="p-3 mx-2.5 my-2.5 bg-slate-50 border border-slate-200/80 rounded-md">
+                            <div className="flex items-center gap-2.5">
+                                <img
+                                    src={profileImageUrl}
+                                    alt={studentName}
+                                    className="w-9 h-9 rounded-full object-cover border border-slate-200 shadow-xs flex-shrink-0"
+                                />
+                                <div className="min-w-0 flex-1">
+                                    <h3 className="text-xs font-black text-slate-900 truncate leading-tight">{studentName}</h3>
+                                    {studentEmail && <p className="text-[10px] font-medium text-slate-500 truncate">{studentEmail}</p>}
+                                    <div className="flex items-center gap-1 mt-0.5">
+                                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                        <span className="text-[9px] font-bold text-emerald-700 uppercase tracking-wider">
+                                            {studentClass ? `Class ${studentClass}` : 'Active Student'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Navigation Links */}
+                        <nav className="p-2.5 space-y-1 overflow-y-auto max-h-[calc(100vh-250px)] custom-scrollbar">
+                            <p className="px-2 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Main Menu</p>
+                            
+                            {navItems.map((item) => {
+                                const Icon = item.icon;
+                                const isActive = item.active;
+
+                                if (item.isHighlight) {
+                                    return (
+                                        <button
+                                            key={item.id}
+                                            onClick={() => {
+                                                if (item.isLink) navigate(item.isLink);
+                                                setMobileSidebarOpen(false);
+                                            }}
+                                            className="w-full flex items-center justify-center gap-2 py-2 px-3 my-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-md transition-all shadow-xs"
+                                        >
+                                            <Icon size={15} />
+                                            <span>{item.label}</span>
+                                        </button>
+                                    );
+                                }
+
+                                return (
+                                    <button
+                                        key={item.id}
+                                        onClick={() => {
+                                            if (item.isLink) {
+                                                navigate(item.isLink);
+                                            } else if (item.id === 'courses') {
+                                                setSelectedCourse(null);
+                                                setSelectedTopic(null);
+                                            }
+                                            setMobileSidebarOpen(false);
+                                        }}
+                                        className={`
+                                            w-full flex items-center justify-between px-3.5 py-2 rounded-sm text-xs md:text-sm font-bold transition-all
+                                            ${isActive 
+                                                ? 'bg-blue-600 text-white shadow-xs' 
+                                                : 'text-slate-700 hover:text-blue-600 hover:bg-slate-100/80'
+                                            }
+                                        `}
+                                    >
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            <Icon size={18} className={`flex-shrink-0 ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-blue-600'}`} />
+                                            <span className="truncate">{item.label}</span>
+                                        </div>
+                                        {item.count !== undefined && (
+                                            <span className={`px-2 py-0.5 text-[9px] font-black rounded-sm flex-shrink-0 ${isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'}`}>
+                                                {item.count}
+                                            </span>
+                                        )}
+                                    </button>
+                                );
+                            })}
+                        </nav>
+                    </div>
+
+                    {/* Sidebar Bottom Action Area */}
+                    <div className="p-2.5 border-t border-slate-100">
+                        <button
+                            onClick={handleLogout}
+                            className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold rounded-md transition-colors border border-red-200/60 shadow-xs"
+                        >
+                            <LogOut size={14} />
+                            <span>Logout Account</span>
+                        </button>
+                    </div>
+                </aside>
+            </>
+        );
+    };
 
     // Calculate total topics for current course
     const totalTopics = useMemo(() => {
@@ -515,7 +688,7 @@ const getInstructorName = (instructor) => {
 
     // Loading State
     if (loading) return (
-        <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center font-poppins">
+        <div className={`${isEmbedded ? 'py-12' : 'min-h-screen bg-[#F8FAFC]'} flex items-center justify-center font-poppins`}>
             <div className="text-center">
                 <div className="w-12 h-12 border-3 border-blue-600/20 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
                 <p className="text-slate-500 font-bold animate-pulse">Loading your courses...</p>
@@ -524,7 +697,7 @@ const getInstructorName = (instructor) => {
     );
 
     if (error) return (
-        <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-6 font-poppins">
+        <div className={`${isEmbedded ? 'py-12' : 'min-h-screen bg-[#F8FAFC]'} flex items-center justify-center p-6 font-poppins`}>
             <div className="bg-white border border-slate-200 rounded-sm p-8 text-center max-w-md shadow-sm">
                 <p className="text-red-500 font-bold mb-4">{error}</p>
                 <button onClick={handlePurchasedCourses} className="px-6 py-3 bg-slate-900 hover:bg-blue-600 rounded-sm text-white font-black text-xs uppercase tracking-widest transition-all">Try Again</button>
@@ -533,7 +706,7 @@ const getInstructorName = (instructor) => {
     );
 
     if (courses.length === 0) return (
-        <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-6 font-poppins">
+        <div className={`${isEmbedded ? 'py-12' : 'min-h-screen bg-[#F8FAFC]'} flex items-center justify-center p-6 font-poppins`}>
             <div className="text-center max-w-md bg-white p-8 border border-slate-200 rounded-sm shadow-sm">
                 <div className="w-16 h-16 mx-auto mb-4 rounded-sm bg-blue-50 flex items-center justify-center">
                     <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -548,139 +721,143 @@ const getInstructorName = (instructor) => {
 
     if (!selectedCourse) {
         return (
-            <div className="min-h-screen bg-[#F8FAFC] font-poppins pb-16">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-8">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10 pb-6 border-b border-slate-200">
-                        <div>
-                            <span className="text-blue-700 text-[10px] font-black tracking-widest uppercase bg-blue-50 border border-blue-100 px-3.5 py-1.5 rounded-sm inline-flex items-center gap-1.5">
-                                <Library size={14} className="text-blue-600" />
-                                MY LIBRARY
-                            </span>
-                            <h1 className="text-3xl md:text-4xl font-black text-slate-900 mt-3 tracking-tight">
-                                Learning <span className="text-blue-600">Journey</span>
-                            </h1>
-                            <p className="text-slate-500 text-xs font-bold mt-1">Master subjects with interactive modules and video lectures.</p>
+            <div className={isEmbedded ? "w-full font-poppins" : "min-h-screen bg-[#F8FAFC] font-poppins flex flex-col md:flex-row"}>
+                {!isEmbedded && renderStudentSidebar()}
+
+                <div className="flex-1 min-w-0 flex flex-col pb-16">
+                    <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-8">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10 pb-6 border-b border-slate-200">
+                            <div>
+                                <span className="text-blue-700 text-[10px] font-black tracking-widest uppercase bg-blue-50 border border-blue-100 px-3.5 py-1.5 rounded-sm inline-flex items-center gap-1.5">
+                                    <Library size={14} className="text-blue-600" />
+                                    MY LIBRARY
+                                </span>
+                                <h1 className="text-3xl md:text-4xl font-black text-slate-900 mt-3 tracking-tight">
+                                    Learning <span className="text-blue-600">Journey</span>
+                                </h1>
+                                <p className="text-slate-500 text-xs font-bold mt-1">Master subjects with interactive modules and video lectures.</p>
+                            </div>
+                            <div className="bg-white px-6 py-3 rounded-sm border border-slate-200 shadow-sm flex items-center gap-3">
+                                <strong className="text-2xl font-black text-slate-900">{courses.length}</strong>
+                                <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Course{courses.length !== 1 ? 's' : ''} Enrolled</span>
+                            </div>
                         </div>
-                        <div className="bg-white px-6 py-3 rounded-sm border border-slate-200 shadow-sm flex items-center gap-3">
-                            <strong className="text-2xl font-black text-slate-900">{courses.length}</strong>
-                            <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Course{courses.length !== 1 ? 's' : ''} Enrolled</span>
-                        </div>
-                    </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {courses.map((courseItem) => {
-                            const totalCourseTopics = (courseItem.course.modules || []).reduce((acc, m) =>
-                                acc + ((m.chapters || []).reduce((a, c) => a + (c.topics?.length || 0), 0)), 0);
-                            const dummyImage = getDummyImage(courseItem.course.title);
-                            const courseId = courseItem.course._id;
-                            const progress = courseProgress[courseId];
-                            const progressPercent = progress?.percentage || 0;
-                            const completedCount = progress?.completedCount || 0;
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {courses.map((courseItem) => {
+                                const totalCourseTopics = (courseItem.course.modules || []).reduce((acc, m) =>
+                                    acc + ((m.chapters || []).reduce((a, c) => a + (c.topics?.length || 0), 0)), 0);
+                                const dummyImage = getDummyImage(courseItem.course.title);
+                                const courseId = courseItem.course._id;
+                                const progress = courseProgress[courseId];
+                                const progressPercent = progress?.percentage || 0;
+                                const completedCount = progress?.completedCount || 0;
 
-                            return (
-                                <div
-                                    key={courseItem.course._id}
-                                    onClick={() => handleCourseSelect(courseItem)}
-                                    className="group relative bg-white border border-slate-200 rounded-sm overflow-hidden shadow-xs hover:shadow-md transition-all duration-300 cursor-pointer flex flex-col justify-between"
-                                >
-                                    <div>
-                                        <div className="relative h-48 overflow-hidden bg-slate-100">
-                                            <img
-                                                src={dummyImage}
-                                                alt={courseItem.course.title}
-                                                className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                                            />
-                                            <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent"></div>
+                                return (
+                                    <div
+                                        key={courseItem.course._id}
+                                        onClick={() => handleCourseSelect(courseItem)}
+                                        className="group relative bg-white border border-slate-200 rounded-sm overflow-hidden shadow-xs hover:shadow-md transition-all duration-300 cursor-pointer flex flex-col justify-between"
+                                    >
+                                        <div>
+                                            <div className="relative h-48 overflow-hidden bg-slate-100">
+                                                <img
+                                                    src={dummyImage}
+                                                    alt={courseItem.course.title}
+                                                    className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                                                />
+                                                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent"></div>
 
-                                            <div className="absolute top-3 left-3">
-                                                <span className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded-sm bg-slate-900/90 text-white shadow-sm backdrop-blur-sm">
-                                                    {courseItem.course.level || 'Beginner'}
-                                                </span>
-                                            </div>
-
-                                            {courseItem.price && (
-                                                <div className="absolute top-3 right-3 px-2.5 py-1 text-xs font-black rounded-sm bg-white/95 backdrop-blur-sm text-slate-900 border border-slate-200 shadow-sm">
-                                                    ₹{courseItem.price}
-                                                </div>
-                                            )}
-
-                                            {courseItem.course.category?.name && (
-                                                <div className="absolute bottom-3 left-3">
-                                                    <span className="px-2.5 py-1 text-[10px] font-bold rounded-sm bg-white/90 text-slate-700 backdrop-blur-sm border border-slate-200">
-                                                        {courseItem.course.category.name}
+                                                <div className="absolute top-3 left-3">
+                                                    <span className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded-sm bg-slate-900/90 text-white shadow-sm backdrop-blur-sm">
+                                                        {courseItem.course.level || 'Beginner'}
                                                     </span>
                                                 </div>
-                                            )}
 
-                                            {progressPercent > 0 && (
-                                                <div className="absolute bottom-3 right-3">
-                                                    <div className="px-2.5 py-1 rounded-sm bg-blue-600 backdrop-blur-sm text-white text-[10px] font-black uppercase tracking-wider">
-                                                        {Math.round(progressPercent)}% Complete
+                                                {courseItem.price && (
+                                                    <div className="absolute top-3 right-3 px-2.5 py-1 text-xs font-black rounded-sm bg-white/95 backdrop-blur-sm text-slate-900 border border-slate-200 shadow-sm">
+                                                        ₹{courseItem.price}
                                                     </div>
-                                                </div>
-                                            )}
-                                        </div>
+                                                )}
 
-                                        <div className="p-6">
-                                            <h3 className="text-lg font-black text-slate-900 line-clamp-1 group-hover:text-blue-600 transition-colors">
-                                                {courseItem.course.title}
-                                            </h3>
-                                            <p className="text-slate-500 text-xs font-medium mt-2 line-clamp-2 leading-relaxed">
-                                                {courseItem.course.description || 'No description available'}
-                                            </p>
+                                                {courseItem.course.category?.name && (
+                                                    <div className="absolute bottom-3 left-3">
+                                                        <span className="px-2.5 py-1 text-[10px] font-bold rounded-sm bg-white/90 text-slate-700 backdrop-blur-sm border border-slate-200">
+                                                            {courseItem.course.category.name}
+                                                        </span>
+                                                    </div>
+                                                )}
 
-                                            <div className="flex items-center gap-4 mt-4 pt-3 border-t border-slate-100">
-                                                <div className="flex items-center gap-1.5 text-slate-500 text-xs font-bold">
-                                                    <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                                                    </svg>
-                                                    <span><strong className="text-slate-900">{courseItem.course?.modules?.length || 0}</strong> Modules</span>
-                                                </div>
-                                                <div className="flex items-center gap-1.5 text-slate-500 text-xs font-bold">
-                                                    <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                                    </svg>
-                                                    <span><strong className="text-slate-900">{totalCourseTopics}</strong> Topics</span>
-                                                </div>
+                                                {progressPercent > 0 && (
+                                                    <div className="absolute bottom-3 right-3">
+                                                        <div className="px-2.5 py-1 rounded-sm bg-blue-600 backdrop-blur-sm text-white text-[10px] font-black uppercase tracking-wider">
+                                                            {Math.round(progressPercent)}% Complete
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
 
-                                            {progressPercent > 0 && (
-                                                <div className="mt-4">
-                                                    <div className="flex justify-between text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
-                                                        <span>Progress</span>
-                                                        <span>{completedCount}/{totalCourseTopics} topics</span>
-                                                    </div>
-                                                    <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                                        <div 
-                                                            className="h-full bg-blue-600 rounded-full transition-all duration-300" 
-                                                            style={{ width: `${progressPercent}%` }}
-                                                        ></div>
-                                                    </div>
-                                                </div>
-                                            )}
+                                            <div className="p-6">
+                                                <h3 className="text-lg font-black text-slate-900 line-clamp-1 group-hover:text-blue-600 transition-colors">
+                                                    {courseItem.course.title}
+                                                </h3>
+                                                <p className="text-slate-500 text-xs font-medium mt-2 line-clamp-2 leading-relaxed">
+                                                    {courseItem.course.description || 'No description available'}
+                                                </p>
 
-                                            <div className="flex items-center gap-2 mt-4 text-slate-500 text-xs font-bold">
-                                                <div className="w-6 h-6 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center">
-                                                    <svg className="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                                    </svg>
+                                                <div className="flex items-center gap-4 mt-4 pt-3 border-t border-slate-100">
+                                                    <div className="flex items-center gap-1.5 text-slate-500 text-xs font-bold">
+                                                        <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                                        </svg>
+                                                        <span><strong className="text-slate-900">{courseItem.course?.modules?.length || 0}</strong> Modules</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-1.5 text-slate-500 text-xs font-bold">
+                                                        <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                                        </svg>
+                                                        <span><strong className="text-slate-900">{totalCourseTopics}</strong> Topics</span>
+                                                    </div>
                                                 </div>
-                                                <span>By {getInstructorName(courseItem.course.instructor)}</span>
+
+                                                {progressPercent > 0 && (
+                                                    <div className="mt-4">
+                                                        <div className="flex justify-between text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
+                                                            <span>Progress</span>
+                                                            <span>{completedCount}/{totalCourseTopics} topics</span>
+                                                        </div>
+                                                        <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                                            <div 
+                                                                className="h-full bg-blue-600 rounded-full transition-all duration-300" 
+                                                                style={{ width: `${progressPercent}%` }}
+                                                            ></div>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                <div className="flex items-center gap-2 mt-4 text-slate-500 text-xs font-bold">
+                                                    <div className="w-6 h-6 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center">
+                                                        <svg className="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                                        </svg>
+                                                    </div>
+                                                    <span>By {getInstructorName(courseItem.course.instructor)}</span>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
 
-                                    <div className="px-6 pb-6 pt-0">
-                                        <button className="w-full flex items-center justify-center gap-2 py-3 rounded-sm bg-slate-900 text-white font-bold text-xs uppercase tracking-widest group-hover:bg-blue-600 transition-all group/btn">
-                                            {progressPercent === 100 ? 'Review Course' : progressPercent > 0 ? 'Continue Learning' : 'Start Learning'}
-                                            <svg className="w-4 h-4 group-hover/btn:translate-x-1 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                            </svg>
-                                        </button>
+                                        <div className="px-6 pb-6 pt-0">
+                                            <button className="w-full flex items-center justify-center gap-2 py-3 rounded-sm bg-slate-900 text-white font-bold text-xs uppercase tracking-widest group-hover:bg-blue-600 transition-all group/btn">
+                                                {progressPercent === 100 ? 'Review Course' : progressPercent > 0 ? 'Continue Learning' : 'Start Learning'}
+                                                <svg className="w-4 h-4 group-hover/btn:translate-x-1 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                </svg>
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
-                            );
-                        })}
+                                );
+                            })}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -694,9 +871,12 @@ const getInstructorName = (instructor) => {
     const courseCompletedCount = currentCourseProgress.completedCount || completedTopicsCount;
 
     return (
-        <div className="min-h-screen bg-white">
-            {/* Topbar */}
-            <div className="sticky top-[64px] left-0 right-0 z-30 bg-white border-b border-gray-200 shadow-xs">                <div className="flex items-center justify-between px-4 md:px-6 h-14">
+        <div className={isEmbedded ? "w-full bg-white font-poppins border border-slate-200 rounded-sm overflow-hidden" : "min-h-screen bg-white font-poppins flex flex-col md:flex-row"}>
+            {!isEmbedded && renderStudentSidebar()}
+
+            <div className="flex-1 min-w-0 flex flex-col min-h-screen">
+                {/* Topbar */}
+                <div className="sticky top-0 left-0 right-0 z-30 bg-white border-b border-gray-200 shadow-xs">                <div className="flex items-center justify-between px-4 md:px-6 h-14">
                     <button onClick={() => { setSelectedCourse(null); setSelectedTopic(null); }} className="flex items-center gap-2 text-gray-500 hover:text-gray-700 transition">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -976,7 +1156,8 @@ const getInstructorName = (instructor) => {
                 </main>
             </div>
         </div>
-    );
+    </div>
+);
 };
 
 export default PurchasedCourse;
