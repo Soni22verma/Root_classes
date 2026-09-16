@@ -63,18 +63,25 @@ app.use("/progress", progressRouter)
 
 
 
-let frontendPath = path.join(__dirname, "../Frontend/dist");
-if (!fs.existsSync(frontendPath)) {
-  frontendPath = path.join(__dirname, "./dist");
-}
-if (!fs.existsSync(frontendPath)) {
-  frontendPath = path.join(__dirname, "./public");
-}
+const possiblePaths = [
+  path.join(__dirname, "../Frontend/dist"),
+  path.join(__dirname, "./dist"),
+  path.join(__dirname, "./public"),
+  path.join(process.cwd(), "Frontend/dist"),
+  path.join(process.cwd(), "dist"),
+  path.join(process.cwd(), "public")
+];
+
+let frontendPath = possiblePaths.find(p => fs.existsSync(path.join(p, "index.html"))) || possiblePaths[0];
 
 app.use(express.static(frontendPath));
 
 app.use((req, res) => {
-  res.sendFile(path.join(frontendPath, "index.html"));
+  const indexPath = path.join(frontendPath, "index.html");
+  if (fs.existsSync(indexPath)) {
+    return res.sendFile(indexPath);
+  }
+  return res.status(404).send("Frontend build not found. Please build the frontend first.");
 });
 
 export default app;
