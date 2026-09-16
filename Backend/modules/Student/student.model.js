@@ -69,6 +69,19 @@ const userSchema = new mongoose.Schema(
         type:String,
         enum:["9th","10th","11th","12th"],
        
+      },
+
+      isBanned: {
+        type: Boolean,
+        default: false,
+      },
+      banReason: {
+        type: String,
+        default: "",
+      },
+      isEmailVerified: {
+        type: Boolean,
+        default: false,
       }
 
     },

@@ -235,19 +235,27 @@ export const publishTest = async (req, res) => {
 export const getPublishedTests = async (req, res) => {
   try {
     const tests = await Test.find({ isPublished: true })
-      .select("title duration totalMarks questions");
+      .select("title duration totalMarks questions className description difficulty category createdAt")
+      .sort({ createdAt: -1 });
 
     const formattedTests = tests.map(test => ({
       _id: test._id,
+      id: test._id,
       title: test.title,
       duration: test.duration,
-      totalMarks: test.totalMarks,
-      totalQuestions: test.questions.length  
+      totalMarks: test.totalMarks || (test.questions ? test.questions.length : 0),
+      totalQuestions: test.questions ? test.questions.length : 0,
+      className: test.className,
+      description: test.description,
+      difficulty: test.difficulty || 'Medium',
+      category: test.category || 'General',
+      createdAt: test.createdAt
     }));
 
     res.json({
       success: true,
-      data: formattedTests
+      data: formattedTests,
+      tests: formattedTests
     });
 
   } catch (error) {

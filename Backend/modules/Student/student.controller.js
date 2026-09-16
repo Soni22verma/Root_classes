@@ -5,8 +5,10 @@ import User from './student.model.js';
 import { sendOTP } from '../../config/emailServices.js';
 import { emitNotification } from '../../config/socket.js';
 import { Test } from '../Admin/CreateTest/createtest.model.js';
+import { validateEmail } from '../../utils/emailValidator.js';
 
-
+// In-memory store for verified registration emails (valid for 15 minutes)
+export const verifiedRegistrationEmails = new Map();
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -26,7 +28,8 @@ export const Registeruser = async (req, res) => {
       currentClass,
       interestedCourse,
       address,
-      phone
+      phone,
+      otp
     } = req.body;
 
     // ✅ Validation
@@ -42,11 +45,33 @@ export const Registeruser = async (req, res) => {
       });
     }
 
+    const cleanEmail = email.trim().toLowerCase();
+
+    // ✅ Phone Number Validation
+    const cleanPhone = phone ? phone.toString().trim() : '';
+    if (!/^[6-9]\d{9}$/.test(cleanPhone)) {
+      return res.status(400).json({
+        message: "Please enter a valid 10-digit mobile number starting with 6, 7, 8, or 9",
+        error: true,
+        success: false
+      });
+    }
+
+    // ✅ Disposable & Dummy Email Check
+    const emailValidation = validateEmail(cleanEmail);
+    if (!emailValidation.isValid) {
+      return res.status(400).json({
+        message: emailValidation.message,
+        error: true,
+        success: false
+      });
+    }
+
     // ✅ Check existing user
-    const existinguser = await User.findOne({ email });
+    const existinguser = await User.findOne({ email: cleanEmail });
     if (existinguser) {
       return res.status(400).json({
-        message: "user already registered",
+        message: "User is already registered with this email",
         error: true,
         success: false
       });
@@ -57,8 +82,8 @@ export const Registeruser = async (req, res) => {
 
     // ✅ Create user (role FIXED here)
     const user = await User.create({
-      fullName,
-      email,
+      fullName: fullName.trim(),
+      email: cleanEmail,
       password: hash,
       role: "student",
       dateofBirth,
@@ -67,7 +92,12 @@ export const Registeruser = async (req, res) => {
       interestedCourse,
       address,
       phone,
+      isBanned: false,
+      isEmailVerified: true
     });
+
+    // Clean up verified email state
+    verifiedRegistrationEmails.delete(cleanEmail);
 
     const token = generateToken(user._id);
 
@@ -78,7 +108,7 @@ export const Registeruser = async (req, res) => {
     });
 
     return res.status(201).json({
-      message: "user registered successfully",
+      message: "User registered successfully",
       success: true,
       token,
       user: {
@@ -88,7 +118,6 @@ export const Registeruser = async (req, res) => {
         role: user.role
       }
     });
-
 
   } catch (error) {
     console.log(error);
@@ -114,13 +143,27 @@ export const handleLogin = async (req, res) => {
       });
     }
 
+    const cleanEmail = email.trim().toLowerCase();
+
     // ✅ Find user
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: cleanEmail });
     if (!user) {
       return res.status(400).json({
         message: "Invalid email or password",
         error: true,
         success: false
+      });
+    }
+
+    // 🚫 Check if user account is BANNED
+    if (user.isBanned) {
+      return res.status(403).json({
+        message: user.banReason
+          ? `Your account has been banned: ${user.banReason}. Please contact support.`
+          : "Your account has been banned by the administration. Please contact support.",
+        error: true,
+        success: false,
+        isBanned: true
       });
     }
 
@@ -144,7 +187,7 @@ export const handleLogin = async (req, res) => {
         _id: user._id,
         fullName: user.fullName,
         email: user.email,
-        role: user.role || "user" // 🔥 fallback
+        role: user.role || "user"
       }
     });
 
@@ -304,14 +347,25 @@ export const sendOTPEmail = async (req, res) => {
       });
     }
 
+    const cleanEmail = email.trim().toLowerCase();
+
+    // Validate email format and block disposable domains
+    const validation = validateEmail(cleanEmail);
+    if (!validation.isValid) {
+      return res.status(400).json({
+        success: false,
+        message: validation.message
+      });
+    }
+
     const otp = generateOTP();
 
-    otpStore.set(email, {
+    otpStore.set(cleanEmail, {
       otp: otp,
       expiresAt: Date.now() + 10 * 60 * 1000 // 10 minutes
     });
 
-    const emailSent = await sendOTP(email, otp);
+    const emailSent = await sendOTP(cleanEmail, otp);
 
     if (emailSent) {
       return res.status(200).json({
@@ -345,7 +399,8 @@ export const verifyOTP = async (req, res) => {
       });
     }
 
-    const storedData = otpStore.get(email);
+    const cleanEmail = email.trim().toLowerCase();
+    const storedData = otpStore.get(cleanEmail);
 
     if (!storedData) {
       return res.status(400).json({
@@ -355,7 +410,7 @@ export const verifyOTP = async (req, res) => {
     }
 
     if (Date.now() > storedData.expiresAt) {
-      otpStore.delete(email);
+      otpStore.delete(cleanEmail);
       return res.status(400).json({
         success: false,
         message: 'OTP has expired. Please request a new one.'
@@ -363,15 +418,16 @@ export const verifyOTP = async (req, res) => {
     }
 
     // Check if OTP matches
-    if (storedData.otp !== otp) {
+    if (storedData.otp !== otp.toString().trim()) {
       return res.status(400).json({
         success: false,
         message: 'Invalid OTP'
       });
     }
 
-    // OTP is valid, delete it from store
-    otpStore.delete(email);
+    // OTP is valid, delete it from store and mark email verified for 15 minutes
+    otpStore.delete(cleanEmail);
+    verifiedRegistrationEmails.set(cleanEmail, Date.now() + 15 * 60 * 1000);
 
     return res.status(200).json({
       success: true,
