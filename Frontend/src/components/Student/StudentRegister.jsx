@@ -3,24 +3,176 @@ import React, { useState } from 'react';
 import api from '../../services/endpoints';
 import { toast } from 'react-toastify';
 import { useNavigate, Link } from 'react-router-dom';
-import { User, BookOpen, Check, ChevronRight, ChevronLeft, Globe, Apple } from 'lucide-react';
+import { User, BookOpen, Check, ChevronRight, ChevronLeft, Globe, Apple, Mail, ShieldCheck, RefreshCw, CheckCircle2 } from 'lucide-react';
+
+const DISPOSABLE_DOMAINS = [
+  "mailinator.com", "tempmail.com", "temp-mail.org", "10minutemail.com",
+  "10minutemail.net", "guerrillamail.com", "sharklasers.com", "yopmail.com",
+  "yopmail.fr", "dispostable.com", "trashmail.com", "getairmail.com",
+  "mohmal.com", "crazymailing.com", "maildrop.cc", "fake.com", "test.com",
+  "example.com", "demo.com", "dummy.com", "throwawaymail.com"
+];
 
 const StudentRegistration = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  
+  // OTP Verification States
+  const [isOtpSent, setIsOtpSent] = useState(false);
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+  const [otpDigits, setOtpDigits] = useState(["", "", "", "", "", ""]);
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+
   const [formData, setFormData] = useState({
     fullName: '', email: '', phone: '', password: '',
     dateofBirth: '', gender: '', currentClass: '',
     interestedCourse: '', address: ''
   });
 
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    if (name === 'email') {
+      setIsEmailVerified(false);
+      setIsOtpSent(false);
+      setOtpCode('');
+      setOtpDigits(["", "", "", "", "", ""]);
+      setFormData({ ...formData, [name]: value });
+    } else if (name === 'phone') {
+      // Allow only numbers and max 10 digits
+      const onlyNumbers = value.replace(/\D/g, '').slice(0, 10);
+      setFormData({ ...formData, phone: onlyNumbers });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
+  };
+
+  const handleOtpDigitChange = (index, value) => {
+    if (!/^\d*$/.test(value)) return;
+    const newDigits = [...otpDigits];
+    newDigits[index] = value.slice(-1);
+    setOtpDigits(newDigits);
+    const fullCode = newDigits.join("");
+    setOtpCode(fullCode);
+
+    // Auto focus next box
+    if (value && index < 5) {
+      const nextInput = document.getElementById(`otp-input-${index + 1}`);
+      if (nextInput) nextInput.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index, e) => {
+    if (e.key === "Backspace" && !otpDigits[index] && index > 0) {
+      const prevInput = document.getElementById(`otp-input-${index - 1}`);
+      if (prevInput) {
+        prevInput.focus();
+        const newDigits = [...otpDigits];
+        newDigits[index - 1] = "";
+        setOtpDigits(newDigits);
+        setOtpCode(newDigits.join(""));
+      }
+    }
+  };
+
+  const handleOtpPaste = (e) => {
+    e.preventDefault();
+    const pasteData = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    if (pasteData) {
+      const newDigits = ["", "", "", "", "", ""];
+      for (let i = 0; i < pasteData.length; i++) {
+        newDigits[i] = pasteData[i];
+      }
+      setOtpDigits(newDigits);
+      setOtpCode(newDigits.join(""));
+      const focusIndex = Math.min(pasteData.length, 5);
+      const targetInput = document.getElementById(`otp-input-${focusIndex}`);
+      if (targetInput) targetInput.focus();
+    }
+  };
+
+  const isDummyEmail = (email) => {
+    if (!email || !email.includes('@')) return false;
+    const domain = email.trim().toLowerCase().split('@')[1];
+    return DISPOSABLE_DOMAINS.includes(domain);
+  };
+
+  const handleSendOtp = async () => {
+    const cleanEmail = formData.email.trim().toLowerCase();
+    if (!cleanEmail) {
+      toast.error("Please enter your email first");
+      return;
+    }
+
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(cleanEmail)) {
+      toast.error("Please enter a valid email format");
+      return;
+    }
+
+    if (isDummyEmail(cleanEmail)) {
+      toast.error("Temporary/disposable email addresses are not allowed. Please enter your real email.");
+      return;
+    }
+
+    setOtpLoading(true);
+    try {
+      await axios.post(api.student.sendOtp, { email: cleanEmail });
+      toast.success("Verification code sent to your email!");
+      setIsOtpSent(true);
+      setCountdown(60);
+      const timer = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to send OTP. Please check your email.");
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!otpCode || otpCode.trim().length !== 6) {
+      toast.error("Please enter the 6-digit OTP received in your email");
+      return;
+    }
+
+    setOtpLoading(true);
+    try {
+      await axios.post(api.student.verifyOTP, {
+        email: formData.email.trim().toLowerCase(),
+        otp: otpCode.trim()
+      });
+      toast.success("Email verified successfully! ✓");
+      setIsEmailVerified(true);
+      setIsOtpSent(false);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Invalid or expired OTP");
+    } finally {
+      setOtpLoading(false);
+    }
+  };
 
   const validateStep = (currentStep) => {
     if (currentStep === 1) {
       if (!formData.fullName.trim() || !formData.email.trim() || !formData.password.trim()) {
-        toast.error("Please fill in Name, Email and Password");
+        toast.error("Please fill in Name, Email, and Password");
+        return false;
+      }
+      if (isDummyEmail(formData.email)) {
+        toast.error("Disposable or dummy emails are blocked. Please use a real email provider.");
+        return false;
+      }
+      if (!isEmailVerified) {
+        toast.warning("Please verify your email address via OTP first to ensure real account security.");
         return false;
       }
     } else if (currentStep === 2) {
@@ -29,8 +181,21 @@ const StudentRegistration = () => {
         return false;
       }
     } else if (currentStep === 3) {
-      if (!formData.phone.trim() || !formData.interestedCourse || !formData.address.trim()) {
-        toast.error("Please fill in Phone, Course, and Address");
+      const cleanPhone = formData.phone ? formData.phone.trim() : '';
+      if (!cleanPhone) {
+        toast.error("Please enter your 10-digit mobile number");
+        return false;
+      }
+      if (cleanPhone.length !== 10) {
+        toast.error("Mobile number must be exactly 10 digits");
+        return false;
+      }
+      if (!/^[6-9]\d{9}$/.test(cleanPhone)) {
+        toast.error("Please enter a valid Indian mobile number starting with 6, 7, 8, or 9");
+        return false;
+      }
+      if (!formData.interestedCourse || !formData.address.trim()) {
+        toast.error("Please fill in Course and Address");
         return false;
       }
     }
@@ -54,8 +219,11 @@ const StudentRegistration = () => {
     }
     setLoading(true);
     try {
-      await axios.post(api.student.register, formData);
-      toast.success("Welcome aboard!");
+      await axios.post(api.student.register, {
+        ...formData,
+        email: formData.email.trim().toLowerCase()
+      });
+      toast.success("Account created successfully! Welcome to Roots Classes.");
       navigate("/stdlogin");
     } catch (error) {
       toast.error(error.response?.data?.message || "Registration failed");
@@ -87,22 +255,129 @@ const StudentRegistration = () => {
             </div>
 
             <div className="mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 mb-1 tracking-tight">Create account</h1>
-              <p className="text-sm text-gray-400">Join the Roots Classes community.</p>
+              <h1 className="text-3xl font-bold text-gray-900 mb-1 tracking-tight">Create student account</h1>
+              <p className="text-sm text-gray-400">Join the Roots Classes learning community.</p>
             </div>
 
             <form onSubmit={handleRegister} className="space-y-5">
               {/* Step 1: Identity */}
               {step === 1 && (
-                <div className="animate-slideIn space-y-5">
+                <div className="animate-slideIn space-y-4">
                   <div className="space-y-1">
                     <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-3">Full Name</label>
                     <input type="text" name="fullName" required value={formData.fullName} onChange={handleChange} className="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 px-5 focus:outline-none focus:border-[#0078FF] transition-all text-xs font-bold" placeholder="John Doe" />
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-3">Email</label>
-                    <input type="email" name="email" required value={formData.email} onChange={handleChange} className="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 px-5 focus:outline-none focus:border-[#0078FF] transition-all text-xs font-bold" placeholder="name@example.com" />
+
+                  {/* Email with OTP Verification Box */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between ml-3 mr-1">
+                      <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Email Address</label>
+                      {isEmailVerified && (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600">
+                          <CheckCircle2 size={13} className="stroke-[2.5]" /> Verified
+                        </span>
+                      )}
+                    </div>
+                    
+                    <div className="relative">
+                      <input 
+                        type="email" 
+                        name="email" 
+                        required 
+                        disabled={isEmailVerified}
+                        value={formData.email} 
+                        onChange={handleChange} 
+                        className={`w-full bg-gray-50 border rounded-xl py-3 pl-5 pr-24 focus:outline-none transition-all text-xs font-bold ${
+                          isEmailVerified ? 'border-emerald-300 bg-emerald-50/40 text-emerald-900' : 'border-gray-100 focus:border-[#0078FF]'
+                        }`} 
+                        placeholder="yourname@gmail.com" 
+                      />
+                      
+                      {!isEmailVerified && (
+                        <button
+                          type="button"
+                          onClick={handleSendOtp}
+                          disabled={otpLoading || countdown > 0 || !formData.email}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#0078FF] hover:bg-blue-700 disabled:bg-gray-200 disabled:text-gray-400 text-white rounded-lg text-[10px] font-bold transition-all shadow-xs"
+                        >
+                          {otpLoading ? 'Sending...' : countdown > 0 ? `${countdown}s` : isOtpSent ? 'Resend' : 'Send OTP'}
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Segmented Compact OTP Verification Box */}
+                    {isOtpSent && !isEmailVerified && (
+                      <div className="p-3 bg-gradient-to-br from-blue-50/90 via-sky-50/30 to-white border border-blue-200/80 rounded-xl space-y-2.5 mt-2 animate-slideIn shadow-xs">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-[#0078FF] shrink-0">
+                              <ShieldCheck size={12} className="stroke-[2.5]" />
+                            </div>
+                            <div>
+                              <p className="text-[11px] font-bold text-slate-900 leading-tight">Enter 6-Digit OTP</p>
+                              <p className="text-[9.5px] font-medium text-slate-500 truncate max-w-[180px] sm:max-w-[220px]">Sent to {formData.email}</p>
+                            </div>
+                          </div>
+
+                          {countdown > 0 ? (
+                            <span className="text-[10px] font-mono font-bold text-blue-600 bg-blue-100/70 px-2 py-0.5 rounded-md">
+                              {countdown}s
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={handleSendOtp}
+                              disabled={otpLoading}
+                              className="text-[10.5px] font-bold text-[#0078FF] hover:underline"
+                            >
+                              Resend OTP
+                            </button>
+                          )}
+                        </div>
+
+                        {/* 6 Compact Segmented Digit Boxes */}
+                        <div className="flex items-center justify-center gap-1.5 sm:gap-2">
+                          {[0, 1, 2, 3, 4, 5].map((idx) => (
+                            <input
+                              key={idx}
+                              id={`otp-input-${idx}`}
+                              type="text"
+                              inputMode="numeric"
+                              maxLength={1}
+                              value={otpDigits[idx]}
+                              onChange={(e) => handleOtpDigitChange(idx, e.target.value)}
+                              onKeyDown={(e) => handleOtpKeyDown(idx, e)}
+                              onPaste={handleOtpPaste}
+                              className={`w-7.5 h-9 sm:w-9 sm:h-9.5 text-center text-sm font-bold font-mono rounded-lg bg-white border transition-all outline-none shadow-2xs ${
+                                otpDigits[idx]
+                                  ? 'border-[#0078FF] text-[#0078FF] bg-blue-50/40'
+                                  : 'border-slate-200 text-slate-800 focus:border-[#0078FF] focus:ring-1.5 focus:ring-[#0078FF]/20'
+                              }`}
+                            />
+                          ))}
+                        </div>
+
+                        {/* Verify Action Button */}
+                        <button
+                          type="button"
+                          onClick={handleVerifyOtp}
+                          disabled={otpLoading || otpCode.length !== 6}
+                          className="w-full py-1.5 sm:py-2 bg-[#0078FF] hover:bg-blue-700 disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-lg text-[11px] font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer disabled:cursor-not-allowed"
+                        >
+                          {otpLoading ? (
+                            <>
+                              <RefreshCw size={12} className="animate-spin" /> Verifying...
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle2 size={13} /> Verify & Confirm Email
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    )}
                   </div>
+
                   <div className="space-y-1">
                     <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-3">Password</label>
                     <input type="password" name="password" required value={formData.password} onChange={handleChange} className="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 px-5 focus:outline-none focus:border-[#0078FF] transition-all text-xs font-bold" placeholder="••••••••" />
@@ -142,8 +417,29 @@ const StudentRegistration = () => {
                 <div className="animate-slideIn space-y-5">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-3">Phone</label>
-                      <input type="tel" name="phone" required value={formData.phone} onChange={handleChange} className="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 px-5 focus:outline-none focus:border-[#0078FF] text-xs font-bold" placeholder="10-digit mobile" />
+                      <div className="flex items-center justify-between ml-3 mr-1">
+                        <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Phone Number</label>
+                        {formData.phone.length === 10 && /^[6-9]\d{9}$/.test(formData.phone) && (
+                          <span className="text-[10px] font-bold text-emerald-600">✓ Valid</span>
+                        )}
+                      </div>
+                      <input 
+                        type="tel" 
+                        name="phone" 
+                        required 
+                        maxLength={10}
+                        inputMode="numeric"
+                        value={formData.phone} 
+                        onChange={handleChange} 
+                        className={`w-full bg-gray-50 border rounded-xl py-3 px-5 focus:outline-none transition-all text-xs font-bold ${
+                          formData.phone.length === 10
+                            ? /^[6-9]\d{9}$/.test(formData.phone)
+                              ? 'border-emerald-300 focus:border-emerald-500'
+                              : 'border-red-300 focus:border-red-500'
+                            : 'border-gray-100 focus:border-[#0078FF]'
+                        }`} 
+                        placeholder="10-digit mobile (e.g. 9876543210)" 
+                      />
                     </div>
                     <div className="space-y-1">
                       <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-3">Course</label>

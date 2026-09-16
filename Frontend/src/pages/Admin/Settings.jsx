@@ -15,12 +15,14 @@ import {
 import { toast } from 'react-toastify';
 import axios from 'axios';
 import useStudentStore from '../../Store/studentstore';
+import api from '../../services/adminendpoint';
 
 const Settings = () => {
   const { student, setStudent } = useStudentStore();
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
   const [showPassword, setShowPassword] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -76,23 +78,27 @@ const Settings = () => {
 
   const handlePasswordUpdate = async (e) => {
     e.preventDefault();
+    if (!formData.newPassword) {
+      return toast.error('Please enter a new password');
+    }
     if (formData.newPassword !== formData.confirmPassword) {
       return toast.error('Passwords do not match');
     }
     setLoading(true);
     try {
-      const BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_BASE_URL || "http://localhost:5050";
-      const response = await axios.post(`${BASE_URL}/student/reset-password`, {
-        email: student.email,
+      const response = await axios.post(api.admin.changePassword, {
+        email: student?.email || formData.email,
+        currentPassword: formData.currentPassword,
         newPassword: formData.newPassword,
         confirmPassword: formData.confirmPassword
       });
+
       if (response.data.success) {
-        toast.success('Security Credentials Reset');
+        toast.success(response.data.message || 'Password changed successfully!');
         setFormData(prev => ({ ...prev, currentPassword: '', newPassword: '', confirmPassword: '' }));
       }
     } catch (error) {
-      toast.error('Security Update Failed');
+      toast.error(error.response?.data?.message || 'Password update failed. Check your current password.');
     } finally {
       setLoading(false);
     }
@@ -192,12 +198,22 @@ const Settings = () => {
                        <p className="text-xs text-gray-500">Update your access password and security settings.</p>
                     </div>
                     <div className="p-6 space-y-5">
-                       <div className="max-w-md space-y-4">
+                        <div className="max-w-md space-y-4">
+                          <div className="space-y-1.5">
+                             <label className="text-xs font-semibold text-gray-700">Current Password (optional for first time)</label>
+                             <div className="relative">
+                                <Lock size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                                <input name="currentPassword" type={showCurrentPassword ? "text" : "password"} value={formData.currentPassword} onChange={handleInputChange} placeholder="••••••••" className="w-full bg-white border border-gray-200 rounded-md py-2.5 pl-10 pr-10 text-xs font-medium focus:ring-2 focus:ring-[#0078FF]/20 focus:border-[#0078FF] outline-none transition-all" />
+                                <button type="button" onClick={() => setShowCurrentPassword(!showCurrentPassword)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
+                                   {showCurrentPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                                </button>
+                             </div>
+                          </div>
                           <div className="space-y-1.5">
                              <label className="text-xs font-semibold text-gray-700">New Password</label>
                              <div className="relative">
                                 <Lock size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-                                <input name="newPassword" type={showPassword ? "text" : "password"} value={formData.newPassword} onChange={handleInputChange} className="w-full bg-white border border-gray-200 rounded-md py-2.5 pl-10 pr-10 text-xs font-medium focus:ring-2 focus:ring-[#FB0500]/20 focus:border-[#FB0500] outline-none transition-all" />
+                                <input name="newPassword" type={showPassword ? "text" : "password"} value={formData.newPassword} onChange={handleInputChange} placeholder="Enter new password" className="w-full bg-white border border-gray-200 rounded-md py-2.5 pl-10 pr-10 text-xs font-medium focus:ring-2 focus:ring-[#FB0500]/20 focus:border-[#FB0500] outline-none transition-all" />
                                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
                                    {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
                                 </button>
@@ -207,7 +223,7 @@ const Settings = () => {
                              <label className="text-xs font-semibold text-gray-700">Confirm New Password</label>
                              <div className="relative">
                                 <ShieldCheck size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-                                <input name="confirmPassword" type={showPassword ? "text" : "password"} value={formData.confirmPassword} onChange={handleInputChange} className="w-full bg-white border border-gray-200 rounded-md py-2.5 pl-10 pr-4 text-xs font-medium focus:ring-2 focus:ring-[#FB0500]/20 focus:border-[#FB0500] outline-none transition-all" />
+                                <input name="confirmPassword" type={showPassword ? "text" : "password"} value={formData.confirmPassword} onChange={handleInputChange} placeholder="Repeat new password" className="w-full bg-white border border-gray-200 rounded-md py-2.5 pl-10 pr-4 text-xs font-medium focus:ring-2 focus:ring-[#FB0500]/20 focus:border-[#FB0500] outline-none transition-all" />
                              </div>
                           </div>
                        </div>

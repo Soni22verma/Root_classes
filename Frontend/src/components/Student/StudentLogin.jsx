@@ -18,6 +18,7 @@ const LoginPage = () => {
   const [forgotStep, setForgotStep] = useState(1); // 1: email, 2: otp, 3: reset password
   const [forgotEmail, setForgotEmail] = useState('');
   const [otp, setOtp] = useState('');
+  const [otpDigits, setOtpDigits] = useState(["", "", "", "", "", ""]);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -26,11 +27,57 @@ const LoginPage = () => {
   const [resetLoading, setResetLoading] = useState(false);
   const [countdown, setCountdown] = useState(0);
 
+  const handleOtpDigitChange = (index, value) => {
+    if (!/^\d*$/.test(value)) return;
+    const newDigits = [...otpDigits];
+    newDigits[index] = value.slice(-1);
+    setOtpDigits(newDigits);
+    const fullOtp = newDigits.join("");
+    setOtp(fullOtp);
+
+    if (value && index < 5) {
+      const nextInput = document.getElementById(`forgot-otp-${index + 1}`);
+      if (nextInput) nextInput.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index, e) => {
+    if (e.key === "Backspace" && !otpDigits[index] && index > 0) {
+      const prevInput = document.getElementById(`forgot-otp-${index - 1}`);
+      if (prevInput) {
+        prevInput.focus();
+        const newDigits = [...otpDigits];
+        newDigits[index - 1] = "";
+        setOtpDigits(newDigits);
+        setOtp(newDigits.join(""));
+      }
+    }
+  };
+
+  const handleOtpPaste = (e) => {
+    e.preventDefault();
+    const pasteData = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    if (pasteData) {
+      const newDigits = ["", "", "", "", "", ""];
+      for (let i = 0; i < pasteData.length; i++) {
+        newDigits[i] = pasteData[i];
+      }
+      setOtpDigits(newDigits);
+      setOtp(newDigits.join(""));
+      const focusIndex = Math.min(pasteData.length, 5);
+      const targetInput = document.getElementById(`forgot-otp-${focusIndex}`);
+      if (targetInput) targetInput.focus();
+    }
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await axios.post(api.student.login, formData);
+      const res = await axios.post(api.student.login, {
+        email: formData.email.trim().toLowerCase(),
+        password: formData.password
+      });
       const user = res.data.user || res.data.student || res.data?.data?.student;
       const token = res.data.token || res.data?.data?.token;
       if (!user) throw new Error("Invalid response");
@@ -42,7 +89,13 @@ const LoginPage = () => {
       toast.success("Welcome back!");
       navigate(user.role === "admin" || user.role === "instructor" ? "/instructor/dashboard" : "/");
     } catch (error) {
-      toast.error(error.response?.data?.message || "Login failed");
+      if (error.response?.data?.isBanned || error.response?.status === 403) {
+        toast.error(error.response?.data?.message || "Your account has been suspended by administration. Please contact support.", {
+          autoClose: 7000
+        });
+      } else {
+        toast.error(error.response?.data?.message || "Login failed. Please check your credentials.");
+      }
     } finally {
       setLoading(false);
     }
@@ -212,113 +265,144 @@ const LoginPage = () => {
         </div>
 
         {forgotStep === 1 && (
-          <form onSubmit={handleSendOtp} className="space-y-6">
-            <div className="space-y-1">
-              <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-4">
+          <form onSubmit={handleSendOtp} className="space-y-5 animate-slideIn">
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-3">
                 Email Address
               </label>
-              <input
-                type="email"
-                required
-                value={forgotEmail}
-                onChange={(e) => setForgotEmail(e.target.value)}
-                className="w-full bg-gray-50 border border-gray-100 rounded-full py-4 px-6 focus:ring-2 focus:ring-[#0078FF]/20 focus:border-[#0078FF] transition-all text-sm outline-none"
-                placeholder="name@example.com"
-                autoFocus
-              />
+              <div className="relative">
+                <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="email"
+                  required
+                  value={forgotEmail}
+                  onChange={(e) => setForgotEmail(e.target.value)}
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 pl-11 pr-4 focus:ring-2 focus:ring-[#0078FF]/20 focus:border-[#0078FF] transition-all text-xs font-bold outline-none text-gray-900"
+                  placeholder="yourname@gmail.com"
+                  autoFocus
+                />
+              </div>
             </div>
             <button
               type="submit"
               disabled={otpLoading}
-              className="w-full bg-[#0a1628] text-white py-4 rounded-full font-bold hover:bg-[#FB0500] transition-all duration-300 shadow-sm"
+              className="w-full bg-[#0a1628] hover:bg-[#0078FF] active:scale-[0.99] text-white py-3.5 rounded-xl font-bold transition-all duration-200 shadow-md shadow-slate-900/15 text-xs flex items-center justify-center gap-2 cursor-pointer"
             >
-              {otpLoading ? 'Sending...' : 'Send OTP'}
+              {otpLoading ? (
+                <>
+                  <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Sending Code...
+                </>
+              ) : (
+                <>
+                  Send OTP Code <ArrowRight size={14} />
+                </>
+              )}
             </button>
           </form>
         )}
 
         {forgotStep === 2 && (
-          <form onSubmit={handleVerifyOtp} className="space-y-6">
-            <div className="space-y-1">
-              <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-4">
-                Enter OTP
+          <form onSubmit={handleVerifyOtp} className="space-y-6 animate-slideIn">
+            <div className="space-y-3">
+              <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest block text-center">
+                Enter 6-Digit Verification Code
               </label>
-              <input
-                type="text"
-                required
-                maxLength={6}
-                value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                className="w-full bg-gray-50 border border-gray-100 rounded-full py-4 px-6 text-center text-2xl tracking-widest font-mono focus:ring-2 focus:ring-[#0078FF]/20 focus:border-[#0078FF] transition-all outline-none"
-                placeholder="000000"
-                autoFocus
-              />
+
+              {/* 6 Segmented Digit Boxes */}
+              <div className="flex items-center justify-center gap-2 sm:gap-2.5">
+                {[0, 1, 2, 3, 4, 5].map((idx) => (
+                  <input
+                    key={idx}
+                    id={`forgot-otp-${idx}`}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={otpDigits[idx]}
+                    onChange={(e) => handleOtpDigitChange(idx, e.target.value)}
+                    onKeyDown={(e) => handleOtpKeyDown(idx, e)}
+                    onPaste={handleOtpPaste}
+                    autoFocus={idx === 0}
+                    className={`w-11 h-13 sm:w-12 sm:h-14 text-center text-xl font-bold font-mono rounded-xl bg-gray-50 border transition-all outline-none shadow-xs ${
+                      otpDigits[idx]
+                        ? 'border-[#0078FF] text-[#0078FF] bg-blue-50/40 ring-2 ring-[#0078FF]/20'
+                        : 'border-gray-200 text-gray-900 focus:border-[#0078FF] focus:bg-white focus:ring-2 focus:ring-[#0078FF]/20'
+                    }`}
+                  />
+                ))}
+              </div>
             </div>
+
             <button
               type="submit"
-              disabled={otpLoading}
-              className="w-full bg-[#0a1628] text-white py-4 rounded-full font-bold hover:bg-[#FB0500] transition-all duration-300 shadow-sm"
+              disabled={otpLoading || otp.length !== 6}
+              className="w-full bg-[#0a1628] hover:bg-[#0078FF] disabled:bg-gray-200 disabled:text-gray-400 text-white py-3.5 rounded-xl font-bold transition-all duration-300 shadow-sm text-xs cursor-pointer disabled:cursor-not-allowed"
             >
-              {otpLoading ? 'Verifying...' : 'Verify OTP'}
+              {otpLoading ? 'Verifying Code...' : 'Verify & Continue'}
             </button>
+
             <div className="text-center">
               <button
                 type="button"
                 onClick={handleResendOtp}
-                disabled={countdown > 0}
-                className={`text-sm ${countdown > 0 ? 'text-gray-400 cursor-not-allowed' : 'text-[#0078FF] hover:text-[#FB0500]'} transition-colors`}
+                disabled={countdown > 0 || otpLoading}
+                className={`text-xs font-bold ${
+                  countdown > 0 ? 'text-gray-400 cursor-not-allowed' : 'text-[#0078FF] hover:text-blue-700'
+                } transition-colors`}
               >
-                {countdown > 0 ? `Resend OTP in ${countdown}s` : 'Resend OTP'}
+                {countdown > 0 ? `Resend code in ${countdown}s` : 'Resend Code'}
               </button>
             </div>
           </form>
         )}
 
         {forgotStep === 3 && (
-          <form onSubmit={handleResetPassword} className="space-y-6">
-            <div className="space-y-1">
-              <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-4">
+          <form onSubmit={handleResetPassword} className="space-y-5 animate-slideIn">
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-3">
                 New Password
               </label>
               <div className="relative">
+                <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
                   type={showNewPassword ? "text" : "password"}
                   required
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-100 rounded-full py-4 px-6 pr-14 focus:ring-2 focus:ring-[#0078FF]/20 focus:border-[#0078FF] transition-all text-sm outline-none"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 pl-11 pr-12 focus:ring-2 focus:ring-[#0078FF]/20 focus:border-[#0078FF] transition-all text-xs font-bold outline-none text-gray-900"
                   placeholder="••••••••"
                   autoFocus
                 />
                 <button
                   type="button"
                   onClick={() => setShowNewPassword(!showNewPassword)}
-                  className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-900 transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 transition-colors"
                 >
-                  {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
 
-            <div className="space-y-1">
-              <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-4">
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-3">
                 Confirm Password
               </label>
               <div className="relative">
+                <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
                   type={showConfirmPassword ? "text" : "password"}
                   required
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-100 rounded-full py-4 px-6 pr-14 focus:ring-2 focus:ring-[#0078FF]/20 focus:border-[#0078FF] transition-all text-sm outline-none"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 pl-11 pr-12 focus:ring-2 focus:ring-[#0078FF]/20 focus:border-[#0078FF] transition-all text-xs font-bold outline-none text-gray-900"
                   placeholder="••••••••"
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-900 transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 transition-colors"
                 >
-                  {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
@@ -326,9 +410,9 @@ const LoginPage = () => {
             <button
               type="submit"
               disabled={resetLoading}
-              className="w-full bg-[#0a1628] text-white py-4 rounded-full font-bold hover:bg-[#FB0500] transition-all duration-300 shadow-sm"
+              className="w-full bg-[#FB0500] hover:bg-red-700 disabled:bg-gray-200 disabled:text-gray-400 text-white py-3.5 rounded-xl font-bold transition-all duration-300 shadow-sm text-xs cursor-pointer"
             >
-              {resetLoading ? 'Resetting...' : 'Reset Password'}
+              {resetLoading ? 'Resetting Password...' : 'Reset & Save Password'}
             </button>
           </form>
         )}

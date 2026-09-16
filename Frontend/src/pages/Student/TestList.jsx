@@ -1,13 +1,15 @@
 import axios from 'axios';
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../services/endpoints';
 import useStudentStore from '../../Store/studentstore';
+import { toast } from 'react-toastify';
 import { Clock, X, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
 
-const StudentTestPanel = ({ isEmbedded = false, initialFilter = 'completed' }) => {
+const StudentTestPanel = ({ isEmbedded = false, initialFilter = null }) => {
   const { student } = useStudentStore();
   const location = useLocation();
+  const navigate = useNavigate();
 
   // Main state
   const [tests, setTests] = useState([]);
@@ -15,7 +17,9 @@ const StudentTestPanel = ({ isEmbedded = false, initialFilter = 'completed' }) =
   const [studentId, setStudentId] = useState(null);
   const [studentClass, setStudentClass] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [activeFilter, setActiveFilter] = useState(initialFilter || 'completed'); // 'all', 'completed', 'pending'
+  const [activeFilter, setActiveFilter] = useState(
+    location.state?.filter || initialFilter || (isEmbedded ? 'completed' : 'all')
+  ); // 'all', 'completed', 'pending'
 
   useEffect(() => {
     if (location.state?.filter) {
@@ -143,11 +147,49 @@ const StudentTestPanel = ({ isEmbedded = false, initialFilter = 'completed' }) =
     }
   };
 
+  // ----- Public Tests for Guests / Non-logged in users -----
+  const fetchPublicTests = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.post(api.test.publishTest);
+      if (res.data?.success) {
+        const rawTests = res.data.data || res.data.tests || [];
+        const formattedTests = rawTests.map((test) => {
+          const questionCount = test.questions?.length || test.totalQuestions || 0;
+          const totalMarks = test.totalMarks ?? (questionCount * 1);
+
+          return {
+            id: test._id || test.id,
+            title: test.title || 'Untitled Test',
+            duration: test.duration || 30,
+            totalQuestions: questionCount,
+            totalMarks: totalMarks,
+            description: test.description || `Test your knowledge with this comprehensive mock test.`,
+            difficulty: test.difficulty || 'Medium',
+            category: test.category || 'General',
+            className: test.className,
+            isCompleted: false,
+            completedResult: null,
+            originalData: test,
+          };
+        });
+
+        setTests(formattedTests);
+      } else {
+        setTests([]);
+      }
+    } catch (error) {
+      console.error('Error fetching public tests:', error);
+      setTests([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // ----- 5. Main function: fetch tests for this student (only his class) -----
   const getTestsForStudent = async () => {
     if (!isLoggedIn || !studentId) {
-      setTests([]);
-      setLoading(false);
+      fetchPublicTests();
       return;
     }
 
@@ -194,6 +236,7 @@ const StudentTestPanel = ({ isEmbedded = false, initialFilter = 'completed' }) =
               description: test.description || `Test your knowledge`,
               difficulty: test.difficulty || 'Medium',
               category: test.category || 'General',
+              className: test.className,
               isCompleted,
               completedResult,
               originalData: test,
@@ -207,7 +250,8 @@ const StudentTestPanel = ({ isEmbedded = false, initialFilter = 'completed' }) =
       }
     } catch (error) {
       console.error('Error fetching student tests:', error);
-      setTests([]);
+      // Fallback to public tests if error
+      fetchPublicTests();
     } finally {
       setLoading(false);
     }
@@ -217,8 +261,7 @@ const StudentTestPanel = ({ isEmbedded = false, initialFilter = 'completed' }) =
     if (isLoggedIn && studentId) {
       getTestsForStudent();
     } else {
-      setTests([]);
-      setLoading(false);
+      fetchPublicTests();
     }
   }, [studentId, studentClass, isLoggedIn]);
 
@@ -313,8 +356,19 @@ const StudentTestPanel = ({ isEmbedded = false, initialFilter = 'completed' }) =
 
   // ----- 9. Start test handler (with resume support & capture server start time) -----
   const handleStartTest = async (test) => {
+    // If not logged in, show toast message
+    if (!isLoggedIn || !studentId) {
+      toast.warning("Please log in to attempt this test series");
+      return;
+    }
+
+    if (!studentClass) {
+      toast.info("Please update your class in your profile before starting this test");
+      return;
+    }
+
     if (test.isCompleted) {
-      alert('⚠️ You have already taken this test!');
+      toast.warning("You have already taken this test!");
       return;
     }
 
@@ -796,21 +850,18 @@ const StudentTestPanel = ({ isEmbedded = false, initialFilter = 'completed' }) =
                           {test.isCompleted ? (
                             <button
                               onClick={() => handleViewResult(test)}
-                              className={isEmbedded ? "w-full py-2.5 rounded-md font-bold text-xs uppercase tracking-wider border-2 border-emerald-500 text-emerald-600 hover:bg-emerald-50 transition" : "w-full py-3.5 rounded-sm font-bold text-sm uppercase tracking-wider border-2 border-green-500 text-green-600 hover:bg-green-50 transition"}
+                              className="w-full py-3 rounded-lg font-bold text-sm uppercase tracking-wider border-2 border-[#00B074] text-[#00B074] hover:bg-emerald-50 bg-white transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
                             >
-                              View Result →
+                              <span>VIEW RESULT</span>
+                              <span>→</span>
                             </button>
                           ) : (
                             <button
                               onClick={() => handleStartTest(test)}
-                              disabled={!isLoggedIn || !studentClass}
-                              className={`w-full py-2.5 rounded-md font-bold text-xs uppercase tracking-wider transition ${
-                                !isLoggedIn || !studentClass
-                                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
-                                  : 'border-2 border-emerald-500 text-emerald-600 hover:bg-emerald-50'
-                              }`}
+                              className="w-full py-3 rounded-lg font-bold text-sm uppercase tracking-wider border-2 border-[#00B074] text-[#00B074] hover:bg-emerald-50 bg-white transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
                             >
-                              {!isLoggedIn ? 'Login to Start' : !studentClass ? 'Set your class first' : 'Start Test →'}
+                              <span>START TEST</span>
+                              <span>→</span>
                             </button>
                           )}
                         </div>

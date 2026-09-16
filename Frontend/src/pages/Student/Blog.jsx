@@ -100,23 +100,32 @@ const BlogCard = ({ blog, onClick }) => (
 const BlogDetail = ({ blog, onClose }) => {
   if (!blog) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 animate-fadeIn">
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs" onClick={onClose} />
-      <div className="relative bg-white w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-md border border-slate-200 shadow-2xl flex flex-col animate-slideUp">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 pt-20 sm:pt-24 pb-8 overflow-y-auto animate-fadeIn">
+      <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs" onClick={onClose} />
+      <div className="relative bg-white w-full max-w-4xl max-h-[85vh] overflow-hidden rounded-sm border border-slate-200 shadow-2xl flex flex-col animate-slideUp my-auto z-10">
         {/* Modal Top Bar */}
-        <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 sticky top-0 z-10">
+        <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 sticky top-0 z-20">
           <div className="flex items-center gap-2.5">
-            <span className="w-2 h-2 rounded-full bg-[#FB0500]" />
-            <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">Root Insights Article</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-[#FB0500]" />
+            <span className="text-xs font-black text-slate-700 uppercase tracking-wider">Root Insights Article</span>
           </div>
-          <button onClick={onClose} className="p-1.5 hover:bg-slate-200 rounded-md transition-colors text-slate-500 hover:text-slate-900">
-            <X size={18} />
+          <button
+            onClick={onClose}
+            className="p-1.5 hover:bg-slate-200 rounded-full transition-colors text-slate-500 hover:text-slate-900 cursor-pointer"
+            title="Close Article"
+          >
+            <X size={20} />
           </button>
         </div>
 
         <div className="overflow-y-auto custom-scrollbar">
-          <div className="h-64 sm:h-80 w-full relative bg-slate-100">
-            <img src={blog.image} className="w-full h-full object-cover" alt="" onError={(e) => { e.target.src = "https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=800&auto=format"; }} />
+          <div className="h-64 sm:h-80 md:h-96 w-full relative bg-slate-100 overflow-hidden">
+            <img
+              src={blog.image}
+              className="w-full h-full object-cover"
+              alt={blog.title}
+              onError={(e) => { e.target.src = "https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=800&auto=format"; }}
+            />
           </div>
 
           <div className="px-6 sm:px-12 py-8">
@@ -124,16 +133,16 @@ const BlogDetail = ({ blog, onClose }) => {
               <span className="px-3 py-1 bg-red-50 text-[#FB0500] border border-red-200 rounded-sm font-bold uppercase tracking-wider text-[10px]">
                 {blog.category || 'Education'}
               </span>
-              <span className="flex items-center gap-1.5"><Calendar size={13} /> {formatDate(blog.createdAt)}</span>
-              <span className="flex items-center gap-1.5"><User size={13} /> By {blog.author || 'Root Faculty'}</span>
+              <span className="flex items-center gap-1.5"><Calendar size={13} className="text-slate-400" /> {formatDate(blog.createdAt)}</span>
+              <span className="flex items-center gap-1.5"><User size={13} className="text-slate-400" /> By {blog.author || 'Root Faculty'}</span>
             </div>
 
             <h1 className="text-2xl sm:text-4xl font-extrabold text-slate-900 mb-6 leading-tight">
               {blog.title}
             </h1>
 
-            <div className="prose prose-slate max-w-none text-slate-700 leading-relaxed space-y-4 text-sm sm:text-base border-t border-slate-100 pt-6 pb-12">
-              {blog.content.split('\n').map((p, i) => p ? <p key={i}>{p}</p> : <br key={i} />)}
+            <div className="prose prose-slate max-w-none text-slate-700 leading-relaxed space-y-4 text-sm sm:text-base border-t border-slate-100 pt-6 pb-12 whitespace-pre-line">
+              {blog.content}
             </div>
           </div>
         </div>
@@ -176,7 +185,7 @@ const Blog = () => {
 
   const filteredBlogs = blogs.filter(b => {
     const matchesSearch = b.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          (b.content && b.content.toLowerCase().includes(searchTerm.toLowerCase()));
+      (b.content && b.content.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesCat = activeCategory === 'All' || b.category === activeCategory;
     return matchesSearch && matchesCat;
   });
@@ -245,11 +254,10 @@ const Blog = () => {
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
-              className={`px-4 py-1.5 rounded-md text-xs font-bold whitespace-nowrap transition-all ${
-                activeCategory === cat
+              className={`px-4 py-1.5 rounded-md text-xs font-bold whitespace-nowrap transition-all ${activeCategory === cat
                   ? 'bg-[#0078FF] text-white shadow-xs'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200'
-              }`}
+                }`}
             >
               {cat}
             </button>
@@ -297,11 +305,11 @@ const Blog = () => {
           <span className="text-[10px] font-bold text-[#FB0500] uppercase tracking-[0.2em] bg-red-50 border border-red-100 px-3 py-1 rounded-sm inline-block mb-3">
             ROOT INSIGHTS NEWSLETTER
           </span>
-          
+
           <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-3 tracking-tight">
             Stay Updated with Expert Exam Strategies
           </h2>
-          
+
           <p className="text-slate-600 mb-8 max-w-md mx-auto text-xs sm:text-sm font-medium leading-relaxed">
             Get exclusive test notifications, preparation roadmaps, and study materials delivered directly to your inbox.
           </p>

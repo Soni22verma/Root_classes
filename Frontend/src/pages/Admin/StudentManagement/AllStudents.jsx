@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Plus, Search, Eye, User } from 'lucide-react';
+import { Plus, Search, Eye, User, Ban, CheckCircle, ShieldAlert } from 'lucide-react';
 import api from '../../../services/adminendpoint';
 import Loader from '../../../components/AdminComponent/Loader';
+import { toast } from 'react-toastify';
 
 const AllStudent = () => {
   const [students, setStudents] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -37,6 +39,33 @@ const AllStudent = () => {
   useEffect(() => {
     GetAllStudents();
   }, []);
+
+  const handleToggleBan = async (student) => {
+    const actionText = student.isBanned ? "Unban" : "Ban";
+    if (!window.confirm(`Are you sure you want to ${actionText} ${student.fullName || student.email}?`)) {
+      return;
+    }
+
+    try {
+      setActionLoading(true);
+      const res = await axios.post(api.admin.toggleBanStudent, {
+        studentId: student._id,
+        isBanned: !student.isBanned
+      });
+
+      toast.success(res.data.message || `Student ${actionText}ned successfully`);
+      
+      // Update local state
+      setStudents(prev => prev.map(s => s._id === student._id ? { ...s, isBanned: !s.isBanned } : s));
+      if (selectedStudent && selectedStudent._id === student._id) {
+        setSelectedStudent(prev => ({ ...prev, isBanned: !prev.isBanned }));
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || `Failed to ${actionText} student`);
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   const handleViewDetails = (student) => {
     setSelectedStudent(student);
@@ -103,7 +132,7 @@ const AllStudent = () => {
                  <h1 className="text-xl font-bold text-gray-900 tracking-tight">
                     Roster Management
                  </h1>
-                 <p className="text-xs text-gray-500 mt-0.5">Oversee and monitor all registered students across sectors.</p>
+                 <p className="text-xs text-gray-500 mt-0.5">Oversee, monitor, and manage student access across the platform.</p>
               </div>
 
               <div className="flex items-center gap-3 w-full md:w-auto">
@@ -146,7 +175,7 @@ const AllStudent = () => {
                            src={getAvatar(student)}
                            alt={student.fullName}
                         />
-                        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white" />
+                        <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white ${student.isBanned ? 'bg-red-500' : 'bg-emerald-500'}`} />
                      </div>
                      <div className="pr-6">
                         <h3 className="text-sm font-bold text-gray-900 leading-tight">{student.fullName}</h3>
@@ -162,16 +191,25 @@ const AllStudent = () => {
                         </span>
                       </div>
                      <div className="bg-gray-50 p-2.5 rounded-md border border-gray-100">
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Interest</p>
-                        <span className="text-xs font-semibold text-[#0078FF] truncate block">{student.interestedCourse || 'General'}</span>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Status</p>
+                        <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase ${student.isBanned ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                           {student.isBanned ? 'Banned' : 'Active'}
+                        </span>
                      </div>
                   </div>
 
-                  <div className="flex items-center justify-between border-t border-gray-100 pt-3">
-                     <div className="flex items-center gap-1.5">
-                        <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                        <span className="text-xs font-medium text-gray-600">Active</span>
-                     </div>
+                  <div className="flex items-center justify-between border-t border-gray-100 pt-3 gap-2">
+                     <button
+                       onClick={() => handleToggleBan(student)}
+                       disabled={actionLoading}
+                       className={`px-3 py-1.5 rounded-md text-xs font-bold transition-colors flex items-center gap-1.5 ${
+                         student.isBanned
+                           ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
+                           : 'bg-red-50 text-red-600 hover:bg-red-100'
+                       }`}
+                     >
+                       <Ban size={13} /> {student.isBanned ? 'Unban Account' : 'Ban Account'}
+                     </button>
                      <button 
                        onClick={() => handleViewDetails(student)}
                        className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-[#0078FF] rounded-md text-xs font-semibold transition-colors"
@@ -192,7 +230,7 @@ const AllStudent = () => {
                            <th className="px-6 py-3.5 font-semibold text-[11px] uppercase tracking-wider">S.No</th>
                            <th className="px-6 py-3.5 font-semibold text-[11px] uppercase tracking-wider">Student Identity</th>
                            <th className="px-6 py-3.5 font-semibold text-[11px] uppercase tracking-wider">Sector / Class</th>
-                           <th className="px-6 py-3.5 font-semibold text-[11px] uppercase tracking-wider">Gender</th>
+                           <th className="px-6 py-3.5 font-semibold text-[11px] uppercase tracking-wider">Status</th>
                            <th className="px-6 py-3.5 font-semibold text-[11px] uppercase tracking-wider">Interest</th>
                            <th className="px-6 py-3.5 font-semibold text-[11px] uppercase tracking-wider text-right">Actions</th>
                         </tr>
@@ -211,7 +249,7 @@ const AllStudent = () => {
                                           src={getAvatar(student)}
                                           alt={student.fullName}
                                        />
-                                       <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white" />
+                                       <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white ${student.isBanned ? 'bg-red-500' : 'bg-emerald-500'}`} />
                                     </div>
                                     <div>
                                        <h3 className="text-sm font-semibold text-gray-900 leading-none mb-1">{student.fullName}</h3>
@@ -224,19 +262,40 @@ const AllStudent = () => {
                                     {student.currentClass || 'N/A'}
                                  </span>
                               </td>
-                              <td className="px-6 py-4 text-xs font-medium text-gray-600 capitalize">
-                                 {student.gender || 'N/A'}
+                              <td className="px-6 py-4">
+                                 <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+                                   student.isBanned
+                                     ? 'bg-red-100/80 text-red-700 border border-red-200'
+                                     : 'bg-emerald-100/80 text-emerald-700 border border-emerald-200'
+                                 }`}>
+                                    <span className={`w-1.5 h-1.5 rounded-full ${student.isBanned ? 'bg-red-500' : 'bg-emerald-500'}`} />
+                                    {student.isBanned ? 'Banned' : 'Active'}
+                                 </span>
                               </td>
                               <td className="px-6 py-4 text-xs font-semibold text-[#0078FF]">
                                  {student.interestedCourse || 'General'}
                               </td>
                               <td className="px-6 py-4 text-right">
-                                 <button 
-                                   onClick={() => handleViewDetails(student)}
-                                   className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 hover:bg-blue-50 text-[#0078FF] border border-gray-200/80 hover:border-blue-200 rounded-md text-xs font-semibold transition-colors"
-                                 >
-                                    <Eye size={13} /> View
-                                 </button>
+                                 <div className="inline-flex items-center gap-2 justify-end">
+                                    <button 
+                                      onClick={() => handleToggleBan(student)}
+                                      disabled={actionLoading}
+                                      title={student.isBanned ? "Unban Account" : "Ban Account"}
+                                      className={`inline-flex items-center gap-1 px-2.5 py-1.5 border rounded-md text-xs font-semibold transition-colors ${
+                                        student.isBanned
+                                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                                          : 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'
+                                      }`}
+                                    >
+                                       <Ban size={13} /> {student.isBanned ? 'Unban' : 'Ban'}
+                                    </button>
+                                    <button 
+                                      onClick={() => handleViewDetails(student)}
+                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 hover:bg-blue-50 text-[#0078FF] border border-gray-200/80 hover:border-blue-200 rounded-md text-xs font-semibold transition-colors"
+                                    >
+                                       <Eye size={13} /> View
+                                    </button>
+                                 </div>
                               </td>
                            </tr>
                         ))}
@@ -287,8 +346,10 @@ const AllStudent = () => {
                   />
                   <div>
                      <div className="flex items-center gap-2 mb-0.5">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Student Profile</span>
+                        <span className={`w-2 h-2 rounded-full ${selectedStudent.isBanned ? 'bg-red-500' : 'bg-emerald-500'}`} />
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                          Student Profile • {selectedStudent.isBanned ? 'Banned' : 'Active'}
+                        </span>
                      </div>
                      <h2 className="text-lg font-bold text-gray-900 leading-tight">{selectedStudent.fullName}</h2>
                      <p className="text-xs font-semibold text-[#0078FF]">{selectedStudent.currentClass || 'General'} Sector</p>
@@ -301,6 +362,13 @@ const AllStudent = () => {
 
             {/* Modal Content */}
             <div className="p-6 space-y-6 text-sm">
+               {selectedStudent.isBanned && (
+                 <div className="p-3 bg-red-50 border border-red-200 rounded-md flex items-center gap-2 text-xs text-red-700 font-semibold">
+                   <ShieldAlert size={16} />
+                   <span>This student account is currently <strong>BANNED</strong> and cannot log in to the portal.</span>
+                 </div>
+               )}
+
                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div>
                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Contact Information</p>
@@ -331,7 +399,20 @@ const AllStudent = () => {
                </div>
             </div>
 
-            <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end">
+            <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
+              <button
+                type="button"
+                onClick={() => handleToggleBan(selectedStudent)}
+                disabled={actionLoading}
+                className={`px-4 py-2 rounded-md font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-1.5 ${
+                  selectedStudent.isBanned
+                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
+                    : 'bg-red-600 hover:bg-red-700 text-white shadow-xs'
+                }`}
+              >
+                <Ban size={14} /> {selectedStudent.isBanned ? 'Unban Student' : 'Ban Student'}
+              </button>
+
               <button
                 onClick={closeModal}
                 className="px-5 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-md font-semibold text-xs uppercase tracking-wider transition-all"

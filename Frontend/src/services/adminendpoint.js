@@ -3,7 +3,9 @@ const Base_Url = import.meta.env.VITE_BASE_URL || "http://localhost:5050";
 
 const api ={
     admin:{
-        getStudents:Base_Url+"/admin/getall_student"
+        getStudents:Base_Url+"/admin/getall_student",
+        toggleBanStudent:Base_Url+"/admin/toggle-ban-student",
+        changePassword:Base_Url+"/admin/change-password"
     },
     category:{
         createcategory:Base_Url+"/category/create_category",
