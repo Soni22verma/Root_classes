@@ -1,7 +1,13 @@
 import nodemailer from "nodemailer";
 
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true,
+    pool: true,
+    maxConnections: 5,
+    maxMessages: 100,
+    family: 4, // Force IPv4 to eliminate IPv6 DNS delay on cloud hosting (Render/AWS/etc.)
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
@@ -17,16 +23,18 @@ const sendOTP = async (email, otp) => {
         const mailOptions = {
             from: `"Roots Classes" <${process.env.EMAIL_USER}>`,
             to: email,
-            subject: 'Your OTP Code',
+            subject: 'Your OTP Code - Roots Classes',
             html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                    <h2 style="color: #4F46E5;">Email Verification</h2>
-                    <p>Your OTP code is:</p>
-                    <h1 style="font-size: 32px; color: #4F46E5; letter-spacing: 5px;">${otp}</h1>
-                    <p>This OTP is valid for 1 min.</p>
-                    <p>If you didn't request this, please ignore this email.</p>
-                    <hr />
-                    <p style="color: #666; font-size: 12px;">© 2024 Your Company. All rights reserved.</p>
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 10px; padding: 25px;">
+                    <h2 style="color: #4F46E5; margin-top: 0;">Email Verification</h2>
+                    <p style="font-size: 15px; color: #333;">Your OTP verification code is:</p>
+                    <div style="background-color: #f3f4f6; border-radius: 8px; padding: 15px; text-align: center; margin: 20px 0;">
+                        <h1 style="font-size: 34px; color: #4F46E5; letter-spacing: 6px; margin: 0;">${otp}</h1>
+                    </div>
+                    <p style="color: #555; font-size: 14px;">This OTP is valid for <strong>10 minutes</strong>.</p>
+                    <p style="color: #777; font-size: 13px;">If you didn't request this code, please ignore this email.</p>
+                    <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 20px 0;" />
+                    <p style="color: #999; font-size: 12px; margin-bottom: 0;">© ${new Date().getFullYear()} Roots Classes. All rights reserved.</p>
                 </div>
             `
         };
