@@ -19,7 +19,7 @@ const PrivacyPolicy = () => {
               Refund Policy
             </h2>
             <p className="bg-blue-50 p-6 rounded-xl border border-blue-100">
-              Fees once paid are <b>non-refundable</b>. Exceptions may be made only in rare medical or relocation cases and must be approved by the institute head. Any eligible refunds will be processed within <b>7-10 working days</b> through the original payment method.
+              Fees once paid are non-refundable . Exceptions may be made only in rare medical or relocation cases and must be approved by the institute head. Any eligible refunds will be processed within <b>7-10 working days</b> through the original payment method.
             </p>
           </section>
 
