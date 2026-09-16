@@ -396,7 +396,7 @@ const CourseDetails = () => {
       const enrollmentId = data.enrollmentId;
 
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        key: data.keyId || import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_live_TbpL4le4mBM46T',
         amount: data.order.amount,
         currency: data.order.currency,
         name: course.title,

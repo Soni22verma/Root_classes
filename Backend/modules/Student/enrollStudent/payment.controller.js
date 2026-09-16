@@ -159,6 +159,7 @@ export const createPayment = async (req, res) => {
     res.json({
       success: true,
       order,
+      keyId: process.env.RAZORPAY_KEY_ID || 'rzp_live_TbpL4le4mBM46T',
       enrollmentId: enrollment._id,
       finalPrice,
       discountApplied
