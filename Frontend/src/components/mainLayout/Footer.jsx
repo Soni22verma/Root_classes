@@ -7,6 +7,7 @@ const Footer = () => {
   const currentYear = new Date().getFullYear();
 
   const quickLinks = [
+    { name: "About Us", href: "/about" },
     { name: "Classroom Courses", href: "/course" },
     { name: "Test Series", href: "/test" },
     { name: "Contact Us", href: "/contact" },

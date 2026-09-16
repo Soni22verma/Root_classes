@@ -14,6 +14,7 @@ import PurchesCourses from "../components/Student/PurchesCourses";
 import TermsAndConditions from "../pages/TermsAndConditions";
 import PrivacyPolicy from "../pages/PrivacyPolicy";
 import TopicInfo from "../pages/Student/Course/Topicinfo";
+import About from "../pages/Student/About";
 
 
 const StudentRoutes = [
@@ -78,6 +79,14 @@ const StudentRoutes = [
             {
                 path: "/privacypolicy",
                 element: <PrivacyPolicy />
+            },
+            {
+                path: "/about",
+                element: <About />
+            },
+            {
+                path: "/about-us",
+                element: <About />
             }
 
         ]
