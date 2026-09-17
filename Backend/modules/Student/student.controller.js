@@ -365,14 +365,13 @@ export const sendOTPEmail = async (req, res) => {
       expiresAt: Date.now() + 10 * 60 * 1000 // 10 minutes
     });
 
-    // Send email asynchronously in background so the user gets instant response
-    sendOTP(cleanEmail, otp).then((sent) => {
-      if (!sent) {
-        console.warn(`⚠️ Warning: Background OTP email delivery failed for ${cleanEmail}`);
-      }
-    }).catch((err) => {
-      console.error('Error sending background OTP email:', err);
-    });
+    const emailSent = await sendOTP(cleanEmail, otp);
+    if (!emailSent) {
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to send OTP email. Please check server email credentials or spam folder.'
+      });
+    }
 
     return res.status(200).json({
       success: true,
@@ -382,7 +381,7 @@ export const sendOTPEmail = async (req, res) => {
     console.error('Error in sendOTPEmail:', error);
     return res.status(500).json({
       success: false,
-      message: 'Internal server error'
+      message: error.message || 'Internal server error'
     });
   }
 };
