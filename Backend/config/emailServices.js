@@ -7,13 +7,22 @@ const transporter = nodemailer.createTransport({
     pool: true,
     maxConnections: 5,
     maxMessages: 100,
-    family: 4, // Force IPv4 to eliminate IPv6 DNS delay on cloud hosting (Render/AWS/etc.)
+    family: 4, // Force IPv4 to eliminate IPv6 DNS delay on cloud hosting
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
     },
     tls: {
         rejectUnauthorized: false
+    }
+});
+
+// Pre-verify and warm up SMTP connection
+transporter.verify((error) => {
+    if (error) {
+        console.warn("⚠️ SMTP Transporter Connection Warning:", error.message);
+    } else {
+        console.log("✅ Nodemailer SMTP Transporter ready & connected!");
     }
 });
 
