@@ -1,13 +1,7 @@
 import nodemailer from "nodemailer";
 
 const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 465,
-    secure: true,
-    pool: true,
-    maxConnections: 5,
-    maxMessages: 100,
-    family: 4, // Force IPv4 to eliminate IPv6 DNS delay on cloud hosting
+    service: "gmail",
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
@@ -18,17 +12,26 @@ const transporter = nodemailer.createTransport({
 });
 
 // Pre-verify and warm up SMTP connection
-transporter.verify((error) => {
-    if (error) {
-        console.warn("⚠️ SMTP Transporter Connection Warning:", error.message);
-    } else {
-        console.log("✅ Nodemailer SMTP Transporter ready & connected!");
-    }
-});
+if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+    transporter.verify((error) => {
+        if (error) {
+            console.warn("⚠️ SMTP Transporter Connection Warning:", error.message);
+        } else {
+            console.log("✅ Nodemailer SMTP Transporter ready & connected!");
+        }
+    });
+} else {
+    console.error("❌ CRITICAL: EMAIL_USER or EMAIL_PASS environment variables are missing on this server!");
+}
 
 // Function to send OTP
 const sendOTP = async (email, otp) => {
     try {
+        if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+            console.error('❌ EMAIL_USER or EMAIL_PASS is missing in server environment variables!');
+            return false;
+        }
+
         const mailOptions = {
             from: `"Roots Classes" <${process.env.EMAIL_USER}>`,
             to: email,
@@ -49,10 +52,10 @@ const sendOTP = async (email, otp) => {
         };
 
         const info = await transporter.sendMail(mailOptions);
-        console.log('Email sent: ', info.response);
+        console.log('✅ OTP Email sent successfully to:', email, 'Response:', info.response || info.messageId);
         return true;
     } catch (error) {
-        console.error('Error sending email:', error);
+        console.error('❌ Error sending OTP email to', email, ':', error);
         return false;
     }
 };
